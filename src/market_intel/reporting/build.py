@@ -45,6 +45,7 @@ calls the architect left to ST2, not things the spec pinned):
 """
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, timedelta
 
 from .. import db as db_mod
@@ -271,10 +272,30 @@ def _macro_map(conn, cutoff) -> dict[str, dict]:
     return out
 
 
+def _macro_label(subj: str, latest) -> str:
+    """FRED keys its facts by the series id (`CPIAUCSL`), but ECOS keys them by
+    the statistic/item code pair (`722Y001.0101000`) and carries the readable
+    name in `extra.logical_key` / `extra.stat_name`. Looking up only by subject
+    left every Korean macro row printed as its raw code — "722Y001.0101000
+    2.50 연%" instead of "한국 기준금리". Fall through subject → logical_key →
+    the source's own statistic name before giving up and showing the code."""
+    if subj in _MACRO_LABELS:
+        return _MACRO_LABELS[subj]
+    try:
+        extra = json.loads(latest["extra_json"] or "{}")
+    except (json.JSONDecodeError, TypeError, IndexError, KeyError):
+        return subj
+    key = extra.get("logical_key")
+    if key and key in _MACRO_LABELS:
+        return _MACRO_LABELS[key]
+    stat_name = (extra.get("stat_name") or "").strip()
+    return stat_name or subj
+
+
 def _macro_facts(mmap: dict) -> list[FactRow]:
     out = []
     for subj, info in mmap.items():
-        label = _MACRO_LABELS.get(subj, subj)
+        label = _macro_label(subj, info["latest"])
         comparison = f"직전 관측 대비 {info['delta_pct']:+.2f}%" if info["delta_pct"] is not None else "직전 관측 없음"
         out.append(_row_from_fact(info["latest"], label, comparison))
     out.sort(key=lambda r: r.subject)

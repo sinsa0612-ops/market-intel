@@ -1,0 +1,30 @@
+/* market-intel — single stylesheet (spec B8: no CDN, no external font). */
+:root { --fg:#1b1f23; --muted:#6a737d; --line:#e1e4e8; --warn:#b26a00;
+        --warn-bg:#fff6e5; --ok:#1a7f37; --bg:#fff; --accent:#0b5fff; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.65;
+       font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                    "Malgun Gothic", sans-serif; }
+.wrap { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+header.site { border-bottom:1px solid var(--line); margin-bottom:1.5rem; padding-bottom:.75rem; }
+header.site h1 { font-size:1.1rem; margin:0 0 .35rem; }
+nav a { margin-right:1rem; color:var(--accent); text-decoration:none; }
+nav a:hover { text-decoration:underline; }
+h1,h2,h3 { line-height:1.3; }
+h2 { font-size:1.05rem; margin-top:2rem; border-bottom:1px solid var(--line); padding-bottom:.3rem; }
+table { border-collapse:collapse; width:100%; margin:.5rem 0 1rem; font-size:.92rem; }
+th,td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; }
+th { background:#f6f8fa; font-weight:600; }
+.status-ok { color:var(--ok); font-size:.8rem; white-space:nowrap; }
+.status-warn { color:var(--warn); background:var(--warn-bg); font-size:.8rem;
+               padding:0 .25rem; border-radius:3px; white-space:nowrap; }
+.badge-late { color:var(--warn); background:var(--warn-bg); font-size:.75rem;
+              padding:0 .3rem; border-radius:3px; margin-left:.4rem; }
+.ai-badge { color:var(--muted); font-size:.85rem; margin:.2rem 0; }
+ul.cards { list-style:none; padding:0; }
+ul.cards li { border-bottom:1px solid var(--line); padding:.5rem 0; font-size:.95rem; }
+ul.cards li a { color:var(--accent); text-decoration:none; }
+ul.cards li a:hover { text-decoration:underline; }
+.meta { color:var(--muted); font-size:.85rem; }
+footer.site { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line);
+              color:var(--muted); font-size:.8rem; }

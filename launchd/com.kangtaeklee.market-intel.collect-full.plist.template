@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  market-intel launchd job: collect-full
+  토 08:00 · 매월 1일 08:00 — 전체 수집
+
+  설치 전 <REPO_ROOT>를 실제 경로로 치환해야 한다 (launchd/README.md 참조).
+  시각은 이 맥의 로컬 시간(KST) 기준이다.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kangtaeklee.market-intel.collect-full</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string><REPO_ROOT>/scripts/run_job.sh</string>
+    <string>collect-full</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string><REPO_ROOT></string>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Weekday</key><integer>6</integer>
+      <key>Hour</key><integer>8</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Day</key><integer>1</integer>
+      <key>Hour</key><integer>8</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+  </array>
+  <key>StandardOutPath</key>
+  <string><REPO_ROOT>/var/logs/launchd-collect-full.log</string>
+  <key>StandardErrorPath</key>
+  <string><REPO_ROOT>/var/logs/launchd-collect-full.err.log</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

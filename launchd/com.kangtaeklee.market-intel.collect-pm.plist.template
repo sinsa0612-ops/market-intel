@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  market-intel launchd job: collect-pm
+  평일 15:50 — close 수집 (16:15 차단선보다 먼저)
+
+  설치 전 <REPO_ROOT>를 실제 경로로 치환해야 한다 (launchd/README.md 참조).
+  시각은 이 맥의 로컬 시간(KST) 기준이다.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kangtaeklee.market-intel.collect-pm</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string><REPO_ROOT>/scripts/run_job.sh</string>
+    <string>collect-pm</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string><REPO_ROOT></string>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Weekday</key><integer>1</integer>
+      <key>Hour</key><integer>15</integer>
+      <key>Minute</key><integer>50</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>2</integer>
+      <key>Hour</key><integer>15</integer>
+      <key>Minute</key><integer>50</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>3</integer>
+      <key>Hour</key><integer>15</integer>
+      <key>Minute</key><integer>50</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>4</integer>
+      <key>Hour</key><integer>15</integer>
+      <key>Minute</key><integer>50</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>5</integer>
+      <key>Hour</key><integer>15</integer>
+      <key>Minute</key><integer>50</integer>
+    </dict>
+  </array>
+  <key>StandardOutPath</key>
+  <string><REPO_ROOT>/var/logs/launchd-collect-pm.log</string>
+  <key>StandardErrorPath</key>
+  <string><REPO_ROOT>/var/logs/launchd-collect-pm.err.log</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

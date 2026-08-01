@@ -37,7 +37,12 @@ def test_fake_key_maps_observations_to_facts(settings):
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(str(request.url))
-        series_id = request.url.params.get("series_id")
+        # Two endpoints now: observations for the value, /fred/series for the
+        # measurement unit. The observations payload's "units": "lin" is the
+        # requested transformation, not a unit — publishing it printed
+        # "미국 CPI 332.57 lin", so units_short is what reaches the fact.
+        if request.url.path.endswith("/fred/series"):
+            return httpx.Response(200, json={"seriess": [{"units_short": "%"}]})
         return httpx.Response(
             200,
             json={
@@ -55,7 +60,9 @@ def test_fake_key_maps_observations_to_facts(settings):
     result = FredProvider().collect(_ctx(settings, http_factory))
 
     assert result.status == "OK"
-    assert len(calls) == len(SERIES)
+    # one observations call per series + one unit lookup per series (cached,
+    # so exactly one lookup each even though collect runs the loop once)
+    assert len(calls) == 2 * len(SERIES)
     assert len(result.facts) == len(SERIES)
     subjects = {f.subject for f in result.facts}
     assert subjects == set(SERIES)
@@ -64,6 +71,9 @@ def test_fake_key_maps_observations_to_facts(settings):
     assert f.value_num == 3.50
     assert f.data_status == "source_verified"
     assert f.extra["realtime_start"] == "2026-07-01"
+    # the unit is the measured unit, never the "lin" transformation code
+    assert f.unit == "%"
+    assert all(fact.unit == "%" for fact in result.facts)
 
 
 def test_fake_key_never_appears_in_stored_safe_url(settings, caplog):
