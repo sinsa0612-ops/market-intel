@@ -39,6 +39,14 @@ def _this_year() -> int:
     return datetime.now(timezone.utc).year
 
 
+def _now_cutoff() -> datetime:
+    """`schedule.changes` needs an explicit blackout (it has no wall-clock
+    default any more, by design). These fixtures stamp `known_at` from the
+    real clock via the engine, so "now" is the equivalent of the old
+    unbounded read."""
+    return datetime.now(timezone.utc) + timedelta(minutes=1)
+
+
 def _add_months(d: date, n: int) -> date:
     m = d.month - 1 + n
     return date(d.year + m // 12, m % 12 + 1, 1)
@@ -98,7 +106,7 @@ def test_slot_key_stable_across_move(settings):
     assert rows[0]["value_text"] == f"{y}-08-12" and rows[1]["value_text"] == f"{y}-08-19"
     assert rows[0]["comparison_basis"] == schedule_mod.YEAR_TIMETABLE_BASIS
 
-    result = schedule_mod.changes(conn, since="2020-01-01T00:00:00+00:00")
+    result = schedule_mod.changes(conn, "2020-01-01T00:00:00+00:00", _now_cutoff())
     conn.close()
 
     delayed = [c for c in result if c["kind"] == "연기"]
@@ -156,7 +164,7 @@ def test_same_month_double_release(settings):
     assert len(same_month) == 2, "both releases of the doubled month must appear"
 
     # 2. no false 연기/앞당김 between the two dates of that month
-    changed = schedule_mod.changes(conn, since="2020-01-01T00:00:00+00:00")
+    changed = schedule_mod.changes(conn, "2020-01-01T00:00:00+00:00", _now_cutoff())
     assert [c for c in changed if c["kind"] in ("연기", "앞당김")] == []
     before = conn.execute("SELECT COUNT(*) c FROM fact_revisions").fetchone()["c"]
     conn.close()
@@ -248,7 +256,7 @@ def test_earnings_next_cycle(settings, monkeypatch):
     assert len(rows) == 2, "same-year moves stay one fact"
     assert rows[0]["fact_id"] == rows[1]["fact_id"] == f"earnings_calendar:NVDA:scheduled_date:{y}0101"
 
-    result = schedule_mod.changes(conn, since="2020-01-01T00:00:00+00:00")
+    result = schedule_mod.changes(conn, "2020-01-01T00:00:00+00:00", _now_cutoff())
     conn.close()
     nvda = [c for c in result if c["name"] == "NVDA 실적"]
     assert any(c["kind"] == "next_cycle" for c in nvda), nvda
@@ -333,7 +341,7 @@ def test_policy_unscheduled_meeting_no_ordinal_shift(settings):
     ).fetchall()
     assert [r["revision_no"] for r in rows] == [1, 2], "one timetable fact per year, two revisions"
 
-    result = schedule_mod.changes(conn, since="2020-01-01T00:00:00+00:00")
+    result = schedule_mod.changes(conn, "2020-01-01T00:00:00+00:00", _now_cutoff())
     conn.close()
     fomc = [c for c in result if c["name"] == "FOMC" and c["date"] == "2026-10-06"]
     assert [c["kind"] for c in fomc] == ["신규"], result
@@ -431,7 +439,7 @@ def test_changes_reports_a_brand_new_timetable_as_added(settings):
         conn, settings.raw_dir, "policy_calendar", "bokmpc", ["2026-08-27", "2026-10-22"],
         "2026-08-01T00:00:00+00:00", 2026, market="KR", country="KR",
     )
-    result = schedule_mod.changes(conn, since="2026-07-01T00:00:00+00:00")
+    result = schedule_mod.changes(conn, "2026-07-01T00:00:00+00:00", _now_cutoff())
     conn.close()
     assert [c["kind"] for c in result] == ["신규", "신규"]
     assert [c["date"] for c in result] == ["2026-08-27", "2026-10-22"]
@@ -448,9 +456,10 @@ def test_changes_window_filters_to_the_forward_days(settings):
         conn, settings.raw_dir, "policy_calendar", "bokmpc", ["2026-08-03", "2026-11-26"],
         "2026-08-01T00:00:00+00:00", 2026, market="KR", country="KR",
     )
+    # cutoff is after the seeded known_at (2026-08-01T00:00Z) and its KST
+    # date is 2026-08-01, which is what anchors the forward window.
     result = schedule_mod.changes(
-        conn, since="2026-07-01T00:00:00+00:00", days=7,
-        today=date(2026, 8, 1),
+        conn, "2026-07-01T00:00:00+00:00", "2026-08-01T20:00:00+09:00", days=7,
     )
     conn.close()
     assert [c["date"] for c in result] == ["2026-08-03"]

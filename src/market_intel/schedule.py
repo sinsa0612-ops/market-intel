@@ -27,7 +27,7 @@ inserting an unscheduled meeting shifts nothing.
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from . import db as db_mod
@@ -211,7 +211,7 @@ def _row(date_str: str, kind: str, name: str, old: str, new: str) -> dict:
     return {"date": date_str, "kind": kind, "name": name, "old": old, "new": new}
 
 
-def changes(conn, since, days: int | None = None, today: date | None = None) -> list[dict]:
+def changes(conn, since, cutoff, days: int | None = None) -> list[dict]:
     """Deterministic calendar-change classification (spec B2 rev2, no AI).
 
     Diffs the date SET of a timetable fact's latest revision against its
@@ -220,15 +220,27 @@ def changes(conn, since, days: int | None = None, today: date | None = None) -> 
     all just set differences — there are no ordinals to shift and no
     per-date slot that can be silently overwritten.
 
-    `days`, when given, trims the output to dates inside [today, today+days]
-    (spec B2 rev2), so the ~12-row 신규 burst of a newly published next-year
-    timetable does not drown the screen. `today` exists for tests; it
-    defaults to the current KST date.
+    **`cutoff` is the information barrier and is mandatory.** Only revisions
+    with `known_at <= cutoff` are read, so a move that became known after
+    the blackout cannot be reported — mirroring `db.facts_as_of` for the
+    fact layer, and `upcoming()` (which gets it for free by going through
+    `facts_as_of`). Without it a report printed 「다가오는 일정: 08-04」 and
+    「최근 변경: 08-04 → 08-06」 side by side, the move being something only
+    the future knew (judge.md 「양쪽 다 틀린 것」 1).
+
+    `days`, when given, trims the output to dates inside
+    [cutoff의 KST 날짜, +days] (spec B2 rev2), so the ~12-row 신규 burst of a
+    newly published next-year timetable does not drown the screen. The
+    window anchor is **derived from `cutoff`**, never from the wall clock:
+    the old wall-clock default made every backfilled/catch-up report return
+    an empty change list with no error at all (judge.md ②).
     """
     since_str = db_mod.iso_utc(since)
+    cutoff_str = db_mod.iso_utc(cutoff)
     rows = conn.execute(
-        "SELECT * FROM fact_revisions WHERE category=? ORDER BY fact_id ASC, revision_no ASC",
-        (CALENDAR_CATEGORY,),
+        "SELECT * FROM fact_revisions WHERE category=? AND known_at <= ? "
+        "ORDER BY fact_id ASC, revision_no ASC",
+        (CALENDAR_CATEGORY, cutoff_str),
     ).fetchall()
 
     lineages: dict[str, list] = {}
@@ -298,7 +310,7 @@ def changes(conn, since, days: int | None = None, today: date | None = None) -> 
         # reads the latest revision only.
 
     if days is not None:
-        start = today or _kst_date(datetime.now(timezone.utc))
+        start = _kst_date(cutoff)
         end = start + timedelta(days=days)
         out = [r for r in out if r["date"] and start <= date.fromisoformat(r["date"]) <= end]
 

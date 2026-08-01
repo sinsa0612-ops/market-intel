@@ -47,13 +47,16 @@ def _cmd_list(conn, days: int) -> int:
 
 
 def _cmd_changes(conn, days: int) -> int:
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
     since_iso = db_mod.iso_utc(since)
     # `days` is both the lookback for "what changed" and the forward window
     # for "which dates are worth showing" (spec B2 rev2) — without the
     # second half, the day a next-year timetable is first published prints
-    # every one of its dates as 신규.
-    rows = schedule_mod.changes(conn, since, days=days)
+    # every one of its dates as 신규. `now` is this command's information
+    # barrier: an interactive listing may see everything known *now*, and
+    # nothing that is not yet known.
+    rows = schedule_mod.changes(conn, since, now, days=days)
     print(f"changes_total={len(rows)} since={since_iso}")
     for r in rows:
         print(f"{r['date']} {r['kind']} {r['name']} {r['old']} -> {r['new']}")
