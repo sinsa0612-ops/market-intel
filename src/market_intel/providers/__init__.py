@@ -3,9 +3,13 @@ NO_DATA/미구현 in the engine."""
 from __future__ import annotations
 
 from .dart import DartProvider
+from .earnings_calendar import EarningsCalendarProvider
 from .ecos import EcosProvider
 from .fred import FredProvider
+from .fred_calendar import FredCalendarProvider
+from .policy_calendar import PolicyCalendarProvider
 from .pykrx_flows import PykrxProvider
+from .sec_8k_events import Sec8kEventsProvider
 from .sec_edgar import SecEdgarProvider
 from .sec_edgar_13f import Sec13fProvider
 from .yfinance_prices import YFinanceProvider
@@ -18,4 +22,8 @@ PROVIDERS: dict = {
     "fred": FredProvider(),
     "ecos": EcosProvider(),
     "dart": DartProvider(),
+    "fred_calendar": FredCalendarProvider(),
+    "earnings_calendar": EarningsCalendarProvider(),
+    "policy_calendar": PolicyCalendarProvider(),
+    "sec_8k_events": Sec8kEventsProvider(),
 }

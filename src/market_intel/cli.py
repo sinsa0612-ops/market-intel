@@ -3,6 +3,7 @@ No TTY prompts anywhere — must run unattended under cron."""
 from __future__ import annotations
 
 import argparse
+import importlib
 import sys
 from datetime import datetime
 
@@ -10,11 +11,40 @@ from .config import load_settings
 from .db import connect, init_db
 from .engine import run_collect
 from .http_client import configure_logging
+from .schedule import ensure_calendar_gaps
 from .universe import CORE16, UNIVERSE
 from .workflows import WORKFLOWS
 
-PROVIDER_ORDER = ["yfinance", "pykrx", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart"]
+PROVIDER_ORDER = [
+    "yfinance", "pykrx", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
+    # spec B14 (ST1) — without these four, `db stats` reports the calendar
+    # facts as if they did not exist.
+    "fred_calendar", "earnings_calendar", "policy_calendar", "sec_8k_events",
+]
 STATUS_ORDER = ["source_verified", "partial", "reconstructed", "unverified"]
+
+# spec B1 — the single point where ST1/ST2/ST3 each add a `schedule`/
+# `report`/`publish` subcommand without three subtasks editing this file's
+# same lines (worktree merge-hell prevention). Each module registers its
+# own argparse subparser and handles its own subcommand; a module that
+# doesn't exist yet (later worktrees) is skipped silently.
+CLI_EXTENSIONS = ["market_intel.cli_schedule", "market_intel.cli_report", "market_intel.cli_publish"]
+
+
+def _extension_modules() -> list:
+    mods = []
+    for name in CLI_EXTENSIONS:
+        try:
+            mods.append(importlib.import_module(name))
+        except ImportError as exc:
+            # Only "this extension isn't in this worktree yet" is skippable.
+            # A broken import *inside* an existing module must not make its
+            # subcommand vanish silently — that turns a typo into argparse's
+            # "invalid choice: 'schedule'".
+            if exc.name != name:
+                raise
+            continue
+    return mods
 
 
 def _parse_cutoff(value: str | None) -> datetime | None:
@@ -44,6 +74,15 @@ def cmd_collect(settings, workflow: str, cutoff_str: str | None) -> int:
         return 2
     logger = configure_logging(settings)
     result = run_collect(settings, UNIVERSE, PROVIDERS, workflow, cutoff, logger=logger)
+    if workflow in ("calendar", "all"):
+        # spec ST1 boundary / §제외한 것 — what this stage deliberately does
+        # not implement is registered on the write path rather than being
+        # filled with a guess.
+        conn = connect(settings.db_path)
+        try:
+            ensure_calendar_gaps(conn)
+        finally:
+            conn.close()
     print(f"run_id={result['run_id']} workflow={result['workflow']} cutoff={result['cutoff']}")
     for name, info in result["providers"].items():
         print(
@@ -119,6 +158,9 @@ def build_parser() -> argparse.ArgumentParser:
     db_sub = p_db.add_subparsers(dest="db_command", required=True)
     db_sub.add_parser("stats")
 
+    for mod in _extension_modules():
+        mod.register(sub)
+
     return parser
 
 
@@ -126,6 +168,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     settings = load_settings()
+
+    for mod in _extension_modules():
+        result = mod.dispatch(args, settings)
+        if result is not None:
+            return result
 
     if args.command == "init":
         return cmd_init(settings)

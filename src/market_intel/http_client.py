@@ -23,6 +23,11 @@ HOST_WHITELIST: dict[str, set[str]] = {
     "ecos": {"ecos.bok.or.kr"},
     "dart": {"opendart.fss.or.kr"},
     "sec_edgar": {"www.sec.gov", "data.sec.gov", "efts.sec.gov"},
+    # spec B12 (ST1 addition) — calendar/event providers, same rule: HTTPS +
+    # per-provider whitelist, no other host reachable through SafeHttp.
+    "fred_calendar": {"api.stlouisfed.org"},
+    "policy_calendar": {"www.federalreserve.gov", "www.bok.or.kr"},
+    "sec_8k_events": {"data.sec.gov", "www.sec.gov"},
 }
 
 SECRET_PARAM_NAMES = {"api_key", "apikey", "key", "authkey", "servicekey", "crtfc_key"}

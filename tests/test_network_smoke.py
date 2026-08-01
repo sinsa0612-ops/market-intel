@@ -58,3 +58,28 @@ def test_full_morning_workflow_reaches_facts_and_core16_coverage(settings):
     total = conn.execute("SELECT COUNT(*) c FROM fact_revisions").fetchone()["c"]
     conn.close()
     assert total >= 50  # morning alone (yfinance+sec_edgar); full 'all' workflow clears 100+ (see result.md)
+
+
+@pytest.mark.network
+def test_calendar_workflow_reaches_earnings_fomc_and_bokmpc(settings):
+    """spec ST1 network smoke (a)(b)(c): real Core16 earnings-date coverage
+    >=14/16, at least one upcoming FOMC meeting, at least one upcoming BOK
+    MPC meeting."""
+    from datetime import datetime, timezone
+
+    from market_intel import schedule as schedule_mod
+    from market_intel.providers import PROVIDERS
+
+    db_mod.init_db(settings.db_path)
+    result = run_collect(settings, CORE16, PROVIDERS, "calendar", None)
+    assert result["providers"]["earnings_calendar"]["status"] in ("OK", "PARTIAL")
+    assert result["providers"]["policy_calendar"]["status"] in ("OK", "PARTIAL")
+
+    conn = db_mod.connect(settings.db_path)
+    rows = schedule_mod.upcoming(conn, datetime.now(timezone.utc), days=180)
+    conn.close()
+
+    earnings_covered = len({r["subject"] for r in rows if r["subject"] in {m["symbol"] for m in CORE16}})
+    assert earnings_covered >= 14, f"expected >=14/16 Core16 earnings dates, got {earnings_covered}"
+    assert any(r["name"] == "FOMC" for r in rows), "expected at least one upcoming FOMC meeting"
+    assert any(r["name"] == "한국은행 금융통화위원회" for r in rows), "expected at least one upcoming BOK MPC meeting"
