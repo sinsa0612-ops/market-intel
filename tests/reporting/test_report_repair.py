@@ -400,3 +400,60 @@ def test_no_facts_gap_disappears_once_a_pre_cutoff_fact_exists(settings, tmp_pat
     assert report.facts
     assert not any(m.gap_id == build_mod.NO_FACTS_GAP_ID for m in report.missing)
     assert render_md_mod.EMPTY_REPORT_WARNING not in render_md_mod.render_markdown(report)
+
+
+# --- final-review.md F2 / F4: contracts that survived mutation ------------
+
+
+def test_empty_report_is_graded_unverified_not_best():
+    """A report with no facts must carry the WORST grade, not the best.
+
+    Mutating `worst_data_status`'s empty case to `source_verified` left all
+    237 tests green (final-review.md M-16), while the live effect was a
+    report with zero facts published to the public site badged
+    `데이터 상태: 원자료 확인`. Five of the ten committed reports have zero
+    facts, so this is the state the site is actually in when a collection
+    is missed — the grade is the only thing telling the reader so.
+    """
+    from market_intel.reporting.model import FactRow, worst_data_status
+
+    assert worst_data_status([]) == "unverified"
+
+    verified_only = [
+        FactRow(label="a", value="1", comparison="", source_url="",
+                data_status="source_verified", known_at="2026-08-01T00:00:00+00:00",
+                subject="X", metric="price_close"),
+    ]
+    assert worst_data_status(verified_only) == "source_verified"
+
+    # one stale row drags the whole report down — the worst wins, never the best
+    with_partial = verified_only + [
+        FactRow(label="b", value="2", comparison="", source_url="",
+                data_status="partial", known_at="2026-08-01T00:00:00+00:00",
+                subject="Y", metric="price_close"),
+    ]
+    assert worst_data_status(with_partial) == "partial"
+
+
+def test_previous_close_gap_is_named_honestly():
+    """"전일대비" may only be claimed when the closes really are adjacent.
+
+    After a holiday, an outage or a backfill the previous close can be days
+    back; labelling that "전일" asserts something the data does not support
+    (final-review.md F4).
+    """
+    from market_intel.reporting.build import _market_reaction_row
+
+    def info(latest_date, prev_date, pct):
+        latest = {"event_at": f"{latest_date}T00:00:00+00:00", "value_num": 100.0,
+                  "unit": "", "safe_source_url": "", "data_status": "source_verified",
+                  "known_at": "2026-08-01T00:00:00+00:00", "metric": "price_close",
+                  "value_text": None}
+        prev = None if prev_date is None else {"event_at": f"{prev_date}T00:00:00+00:00"}
+        return {"latest": latest, "prev": prev, "delta_pct": pct}
+
+    assert "전일대비" in _market_reaction_row("^KS11", info("2026-07-31", "2026-07-30", 1.5)).comparison
+    gapped = _market_reaction_row("^KS11", info("2026-07-31", "2026-07-27", 1.5)).comparison
+    assert "전일" not in gapped
+    assert "4일 전 종가 대비" in gapped
+    assert "직전 종가 대비" in _market_reaction_row("^KS11", info("2026-07-31", None, 1.5)).comparison

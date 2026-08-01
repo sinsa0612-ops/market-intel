@@ -179,14 +179,36 @@ def _fmt_price_value(row) -> str:
     return f"{v:,.2f}"
 
 
+def _session_gap_days(latest, prev) -> int | None:
+    """Calendar days between the two compared closes, or None if unknowable."""
+    if prev is None:
+        return None
+    try:
+        a = date.fromisoformat((latest["event_at"] or "")[:10])
+        b = date.fromisoformat((prev["event_at"] or "")[:10])
+    except (ValueError, TypeError, IndexError, KeyError):
+        return None
+    return abs((a - b).days)
+
+
 def _market_reaction_row(subj: str, info: dict) -> FactRow:
     row = info["latest"]
     meta = _UNIVERSE_BY_SYMBOL.get(subj, {})
     label = meta.get("name", subj)
-    comparison = (
-        f"전일대비 {info['delta_pct']:+.2f}%" if info["delta_pct"] is not None
-        else "전일 비교 불가(직전 종가 없음)"
-    )
+    # "전일대비" is only true when the two observations really are adjacent
+    # sessions. After a holiday, a collection outage, or a backfill the
+    # previous close can be many days back, and calling that "전일" states a
+    # fact the data does not support (final-review.md F4). Name the actual
+    # gap instead; one trading day keeps the familiar wording.
+    comparison = "전일 비교 불가(직전 종가 없음)"
+    if info["delta_pct"] is not None:
+        gap = _session_gap_days(row, info.get("prev"))
+        if gap is None:
+            comparison = f"직전 종가 대비 {info['delta_pct']:+.2f}%"
+        elif gap <= 1:
+            comparison = f"전일대비 {info['delta_pct']:+.2f}%"
+        else:
+            comparison = f"{gap}일 전 종가 대비 {info['delta_pct']:+.2f}%"
     return FactRow(
         label=label, value=_fmt_price_value(row), comparison=comparison,
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",

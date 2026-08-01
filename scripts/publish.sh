@@ -97,6 +97,28 @@ fi
 git commit -q -m "$msg" || { echo "publish: commit failed" >&2; exit 0; }
 echo "publish: committed — $msg"
 
+# The staging guard above only governs what THIS commit contains. `git push`
+# moves the whole branch, so any earlier unpushed commit rides along with the
+# first report — that is how source code reaches the public repo with no
+# approval (final-review.md F1: 2 unpushed source commits, 66 files, were
+# queued behind the first scheduled publish). The CEO approved auto-publishing
+# artefacts, not source, so the invariant has to be enforced here rather than
+# remembered: refuse to push while anything other than reports/docs is ahead
+# of the remote. The commit stays local and a human pushes after review.
+upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+if [ -n "$upstream" ]; then
+  # The leading '.' matters: with only :(exclude) pathspecs git matches
+  # nothing at all and the guard silently passes everything.
+  ahead="$(git diff --name-only "$upstream"..HEAD -- \
+             . ':(exclude)reports' ':(exclude)docs' 2>/dev/null || true)"
+  if [ -n "$ahead" ]; then
+    echo "publish: refusing to push — unreviewed non-artefact changes are ahead of $upstream:" >&2
+    printf '  %s\n' $ahead | head -20 >&2
+    echo "publish: the report is committed locally; a human must review and push those first." >&2
+    exit 5
+  fi
+fi
+
 if git push -q; then
   echo "publish: pushed"
 else
