@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+_org/
+var/
+.pytest_cache/
+HANDOFF.md

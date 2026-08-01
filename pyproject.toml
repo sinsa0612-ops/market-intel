@@ -1,0 +1,34 @@
+[project]
+name = "market-intel"
+version = "0.1.0"
+description = "Point-in-time market intelligence data collection engine"
+requires-python = ">=3.12"
+dependencies = [
+    "yfinance>=0.2.40",
+    "pykrx>=1.0.45",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+market-intel = "market_intel.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/market_intel"]
+
+[tool.pytest.ini_options]
+# `testpaths` keeps a bare `pytest` from collecting the run-scoped `_org/`
+# sandboxes (each holds a full copy of this package under an older name-space,
+# which collides on duplicate test-module basenames).
+testpaths = ["tests"]
+norecursedirs = ["_org", ".venv", "var"]
+markers = [
+    "network: tests that hit real external services",
+]
