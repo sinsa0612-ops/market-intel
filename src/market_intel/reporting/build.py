@@ -326,13 +326,26 @@ def _macro_facts(mmap: dict) -> list[FactRow]:
 
 # --- financials / filings / flows -----------------------------------------
 
+def _subject_name(subject: str) -> str:
+    """Company name with its ticker, so a Korean listing is readable.
+
+    Price rows already resolve names through the universe, but financial and
+    filing rows printed the bare symbol — the published site showed
+    "000660.KS 영업이익" where a reader needs "SK Hynix(000660.KS)".
+    Unknown symbols (fund managers in 13F rows, for instance) pass through
+    unchanged rather than being invented."""
+    meta = _UNIVERSE_BY_SYMBOL.get(subject)
+    name = (meta or {}).get("name")
+    return f"{name}({subject})" if name else subject
+
+
 def _financials_facts(conn, cutoff, subjects: list[str] | None = None) -> list[FactRow]:
     rows = db_mod.facts_as_of(conn, cutoff, category="financials")
     out = []
     for row in rows:
         if subjects is not None and row["subject"] not in subjects:
             continue
-        label = f"{row['subject']} {_FINANCIALS_LABELS.get(row['metric'], row['metric'])}"
+        label = f"{_subject_name(row['subject'])} {_FINANCIALS_LABELS.get(row['metric'], row['metric'])}"
         basis = _COMPARISON_BASIS_KO.get(row["comparison_basis"], row["comparison_basis"] or "")
         out.append(_row_from_fact(row, label, basis))
     out.sort(key=lambda r: (r.subject, r.metric))
@@ -347,7 +360,7 @@ def _filing_facts(conn, cutoff, since: str | None = None) -> list[FactRow]:
     for row in rows:
         if since is not None and (row["known_at"] or "") < since:
             continue
-        label = f"{row['subject']} · {row['metric']}"
+        label = f"{_subject_name(row['subject'])} · {row['metric']}"
         out.append(_row_from_fact(row, label, row["publisher"] or ""))
     out.sort(key=lambda r: r.known_at, reverse=True)
     return out

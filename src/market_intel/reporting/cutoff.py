@@ -38,6 +38,10 @@ def cutoff_for(report_type: str, report_date_kst: date, now: datetime | None = N
             t.hour, t.minute, tzinfo=KST,
         )
     if report_type in _GENERATION_TIME_TYPES:
+        # Second resolution, matching the fixed-time types. The raw
+        # `datetime.now()` printed a blackout of "18:40:19.353639+09:00" on
+        # the published page, where every other report shows a clean time —
+        # sub-second precision means nothing for an information barrier.
         moment = now or datetime.now(timezone.utc)
-        return moment.astimezone(KST)
+        return moment.astimezone(KST).replace(microsecond=0)
     raise ValueError(f"cutoff_for: unknown report_type {report_type!r}")

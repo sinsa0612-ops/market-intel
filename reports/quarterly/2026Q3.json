@@ -2,15 +2,15 @@
   "schema_version": "2a.1",
   "report_type": "quarterly",
   "report_date": "2026-08-01",
-  "cutoff_kst": "2026-08-01T18:40:19.353639+09:00",
-  "cutoff_utc": "2026-08-01T09:40:19+00:00",
-  "generated_at": "2026-08-01T09:40:19+00:00",
+  "cutoff_kst": "2026-08-01T23:13:08+09:00",
+  "cutoff_utc": "2026-08-01T14:13:08+00:00",
+  "generated_at": "2026-08-01T14:13:08+00:00",
   "title": "분기 실적 리뷰",
   "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · USD/KRW 1,436.6원(+1.1%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
   "data_status": "partial",
   "facts": [
     {
-      "label": "000660.KS 영업이익",
+      "label": "SK Hynix(000660.KS) 영업이익",
       "value": "47,206,319,000,000 KRW",
       "comparison": "연간",
       "source_url": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key=***&corp_code=00164779&bsns_year=2025&reprt_code=11011&fs_div=CFS",
@@ -21,7 +21,7 @@
       "raw_value": 47206319000000.0
     },
     {
-      "label": "000660.KS 매출",
+      "label": "SK Hynix(000660.KS) 매출",
       "value": "97,146,675,000,000 KRW",
       "comparison": "연간",
       "source_url": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key=***&corp_code=00164779&bsns_year=2025&reprt_code=11011&fs_div=CFS",
@@ -32,7 +32,7 @@
       "raw_value": 97146675000000.0
     },
     {
-      "label": "005380.KS 영업이익",
+      "label": "Hyundai Motor(005380.KS) 영업이익",
       "value": "11,467,851,000,000 KRW",
       "comparison": "연간",
       "source_url": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key=***&corp_code=00164742&bsns_year=2025&reprt_code=11011&fs_div=CFS",
@@ -43,7 +43,7 @@
       "raw_value": 11467851000000.0
     },
     {
-      "label": "005380.KS 매출",
+      "label": "Hyundai Motor(005380.KS) 매출",
       "value": "186,254,472,000,000 KRW",
       "comparison": "연간",
       "source_url": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key=***&corp_code=00164742&bsns_year=2025&reprt_code=11011&fs_div=CFS",
@@ -54,7 +54,7 @@
       "raw_value": 186254472000000.0
     },
     {
-      "label": "005930.KS 영업이익",
+      "label": "Samsung Electronics(005930.KS) 영업이익",
       "value": "43,601,051,000,000 KRW",
       "comparison": "연간",
       "source_url": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key=***&corp_code=00126380&bsns_year=2025&reprt_code=11011&fs_div=CFS",
@@ -65,7 +65,7 @@
       "raw_value": 43601051000000.0
     },
     {
-      "label": "005930.KS 매출",
+      "label": "Samsung Electronics(005930.KS) 매출",
       "value": "333,605,938,000,000 KRW",
       "comparison": "연간",
       "source_url": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key=***&corp_code=00126380&bsns_year=2025&reprt_code=11011&fs_div=CFS",
@@ -76,7 +76,7 @@
       "raw_value": 333605938000000.0
     },
     {
-      "label": "105560.KS 영업이익",
+      "label": "KB Financial Group(105560.KS) 영업이익",
       "value": "8,517,711,000,000 KRW",
       "comparison": "연간",
       "source_url": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key=***&corp_code=00688996&bsns_year=2025&reprt_code=11011&fs_div=CFS",
@@ -87,7 +87,7 @@
       "raw_value": 8517711000000.0
     },
     {
-      "label": "AEP CAPEX",
+      "label": "American Electric Power(AEP) CAPEX",
       "value": "102,900,000 USD (기준일 2021-03-31)",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000004904.json",
@@ -98,7 +98,7 @@
       "raw_value": 102900000.0
     },
     {
-      "label": "AEP CAPEX",
+      "label": "American Electric Power(AEP) CAPEX",
       "value": "965,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000004904.json",
@@ -109,7 +109,7 @@
       "raw_value": 965000000.0
     },
     {
-      "label": "AEP FCF",
+      "label": "American Electric Power(AEP) FCF",
       "value": "554,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000004904.json",
@@ -120,7 +120,7 @@
       "raw_value": 554000000.0
     },
     {
-      "label": "AEP 영업현금흐름",
+      "label": "American Electric Power(AEP) 영업현금흐름",
       "value": "1,519,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000004904.json",
@@ -131,7 +131,7 @@
       "raw_value": 1519000000.0
     },
     {
-      "label": "AEP 영업이익",
+      "label": "American Electric Power(AEP) 영업이익",
       "value": "1,360,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000004904.json",
@@ -142,7 +142,7 @@
       "raw_value": 1360000000.0
     },
     {
-      "label": "AEP 매출",
+      "label": "American Electric Power(AEP) 매출",
       "value": "5,921,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000004904.json",
@@ -153,7 +153,7 @@
       "raw_value": 5921000000.0
     },
     {
-      "label": "AMZN CAPEX",
+      "label": "Amazon(AMZN) CAPEX",
       "value": "1,861,000,000 USD (기준일 2017-03-31)",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
@@ -164,7 +164,7 @@
       "raw_value": 1861000000.0
     },
     {
-      "label": "AMZN CAPEX",
+      "label": "Amazon(AMZN) CAPEX",
       "value": "54,208,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
@@ -175,7 +175,7 @@
       "raw_value": 54208000000.0
     },
     {
-      "label": "AMZN FCF",
+      "label": "Amazon(AMZN) FCF",
       "value": "-8,821,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
@@ -186,7 +186,7 @@
       "raw_value": -8821000000.0
     },
     {
-      "label": "AMZN 영업현금흐름",
+      "label": "Amazon(AMZN) 영업현금흐름",
       "value": "45,387,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
@@ -197,7 +197,7 @@
       "raw_value": 45387000000.0
     },
     {
-      "label": "AMZN 영업이익",
+      "label": "Amazon(AMZN) 영업이익",
       "value": "27,461,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
@@ -208,7 +208,7 @@
       "raw_value": 27461000000.0
     },
     {
-      "label": "AMZN 매출",
+      "label": "Amazon(AMZN) 매출",
       "value": "200,606,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
@@ -219,7 +219,7 @@
       "raw_value": 200606000000.0
     },
     {
-      "label": "CAT CAPEX",
+      "label": "Caterpillar(CAT) CAPEX",
       "value": "728,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000018230.json",
@@ -230,7 +230,7 @@
       "raw_value": 728000000.0
     },
     {
-      "label": "CAT FCF",
+      "label": "Caterpillar(CAT) FCF",
       "value": "1,142,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000018230.json",
@@ -241,7 +241,7 @@
       "raw_value": 1142000000.0
     },
     {
-      "label": "CAT 영업현금흐름",
+      "label": "Caterpillar(CAT) 영업현금흐름",
       "value": "1,870,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000018230.json",
@@ -252,7 +252,7 @@
       "raw_value": 1870000000.0
     },
     {
-      "label": "CAT 영업이익",
+      "label": "Caterpillar(CAT) 영업이익",
       "value": "3,085,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000018230.json",
@@ -263,7 +263,7 @@
       "raw_value": 3085000000.0
     },
     {
-      "label": "CAT 매출",
+      "label": "Caterpillar(CAT) 매출",
       "value": "17,415,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000018230.json",
@@ -274,7 +274,7 @@
       "raw_value": 17415000000.0
     },
     {
-      "label": "GOOGL CAPEX",
+      "label": "Alphabet(GOOGL) CAPEX",
       "value": "80,598,000,000 USD",
       "comparison": "180d",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
@@ -285,7 +285,7 @@
       "raw_value": 80598000000.0
     },
     {
-      "label": "GOOGL FCF",
+      "label": "Alphabet(GOOGL) FCF",
       "value": "4,261,000,000 USD",
       "comparison": "180d",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
@@ -296,7 +296,7 @@
       "raw_value": 4261000000.0
     },
     {
-      "label": "GOOGL 영업현금흐름",
+      "label": "Alphabet(GOOGL) 영업현금흐름",
       "value": "84,859,000,000 USD",
       "comparison": "180d",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
@@ -307,7 +307,7 @@
       "raw_value": 84859000000.0
     },
     {
-      "label": "GOOGL 영업이익",
+      "label": "Alphabet(GOOGL) 영업이익",
       "value": "40,770,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
@@ -318,7 +318,7 @@
       "raw_value": 40770000000.0
     },
     {
-      "label": "GOOGL 매출",
+      "label": "Alphabet(GOOGL) 매출",
       "value": "90,234,000,000 USD (기준일 2025-03-31)",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
@@ -329,7 +329,7 @@
       "raw_value": 90234000000.0
     },
     {
-      "label": "GOOGL 매출",
+      "label": "Alphabet(GOOGL) 매출",
       "value": "119,796,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
@@ -340,7 +340,7 @@
       "raw_value": 119796000000.0
     },
     {
-      "label": "JPM 영업현금흐름",
+      "label": "JPMorgan Chase(JPM) 영업현금흐름",
       "value": "-211,761,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000019617.json",
@@ -351,7 +351,7 @@
       "raw_value": -211761000000.0
     },
     {
-      "label": "JPM 매출",
+      "label": "JPMorgan Chase(JPM) 매출",
       "value": "182,447,000,000 USD",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000019617.json",
@@ -362,7 +362,7 @@
       "raw_value": 182447000000.0
     },
     {
-      "label": "LLY CAPEX",
+      "label": "Eli Lilly(LLY) CAPEX",
       "value": "1,353,600,000 USD (기준일 2022-09-30)",
       "comparison": "272d",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000059478.json",
@@ -373,7 +373,7 @@
       "raw_value": 1353600000.0
     },
     {
-      "label": "LLY 영업현금흐름",
+      "label": "Eli Lilly(LLY) 영업현금흐름",
       "value": "5,333,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000059478.json",
@@ -384,7 +384,7 @@
       "raw_value": 5333000000.0
     },
     {
-      "label": "LLY 매출",
+      "label": "Eli Lilly(LLY) 매출",
       "value": "19,799,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000059478.json",
@@ -395,7 +395,7 @@
       "raw_value": 19799000000.0
     },
     {
-      "label": "META CAPEX",
+      "label": "Meta Platforms(META) CAPEX",
       "value": "18,997,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
@@ -406,7 +406,7 @@
       "raw_value": 18997000000.0
     },
     {
-      "label": "META FCF",
+      "label": "Meta Platforms(META) FCF",
       "value": "13,229,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
@@ -417,7 +417,7 @@
       "raw_value": 13229000000.0
     },
     {
-      "label": "META 영업현금흐름",
+      "label": "Meta Platforms(META) 영업현금흐름",
       "value": "32,226,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
@@ -428,7 +428,7 @@
       "raw_value": 32226000000.0
     },
     {
-      "label": "META 영업이익",
+      "label": "Meta Platforms(META) 영업이익",
       "value": "22,872,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
@@ -439,7 +439,7 @@
       "raw_value": 22872000000.0
     },
     {
-      "label": "META 매출",
+      "label": "Meta Platforms(META) 매출",
       "value": "56,311,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
@@ -450,7 +450,7 @@
       "raw_value": 56311000000.0
     },
     {
-      "label": "MSFT CAPEX",
+      "label": "Microsoft(MSFT) CAPEX",
       "value": "115,948,000,000 USD",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
@@ -461,7 +461,7 @@
       "raw_value": 115948000000.0
     },
     {
-      "label": "MSFT FCF",
+      "label": "Microsoft(MSFT) FCF",
       "value": "66,987,000,000 USD",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
@@ -472,7 +472,7 @@
       "raw_value": 66987000000.0
     },
     {
-      "label": "MSFT 영업현금흐름",
+      "label": "Microsoft(MSFT) 영업현금흐름",
       "value": "182,935,000,000 USD",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
@@ -483,7 +483,7 @@
       "raw_value": 182935000000.0
     },
     {
-      "label": "MSFT 영업이익",
+      "label": "Microsoft(MSFT) 영업이익",
       "value": "155,237,000,000 USD",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
@@ -494,7 +494,7 @@
       "raw_value": 155237000000.0
     },
     {
-      "label": "MSFT 매출",
+      "label": "Microsoft(MSFT) 매출",
       "value": "331,839,000,000 USD",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
@@ -505,7 +505,7 @@
       "raw_value": 331839000000.0
     },
     {
-      "label": "NVDA CAPEX",
+      "label": "NVIDIA(NVDA) CAPEX",
       "value": "372,000,000 USD (기준일 2020-07-26)",
       "comparison": "181d",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
@@ -516,7 +516,7 @@
       "raw_value": 372000000.0
     },
     {
-      "label": "NVDA CAPEX",
+      "label": "NVIDIA(NVDA) CAPEX",
       "value": "1,757,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
@@ -527,7 +527,7 @@
       "raw_value": 1757000000.0
     },
     {
-      "label": "NVDA FCF",
+      "label": "NVIDIA(NVDA) FCF",
       "value": "48,587,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
@@ -538,7 +538,7 @@
       "raw_value": 48587000000.0
     },
     {
-      "label": "NVDA 영업현금흐름",
+      "label": "NVIDIA(NVDA) 영업현금흐름",
       "value": "50,344,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
@@ -549,7 +549,7 @@
       "raw_value": 50344000000.0
     },
     {
-      "label": "NVDA 영업이익",
+      "label": "NVIDIA(NVDA) 영업이익",
       "value": "53,536,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
@@ -560,7 +560,7 @@
       "raw_value": 53536000000.0
     },
     {
-      "label": "NVDA 매출",
+      "label": "NVIDIA(NVDA) 매출",
       "value": "26,914,000,000 USD (기준일 2022-01-30)",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
@@ -571,7 +571,7 @@
       "raw_value": 26914000000.0
     },
     {
-      "label": "NVDA 매출",
+      "label": "NVIDIA(NVDA) 매출",
       "value": "81,615,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
@@ -582,7 +582,7 @@
       "raw_value": 81615000000.0
     },
     {
-      "label": "TSM 영업현금흐름",
+      "label": "TSMC ADR(TSM) 영업현금흐름",
       "value": "55,693,100,000 USD (기준일 2024-12-31)",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001046179.json",
@@ -593,7 +593,7 @@
       "raw_value": 55693100000.0
     },
     {
-      "label": "TSM 영업이익",
+      "label": "TSMC ADR(TSM) 영업이익",
       "value": "40,318,800,000 USD (기준일 2024-12-31)",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001046179.json",
@@ -604,7 +604,7 @@
       "raw_value": 40318800000.0
     },
     {
-      "label": "TSM 매출",
+      "label": "TSMC ADR(TSM) 매출",
       "value": "88,268,000,000 USD (기준일 2024-12-31)",
       "comparison": "연간",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001046179.json",
@@ -615,7 +615,7 @@
       "raw_value": 88268000000.0
     },
     {
-      "label": "WMT CAPEX",
+      "label": "Walmart(WMT) CAPEX",
       "value": "6,684,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000104169.json",
@@ -626,7 +626,7 @@
       "raw_value": 6684000000.0
     },
     {
-      "label": "WMT FCF",
+      "label": "Walmart(WMT) FCF",
       "value": "-1,946,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000104169.json",
@@ -637,7 +637,7 @@
       "raw_value": -1946000000.0
     },
     {
-      "label": "WMT 영업현금흐름",
+      "label": "Walmart(WMT) 영업현금흐름",
       "value": "4,738,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000104169.json",
@@ -648,7 +648,7 @@
       "raw_value": 4738000000.0
     },
     {
-      "label": "WMT 영업이익",
+      "label": "Walmart(WMT) 영업이익",
       "value": "7,493,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000104169.json",
@@ -659,7 +659,7 @@
       "raw_value": 7493000000.0
     },
     {
-      "label": "WMT 매출",
+      "label": "Walmart(WMT) 매출",
       "value": "175,684,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000104169.json",
@@ -670,7 +670,7 @@
       "raw_value": 175684000000.0
     },
     {
-      "label": "XOM CAPEX",
+      "label": "Exxon Mobil(XOM) CAPEX",
       "value": "6,470,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000034088.json",
@@ -681,7 +681,7 @@
       "raw_value": 6470000000.0
     },
     {
-      "label": "XOM FCF",
+      "label": "Exxon Mobil(XOM) FCF",
       "value": "2,235,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000034088.json",
@@ -692,7 +692,7 @@
       "raw_value": 2235000000.0
     },
     {
-      "label": "XOM 영업현금흐름",
+      "label": "Exxon Mobil(XOM) 영업현금흐름",
       "value": "8,705,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000034088.json",
@@ -703,7 +703,7 @@
       "raw_value": 8705000000.0
     },
     {
-      "label": "XOM 매출",
+      "label": "Exxon Mobil(XOM) 매출",
       "value": "85,138,000,000 USD",
       "comparison": "분기",
       "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000034088.json",
@@ -714,7 +714,7 @@
       "raw_value": 85138000000.0
     },
     {
-      "label": "AEP · earnings_release_8k",
+      "label": "American Electric Power(AEP) · earnings_release_8k",
       "value": "0000004904-26-000055",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000004904.json",
@@ -725,7 +725,7 @@
       "raw_value": "0000004904-26-000055"
     },
     {
-      "label": "AMZN · earnings_release_8k",
+      "label": "Amazon(AMZN) · earnings_release_8k",
       "value": "0001018724-26-000024",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001018724.json",
@@ -736,7 +736,7 @@
       "raw_value": "0001018724-26-000024"
     },
     {
-      "label": "CAT · earnings_release_8k",
+      "label": "Caterpillar(CAT) · earnings_release_8k",
       "value": "0000018230-26-000017",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000018230.json",
@@ -747,7 +747,7 @@
       "raw_value": "0000018230-26-000017"
     },
     {
-      "label": "GOOGL · earnings_release_8k",
+      "label": "Alphabet(GOOGL) · earnings_release_8k",
       "value": "0001652044-26-000066",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001652044.json",
@@ -758,7 +758,7 @@
       "raw_value": "0001652044-26-000066"
     },
     {
-      "label": "JPM · earnings_release_8k",
+      "label": "JPMorgan Chase(JPM) · earnings_release_8k",
       "value": "0001628280-26-048078",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000019617.json",
@@ -769,7 +769,7 @@
       "raw_value": "0001628280-26-048078"
     },
     {
-      "label": "LLY · earnings_release_8k",
+      "label": "Eli Lilly(LLY) · earnings_release_8k",
       "value": "0000059478-26-000043",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000059478.json",
@@ -780,7 +780,7 @@
       "raw_value": "0000059478-26-000043"
     },
     {
-      "label": "META · earnings_release_8k",
+      "label": "Meta Platforms(META) · earnings_release_8k",
       "value": "0001628280-26-050596",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001326801.json",
@@ -791,7 +791,7 @@
       "raw_value": "0001628280-26-050596"
     },
     {
-      "label": "MSFT · earnings_release_8k",
+      "label": "Microsoft(MSFT) · earnings_release_8k",
       "value": "0001193125-26-323632",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
@@ -802,7 +802,7 @@
       "raw_value": "0001193125-26-323632"
     },
     {
-      "label": "NVDA · earnings_release_8k",
+      "label": "NVIDIA(NVDA) · earnings_release_8k",
       "value": "0001045810-26-000051",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001045810.json",
@@ -813,7 +813,7 @@
       "raw_value": "0001045810-26-000051"
     },
     {
-      "label": "WMT · earnings_release_8k",
+      "label": "Walmart(WMT) · earnings_release_8k",
       "value": "0000104169-26-000095",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000104169.json",
@@ -824,7 +824,7 @@
       "raw_value": "0000104169-26-000095"
     },
     {
-      "label": "XOM · earnings_release_8k",
+      "label": "Exxon Mobil(XOM) · earnings_release_8k",
       "value": "0002115436-26-000006",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0002115436.json",
@@ -835,7 +835,7 @@
       "raw_value": "0002115436-26-000006"
     },
     {
-      "label": "000660.KS · filing_event",
+      "label": "SK Hynix(000660.KS) · filing_event",
       "value": "20260515002287",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00164779&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
@@ -846,7 +846,7 @@
       "raw_value": "20260515002287"
     },
     {
-      "label": "005380.KS · filing_event",
+      "label": "Hyundai Motor(005380.KS) · filing_event",
       "value": "20260515002418",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00164742&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
@@ -857,7 +857,7 @@
       "raw_value": "20260515002418"
     },
     {
-      "label": "005930.KS · filing_event",
+      "label": "Samsung Electronics(005930.KS) · filing_event",
       "value": "20260515002181",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00126380&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
@@ -868,7 +868,7 @@
       "raw_value": "20260515002181"
     },
     {
-      "label": "105560.KS · filing_event",
+      "label": "KB Financial Group(105560.KS) · filing_event",
       "value": "20260619000667",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00688996&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
@@ -934,7 +934,7 @@
       "raw_value": "0001647251-26-000004"
     },
     {
-      "label": "AEP · filing_event",
+      "label": "American Electric Power(AEP) · filing_event",
       "value": "0000004904-26-000059",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000004904.json",
@@ -945,7 +945,7 @@
       "raw_value": "0000004904-26-000059"
     },
     {
-      "label": "AMZN · filing_event",
+      "label": "Amazon(AMZN) · filing_event",
       "value": "0001018724-26-000026",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001018724.json",
@@ -956,7 +956,7 @@
       "raw_value": "0001018724-26-000026"
     },
     {
-      "label": "CAT · filing_event",
+      "label": "Caterpillar(CAT) · filing_event",
       "value": "0000018230-26-000021",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000018230.json",
@@ -967,7 +967,7 @@
       "raw_value": "0000018230-26-000021"
     },
     {
-      "label": "GOOGL · filing_event",
+      "label": "Alphabet(GOOGL) · filing_event",
       "value": "0001652044-26-000071",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001652044.json",
@@ -978,7 +978,7 @@
       "raw_value": "0001652044-26-000071"
     },
     {
-      "label": "JPM · filing_event",
+      "label": "JPMorgan Chase(JPM) · filing_event",
       "value": "0001628280-26-029344",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000019617.json",
@@ -989,7 +989,7 @@
       "raw_value": "0001628280-26-029344"
     },
     {
-      "label": "LLY · filing_event",
+      "label": "Eli Lilly(LLY) · filing_event",
       "value": "0000059478-26-000045",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000059478.json",
@@ -1000,7 +1000,7 @@
       "raw_value": "0000059478-26-000045"
     },
     {
-      "label": "META · filing_event",
+      "label": "Meta Platforms(META) · filing_event",
       "value": "0001628280-26-050705",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001326801.json",
@@ -1011,7 +1011,7 @@
       "raw_value": "0001628280-26-050705"
     },
     {
-      "label": "MSFT · filing_event",
+      "label": "Microsoft(MSFT) · filing_event",
       "value": "0001193125-26-323660",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
@@ -1022,7 +1022,7 @@
       "raw_value": "0001193125-26-323660"
     },
     {
-      "label": "NVDA · filing_event",
+      "label": "NVIDIA(NVDA) · filing_event",
       "value": "0001045810-26-000052",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001045810.json",
@@ -1033,7 +1033,7 @@
       "raw_value": "0001045810-26-000052"
     },
     {
-      "label": "TSM · filing_event",
+      "label": "TSMC ADR(TSM) · filing_event",
       "value": "0001046179-26-000459",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001046179.json",
@@ -1044,7 +1044,7 @@
       "raw_value": "0001046179-26-000459"
     },
     {
-      "label": "WMT · filing_event",
+      "label": "Walmart(WMT) · filing_event",
       "value": "0000104169-26-000102",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000104169.json",
@@ -1676,6 +1676,16 @@
       "change": "",
       "source_url": "",
       "data_status": "부분 확인"
+    },
+    {
+      "when": "2026-10-30",
+      "name": "XOM 실적",
+      "country": "US",
+      "subject": "XOM",
+      "importance": "C",
+      "change": "",
+      "source_url": "",
+      "data_status": "부분 확인"
     }
   ],
   "schedule_changes": [
@@ -2071,6 +2081,16 @@
     },
     {
       "when": "2026-10-30",
+      "name": "XOM 실적 2026-07-31 → 2026-10-30",
+      "country": "",
+      "subject": "",
+      "importance": "",
+      "change": "next_cycle",
+      "source_url": "",
+      "data_status": ""
+    },
+    {
+      "when": "2026-10-30",
       "name": "AMZN 실적 → 2026-10-30",
       "country": "",
       "subject": "",
@@ -2084,7 +2104,7 @@
     {
       "area": "한국 수급(외국인/기관/개인)",
       "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
-      "since": "2026-08-01T09:40:19+00:00",
+      "since": "2026-08-01T14:13:08+00:00",
       "gap_id": "kr_flows:net_buy"
     }
   ],
@@ -2103,8 +2123,8 @@
     "counts": {
       "facts": 95,
       "market_reaction": 19,
-      "events": 41,
-      "schedule_changes": 40,
+      "events": 42,
+      "schedule_changes": 41,
       "missing": 1
     }
   }

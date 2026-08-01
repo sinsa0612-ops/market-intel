@@ -4,7 +4,7 @@
   "report_date": "2026-08-01",
   "cutoff_kst": "2026-08-01T08:30:00+09:00",
   "cutoff_utc": "2026-07-31T23:30:00+00:00",
-  "generated_at": "2026-08-01T09:40:19+00:00",
+  "generated_at": "2026-08-01T14:13:07+00:00",
   "title": "월간 거시 체제 · 판정 불가(입력 부족)",
   "headline": "KOSPI 미확인 · S&P500 미확인 · USD/KRW 미확인 · 미10Y 미확인 — Core16 중 ±3% 이상 0종목, 결측 16건",
   "data_status": "unverified",
@@ -27,13 +27,13 @@
     {
       "area": "한국 수급(외국인/기관/개인)",
       "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
-      "since": "2026-08-01T09:40:19+00:00",
+      "since": "2026-08-01T14:13:07+00:00",
       "gap_id": "kr_flows:net_buy"
     },
     {
       "area": "월간 국면 판정 입력",
       "reason": "월간 국면 판정에 쓰는 입력(CPI·PCE 전월비, 실업률 변화, DGS10 변화, DXY 변화) 중 차단선 이전에 알려진 값이 하나도 없어 §6.3 라벨을 결정하지 않았다. 추정으로 채우지 않는다(§3.3).",
-      "since": "2026-08-01T09:40:19+00:00",
+      "since": "2026-08-01T14:13:07+00:00",
       "gap_id": "monthly_regime:inputs"
     },
     {

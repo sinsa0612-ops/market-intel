@@ -2,11 +2,11 @@
   "schema_version": "2a.1",
   "report_type": "close_delta",
   "report_date": "2026-08-01",
-  "cutoff_kst": "2026-08-01T19:21:12+09:00",
-  "cutoff_utc": "2026-08-01T10:21:12+00:00",
-  "generated_at": "2026-08-01T10:21:12+00:00",
+  "cutoff_kst": "2026-08-01T16:15:00+09:00",
+  "cutoff_utc": "2026-08-01T07:15:00+00:00",
+  "generated_at": "2026-08-01T14:13:07+00:00",
   "title": "장마감 델타",
-  "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · USD/KRW 1,436.6원(+1.1%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
+  "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · USD/KRW 1,442.1원(+1.5%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
   "data_status": "source_verified",
   "facts": [
     {
@@ -33,248 +33,127 @@
     },
     {
       "label": "미국 CPI",
-      "value": "332.57 Index 1982-1984=100",
+      "value": "332.57 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "CPIAUCSL",
       "metric": "value",
       "raw_value": 332.568
     },
     {
       "label": "연방기금금리 상단(목표)",
-      "value": "3.75 %",
+      "value": "3.75 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DFEDTARU&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "DFEDTARU",
       "metric": "value",
       "raw_value": 3.75
     },
     {
       "label": "미국채 10년물 금리",
-      "value": "4.68 %",
+      "value": "4.68 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "DGS10",
       "metric": "value",
       "raw_value": 4.68
     },
     {
       "label": "미국채 2년물 금리",
-      "value": "4.23 %",
+      "value": "4.23 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DGS2&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "DGS2",
       "metric": "value",
       "raw_value": 4.23
     },
     {
       "label": "연방기금금리(실효)",
-      "value": "3.63 %",
+      "value": "3.63 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=FEDFUNDS&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "FEDFUNDS",
       "metric": "value",
       "raw_value": 3.63
     },
     {
       "label": "미국 산업생산지수",
-      "value": "102.64 Index 2017=100",
+      "value": "102.64 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=INDPRO&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "INDPRO",
       "metric": "value",
       "raw_value": 102.6395
     },
     {
       "label": "미국 비농업고용",
-      "value": "158,984 Thous. of Persons",
+      "value": "158,984 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=PAYEMS&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "PAYEMS",
       "metric": "value",
       "raw_value": 158984.0
     },
     {
       "label": "미국 PCE",
-      "value": "131.39 Index 2017=100",
+      "value": "131.39 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=PCEPI&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "PCEPI",
       "metric": "value",
       "raw_value": 131.392
     },
     {
       "label": "미국 소매판매",
-      "value": "768,553 Mil. of $",
+      "value": "768,553 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=RSAFS&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "RSAFS",
       "metric": "value",
       "raw_value": 768553.0
     },
     {
       "label": "미 10Y-2Y 금리차",
-      "value": "0.47 %",
+      "value": "0.47 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=T10Y2Y&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "T10Y2Y",
       "metric": "value",
       "raw_value": 0.47
     },
     {
       "label": "미국 실업률",
-      "value": "4.20 %",
+      "value": "4.20 lin",
       "comparison": "직전 관측 없음",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=UNRATE&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-01T02:35:06+00:00",
       "subject": "UNRATE",
       "metric": "value",
       "raw_value": 4.2
     },
     {
-      "label": "AEP · earnings_release_8k",
-      "value": "0000004904-26-000055",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0000004904.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "AEP",
-      "metric": "earnings_release_8k",
-      "raw_value": "0000004904-26-000055"
-    },
-    {
-      "label": "AMZN · earnings_release_8k",
-      "value": "0001018724-26-000024",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0001018724.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "AMZN",
-      "metric": "earnings_release_8k",
-      "raw_value": "0001018724-26-000024"
-    },
-    {
-      "label": "CAT · earnings_release_8k",
-      "value": "0000018230-26-000017",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0000018230.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "CAT",
-      "metric": "earnings_release_8k",
-      "raw_value": "0000018230-26-000017"
-    },
-    {
-      "label": "GOOGL · earnings_release_8k",
-      "value": "0001652044-26-000066",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0001652044.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "GOOGL",
-      "metric": "earnings_release_8k",
-      "raw_value": "0001652044-26-000066"
-    },
-    {
-      "label": "JPM · earnings_release_8k",
-      "value": "0001628280-26-048078",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0000019617.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "JPM",
-      "metric": "earnings_release_8k",
-      "raw_value": "0001628280-26-048078"
-    },
-    {
-      "label": "LLY · earnings_release_8k",
-      "value": "0000059478-26-000043",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0000059478.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "LLY",
-      "metric": "earnings_release_8k",
-      "raw_value": "0000059478-26-000043"
-    },
-    {
-      "label": "META · earnings_release_8k",
-      "value": "0001628280-26-050596",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0001326801.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "META",
-      "metric": "earnings_release_8k",
-      "raw_value": "0001628280-26-050596"
-    },
-    {
-      "label": "MSFT · earnings_release_8k",
-      "value": "0001193125-26-323632",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "MSFT",
-      "metric": "earnings_release_8k",
-      "raw_value": "0001193125-26-323632"
-    },
-    {
-      "label": "NVDA · earnings_release_8k",
-      "value": "0001045810-26-000051",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0001045810.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "NVDA",
-      "metric": "earnings_release_8k",
-      "raw_value": "0001045810-26-000051"
-    },
-    {
-      "label": "WMT · earnings_release_8k",
-      "value": "0000104169-26-000095",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0000104169.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "WMT",
-      "metric": "earnings_release_8k",
-      "raw_value": "0000104169-26-000095"
-    },
-    {
-      "label": "XOM · earnings_release_8k",
-      "value": "0002115436-26-000006",
-      "comparison": "SEC EDGAR",
-      "source_url": "https://data.sec.gov/submissions/CIK0002115436.json",
-      "data_status": "source_verified",
-      "known_at": "2026-08-01T09:37:27+00:00",
-      "subject": "XOM",
-      "metric": "earnings_release_8k",
-      "raw_value": "0002115436-26-000006"
-    },
-    {
-      "label": "000660.KS · filing_event",
+      "label": "SK Hynix(000660.KS) · filing_event",
       "value": "20260515002287",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00164779&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
@@ -285,7 +164,7 @@
       "raw_value": "20260515002287"
     },
     {
-      "label": "005380.KS · filing_event",
+      "label": "Hyundai Motor(005380.KS) · filing_event",
       "value": "20260515002418",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00164742&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
@@ -296,7 +175,7 @@
       "raw_value": "20260515002418"
     },
     {
-      "label": "005930.KS · filing_event",
+      "label": "Samsung Electronics(005930.KS) · filing_event",
       "value": "20260515002181",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00126380&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
@@ -307,7 +186,7 @@
       "raw_value": "20260515002181"
     },
     {
-      "label": "105560.KS · filing_event",
+      "label": "KB Financial Group(105560.KS) · filing_event",
       "value": "20260619000667",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00688996&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
@@ -373,7 +252,7 @@
       "raw_value": "0001647251-26-000004"
     },
     {
-      "label": "AEP · filing_event",
+      "label": "American Electric Power(AEP) · filing_event",
       "value": "0000004904-26-000059",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000004904.json",
@@ -384,7 +263,7 @@
       "raw_value": "0000004904-26-000059"
     },
     {
-      "label": "AMZN · filing_event",
+      "label": "Amazon(AMZN) · filing_event",
       "value": "0001018724-26-000026",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001018724.json",
@@ -395,7 +274,7 @@
       "raw_value": "0001018724-26-000026"
     },
     {
-      "label": "CAT · filing_event",
+      "label": "Caterpillar(CAT) · filing_event",
       "value": "0000018230-26-000021",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000018230.json",
@@ -406,7 +285,7 @@
       "raw_value": "0000018230-26-000021"
     },
     {
-      "label": "GOOGL · filing_event",
+      "label": "Alphabet(GOOGL) · filing_event",
       "value": "0001652044-26-000071",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001652044.json",
@@ -417,7 +296,7 @@
       "raw_value": "0001652044-26-000071"
     },
     {
-      "label": "JPM · filing_event",
+      "label": "JPMorgan Chase(JPM) · filing_event",
       "value": "0001628280-26-029344",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000019617.json",
@@ -428,7 +307,7 @@
       "raw_value": "0001628280-26-029344"
     },
     {
-      "label": "LLY · filing_event",
+      "label": "Eli Lilly(LLY) · filing_event",
       "value": "0000059478-26-000045",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000059478.json",
@@ -439,7 +318,7 @@
       "raw_value": "0000059478-26-000045"
     },
     {
-      "label": "META · filing_event",
+      "label": "Meta Platforms(META) · filing_event",
       "value": "0001628280-26-050705",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001326801.json",
@@ -450,7 +329,7 @@
       "raw_value": "0001628280-26-050705"
     },
     {
-      "label": "MSFT · filing_event",
+      "label": "Microsoft(MSFT) · filing_event",
       "value": "0001193125-26-323660",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
@@ -461,7 +340,7 @@
       "raw_value": "0001193125-26-323660"
     },
     {
-      "label": "NVDA · filing_event",
+      "label": "NVIDIA(NVDA) · filing_event",
       "value": "0001045810-26-000052",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001045810.json",
@@ -472,7 +351,7 @@
       "raw_value": "0001045810-26-000052"
     },
     {
-      "label": "TSM · filing_event",
+      "label": "TSMC ADR(TSM) · filing_event",
       "value": "0001046179-26-000459",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001046179.json",
@@ -483,7 +362,7 @@
       "raw_value": "0001046179-26-000459"
     },
     {
-      "label": "WMT · filing_event",
+      "label": "Walmart(WMT) · filing_event",
       "value": "0000104169-26-000102",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000104169.json",
@@ -497,25 +376,25 @@
   "market_reaction": [
     {
       "label": "KOSPI",
-      "value": "6,595.45 point",
+      "value": "6,595.5원",
       "comparison": "전일대비 +17.91%",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^KS11",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T09:36:56+00:00",
+      "known_at": "2026-08-01T02:34:51+00:00",
       "subject": "^KS11",
       "metric": "price_close",
       "raw_value": 6595.4501953125
     },
     {
       "label": "USD/KRW",
-      "value": "1,436.6원",
-      "comparison": "전일대비 +1.13%",
+      "value": "1,442.07 USD",
+      "comparison": "전일대비 +1.51%",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/KRW=X",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T09:36:56+00:00",
+      "known_at": "2026-08-01T02:34:51+00:00",
       "subject": "KRW=X",
       "metric": "price_close",
-      "raw_value": 1436.5999755859375
+      "raw_value": 1442.0699462890625
     },
     {
       "label": "SK Hynix",
@@ -553,56 +432,6 @@
   ],
   "events": [
     {
-      "when": "2026-08-04",
-      "name": "Job Openings and Labor Turnover Survey",
-      "country": "US",
-      "subject": "fredrel:192",
-      "importance": "B",
-      "change": "",
-      "source_url": "https://api.stlouisfed.org/fred/release/dates?release_id=192&api_key=***&file_type=json&realtime_start=2026-01-01&realtime_end=2026-12-31&include_release_dates_with_no_data=true&sort_order=asc",
-      "data_status": "원자료 확인"
-    },
-    {
-      "when": "2026-08-04",
-      "name": "CAT 실적",
-      "country": "US",
-      "subject": "CAT",
-      "importance": "C",
-      "change": "",
-      "source_url": "",
-      "data_status": "부분 확인"
-    },
-    {
-      "when": "2026-08-05",
-      "name": "LLY 실적",
-      "country": "US",
-      "subject": "LLY",
-      "importance": "C",
-      "change": "",
-      "source_url": "",
-      "data_status": "부분 확인"
-    },
-    {
-      "when": "2026-08-07",
-      "name": "Employment Situation",
-      "country": "US",
-      "subject": "fredrel:50",
-      "importance": "A",
-      "change": "",
-      "source_url": "https://api.stlouisfed.org/fred/release/dates?release_id=50&api_key=***&file_type=json&realtime_start=2026-01-01&realtime_end=2026-12-31&include_release_dates_with_no_data=true&sort_order=asc",
-      "data_status": "원자료 확인"
-    },
-    {
-      "when": "2026-08-12",
-      "name": "Consumer Price Index",
-      "country": "US",
-      "subject": "fredrel:10",
-      "importance": "A",
-      "change": "",
-      "source_url": "https://api.stlouisfed.org/fred/release/dates?release_id=10&api_key=***&file_type=json&realtime_start=2026-01-01&realtime_end=2026-12-31&include_release_dates_with_no_data=true&sort_order=asc",
-      "data_status": "원자료 확인"
-    },
-    {
       "when": "2026-08-14",
       "name": "13F 제출 마감",
       "country": "US",
@@ -611,85 +440,14 @@
       "change": "",
       "source_url": "",
       "data_status": "복원 완료"
-    },
-    {
-      "when": "2026-08-14",
-      "name": "Advance Monthly Sales for Retail and Food Services",
-      "country": "US",
-      "subject": "fredrel:9",
-      "importance": "B",
-      "change": "",
-      "source_url": "https://api.stlouisfed.org/fred/release/dates?release_id=9&api_key=***&file_type=json&realtime_start=2026-01-01&realtime_end=2026-12-31&include_release_dates_with_no_data=true&sort_order=asc",
-      "data_status": "원자료 확인"
     }
   ],
-  "schedule_changes": [
-    {
-      "when": "2026-08-04",
-      "name": "CAT 실적 → 2026-08-04",
-      "country": "",
-      "subject": "",
-      "importance": "",
-      "change": "신규",
-      "source_url": "",
-      "data_status": ""
-    },
-    {
-      "when": "2026-08-04",
-      "name": "Job Openings and Labor Turnover Survey → 2026-08-04",
-      "country": "",
-      "subject": "",
-      "importance": "",
-      "change": "신규",
-      "source_url": "",
-      "data_status": ""
-    },
-    {
-      "when": "2026-08-05",
-      "name": "LLY 실적 → 2026-08-05",
-      "country": "",
-      "subject": "",
-      "importance": "",
-      "change": "신규",
-      "source_url": "",
-      "data_status": ""
-    },
-    {
-      "when": "2026-08-07",
-      "name": "Employment Situation → 2026-08-07",
-      "country": "",
-      "subject": "",
-      "importance": "",
-      "change": "신규",
-      "source_url": "",
-      "data_status": ""
-    },
-    {
-      "when": "2026-08-12",
-      "name": "Consumer Price Index → 2026-08-12",
-      "country": "",
-      "subject": "",
-      "importance": "",
-      "change": "신규",
-      "source_url": "",
-      "data_status": ""
-    },
-    {
-      "when": "2026-08-14",
-      "name": "Advance Monthly Sales for Retail and Food Services → 2026-08-14",
-      "country": "",
-      "subject": "",
-      "importance": "",
-      "change": "신규",
-      "source_url": "",
-      "data_status": ""
-    }
-  ],
+  "schedule_changes": [],
   "missing": [
     {
       "area": "한국 수급(외국인/기관/개인)",
       "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
-      "since": "2026-08-01T10:21:12+00:00",
+      "since": "2026-08-01T14:13:07+00:00",
       "gap_id": "kr_flows:net_buy"
     }
   ],
@@ -706,10 +464,10 @@
     "late_generation": false,
     "no_facts_before_cutoff": false,
     "counts": {
-      "facts": 44,
+      "facts": 33,
       "market_reaction": 5,
-      "events": 7,
-      "schedule_changes": 6,
+      "events": 1,
+      "schedule_changes": 0,
       "missing": 1
     }
   }
