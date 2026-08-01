@@ -1,0 +1,22 @@
+{
+  "schema_version": "thesis.1",
+  "themes": {
+    "ai_semi": {
+      "label": "AI·반도체",
+      "theses": [
+        {
+          "id": "ai_semi_bad",
+          "slot": 1,
+          "statement": "반증 조건 없는 가설(테스트용, 적재 거부되어야 함).",
+          "leading_indicators": ["NVDA price_close"],
+          "next_check_date": "2026-12-01",
+          "conditions": {"falsify": [], "weaken": [], "strengthen": []}
+        }
+      ]
+    },
+    "power_energy": {"label": "전력·에너지", "theses": []},
+    "fin_credit": {"label": "금융·신용", "theses": []},
+    "consumer_cycle": {"label": "소비·경기", "theses": []},
+    "policy_geo": {"label": "정책·지정학", "theses": []}
+  }
+}

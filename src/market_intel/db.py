@@ -109,6 +109,81 @@ BEGIN SELECT RAISE(ABORT, 'append-only'); END;
 CREATE TRIGGER IF NOT EXISTS trg_raw_snapshots_no_delete
 BEFORE DELETE ON raw_snapshots
 BEGIN SELECT RAISE(ABORT, 'append-only'); END;
+
+-- 2B: Thesis 계층 (명세 §3.1 ③). 5테마 × 슬롯 1~3 = 최대 15행이 스키마로 강제된다.
+CREATE TABLE IF NOT EXISTS theses (
+    thesis_id TEXT PRIMARY KEY,
+    theme TEXT NOT NULL CHECK(theme IN
+        ('ai_semi','power_energy','fin_credit','consumer_cycle','policy_geo')),
+    slot INTEGER NOT NULL CHECK(slot BETWEEN 1 AND 3),
+    statement TEXT NOT NULL,
+    conditions_json TEXT NOT NULL,
+    leading_indicators TEXT NOT NULL,
+    next_check_date TEXT NOT NULL,
+    source_sha256 TEXT NOT NULL,
+    loaded_at TEXT NOT NULL,
+    UNIQUE(theme, slot)
+);
+
+-- 2B: Review 계층 (명세 §3.1 ④). append-only.
+CREATE TABLE IF NOT EXISTS thesis_reviews (
+    review_id TEXT PRIMARY KEY,
+    thesis_id TEXT NOT NULL,
+    report_type TEXT NOT NULL,
+    report_date TEXT NOT NULL,
+    cutoff_utc TEXT NOT NULL,
+    verdict TEXT NOT NULL CHECK(verdict IN ('강화','유지','약화','무효','판정 불가')),
+    prev_verdict TEXT,
+    changed INTEGER NOT NULL CHECK(changed IN (0,1)),
+    atoms_json TEXT NOT NULL,
+    evidence_json TEXT NOT NULL,
+    error_type TEXT,                     -- 명세 §10.3 오류 분해. 엔진은 항상 NULL로 둔다(사람 판단). 뒤 단계용 예약.
+    engine_version TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE(thesis_id, report_type, report_date, cutoff_utc)
+);
+
+-- 2B: 해석 생성 이력(질의용 미러. 정본은 리포트 JSON의 meta). append-only.
+CREATE TABLE IF NOT EXISTS interpretations (
+    interpretation_id TEXT PRIMARY KEY,
+    report_type TEXT NOT NULL,
+    report_date TEXT NOT NULL,
+    cutoff_utc TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN
+        ('ok','partial','llm_unavailable','llm_timeout','bad_output','validation_failed','disabled')),
+    model TEXT, prompt_version TEXT, prompt_sha256 TEXT,
+    fields_json TEXT NOT NULL,
+    violations_json TEXT,
+    evidence_json TEXT,
+    attempts INTEGER, elapsed_ms INTEGER,
+    engine_version TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_interpretations_report
+    ON interpretations(report_type, report_date, cutoff_utc);
+
+-- 2B: 운영 상태 (최종 검수 F3).
+CREATE TABLE IF NOT EXISTS job_runs (
+    job_run_id TEXT PRIMARY KEY,
+    job TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    finished_at TEXT,
+    lock TEXT,
+    steps_json TEXT,
+    catchup_generated INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL CHECK(status IN ('running','ok','partial','fail')),
+    note TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_job_runs_job ON job_runs(job, started_at);
+
+CREATE TRIGGER IF NOT EXISTS trg_thesis_reviews_no_update
+BEFORE UPDATE ON thesis_reviews BEGIN SELECT RAISE(ABORT, 'append-only'); END;
+CREATE TRIGGER IF NOT EXISTS trg_thesis_reviews_no_delete
+BEFORE DELETE ON thesis_reviews BEGIN SELECT RAISE(ABORT, 'append-only'); END;
+CREATE TRIGGER IF NOT EXISTS trg_interpretations_no_update
+BEFORE UPDATE ON interpretations BEGIN SELECT RAISE(ABORT, 'append-only'); END;
+CREATE TRIGGER IF NOT EXISTS trg_interpretations_no_delete
+BEFORE DELETE ON interpretations BEGIN SELECT RAISE(ABORT, 'append-only'); END;
 """
 
 # Columns fact_revisions may be filtered on from facts_as_of(**filters).

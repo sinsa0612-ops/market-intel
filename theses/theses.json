@@ -1,0 +1,75 @@
+{
+  "schema_version": "thesis.1",
+  "themes": {
+    "ai_semi": {
+      "label": "AI·반도체",
+      "theses": [
+        {
+          "id": "ai_semi_1",
+          "slot": 1,
+          "statement": "AI 반도체 대형주(NVDA)의 최근 가격 흐름은 단기 상승 모멘텀을 보이고 있으며, 이 모멘텀의 지속 여부가 AI 인프라 수요 서사에 대한 시장 반응을 가늠하는 선행 신호다.",
+          "leading_indicators": ["NVDA price_close", "^SOX price_close", "^VIX price_close"],
+          "next_check_date": "2026-08-15",
+          "conditions": {
+            "falsify": [
+              {"id": "nvda_3d_down", "kind": "consecutive", "category": "price",
+               "subject": "NVDA", "metric": "price_close", "direction": "down", "periods": 3}
+            ],
+            "weaken": [
+              {"id": "vix_spike", "kind": "threshold", "category": "price",
+               "subject": "^VIX", "metric": "price_close", "op": ">=", "value": 25.0}
+            ],
+            "strengthen": [
+              {"id": "nvda_2d_up", "kind": "consecutive", "category": "price",
+               "subject": "NVDA", "metric": "price_close", "direction": "up", "periods": 2}
+            ]
+          }
+        },
+        {
+          "id": "ai_semi_2",
+          "slot": 2,
+          "statement": "AI 인프라 수요는 견조하나, 2027년 이후 추가 증설은 빅테크의 FCF 회복 속도에 달려 있다.",
+          "leading_indicators": ["MSFT free_cash_flow", "GOOGL free_cash_flow"],
+          "next_check_date": "2026-11-01",
+          "conditions": {
+            "falsify": [
+              {"id": "msft_fcf_2q_down", "kind": "consecutive", "category": "financials",
+               "subject": "MSFT", "metric": "free_cash_flow", "direction": "down", "periods": 2}
+            ],
+            "weaken": [],
+            "strengthen": []
+          }
+        }
+      ]
+    },
+    "power_energy": {"label": "전력·에너지", "theses": []},
+    "fin_credit": {
+      "label": "금융·신용",
+      "theses": [
+        {
+          "id": "fin_credit_1",
+          "slot": 1,
+          "statement": "미 10년물 국채금리는 4%대 중반 이상의 고금리 국면을 유지하고 있으며, 이는 금융·신용 여건 전반에 긴축 압력으로 작용한다.",
+          "leading_indicators": ["DGS10 value"],
+          "next_check_date": "2026-09-01",
+          "conditions": {
+            "falsify": [
+              {"id": "dgs10_low", "kind": "threshold", "category": "macro",
+               "subject": "DGS10", "metric": "value", "op": "<=", "value": 3.0}
+            ],
+            "weaken": [
+              {"id": "dgs10_mid", "kind": "threshold", "category": "macro",
+               "subject": "DGS10", "metric": "value", "op": "<", "value": 4.0}
+            ],
+            "strengthen": [
+              {"id": "dgs10_high", "kind": "threshold", "category": "macro",
+               "subject": "DGS10", "metric": "value", "op": ">=", "value": 4.5}
+            ]
+          }
+        }
+      ]
+    },
+    "consumer_cycle": {"label": "소비·경기", "theses": []},
+    "policy_geo": {"label": "정책·지정학", "theses": []}
+  }
+}

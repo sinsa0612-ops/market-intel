@@ -350,11 +350,21 @@ def test_policy_unscheduled_meeting_no_ordinal_shift(settings):
 
 def test_no_new_tables():
     """spec ST1 test_no_new_tables: calendar facts live in fact_revisions —
-    db.SCHEMA must not gain a new table."""
+    the calendar work (this file) must not gain a new table.
+
+    2단계-B ST1 (thesis engine, `_org/20260801-mi-interp/spec.md` SA-2)
+    legitimately appends `theses`/`thesis_reviews`/`interpretations`/
+    `job_runs` to `db.SCHEMA` afterwards — additive migration is that
+    subtask's explicit mandate, not a regression of this one. This guard is
+    updated to the new baseline rather than deleted, so a *future*
+    unauthorized table addition still fails it."""
     import re
 
     tables = set(re.findall(r"CREATE TABLE IF NOT EXISTS (\w+)", db_mod.SCHEMA))
-    assert tables == {"raw_snapshots", "fact_revisions", "collect_runs", "provider_runs", "data_gaps", "label_revisions"}
+    assert tables == {
+        "raw_snapshots", "fact_revisions", "collect_runs", "provider_runs", "data_gaps", "label_revisions",
+        "theses", "thesis_reviews", "interpretations", "job_runs",
+    }
 
 
 def test_serialize_dates_normalisation_is_stable():
