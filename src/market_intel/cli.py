@@ -33,6 +33,10 @@ CLI_EXTENSIONS = [
     # 2단계-B: ST1/ST2는 자기 서브커맨드 모듈만 만들 수 있었고(이 파일은 ST3 소유)
     # 그 결과 `market-intel interpret`이 인도물 상태로 실행 불가능했다(judge.md 6-1).
     "market_intel.cli_thesis", "market_intel.cli_interpret", "market_intel.cli_ops",
+    # 백필 ST1 — `market-intel backfill`. 등록하지 않으면 모듈만 존재하고
+    # 명령은 `invalid choice: 'backfill'`로 죽는다(2단계-B judge.md 6-1과
+    # 같은 실패). CEO 실행 단계(백필 spec §9)가 이 명령을 직접 친다.
+    "market_intel.cli_backfill",
 ]
 
 

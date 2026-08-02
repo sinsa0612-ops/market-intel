@@ -283,9 +283,17 @@ def insert_raw_snapshot(conn: sqlite3.Connection, raw_dir: str, provider: str, i
 
 def upsert_fact(conn: sqlite3.Connection, fact_id: str, snapshot_id: str | None, known_at: str, fc) -> bool:
     """Append a new revision iff the value actually changed. Returns True if
-    a new revision row was appended, False on no-op (spec A4)."""
+    a new revision row was appended, False on no-op (spec A4).
+
+    "Current revision" means the **latest known_at**, not the highest
+    revision_no (spec 백필 §4 S1). revision_no is an append counter, not a
+    time axis: once a backfill appends older vintages behind a live
+    revision, the highest revision_no is an *older* value, and comparing
+    against it makes every subsequent live collect append a spurious
+    revision (backfill spec 반증 4)."""
     latest = conn.execute(
-        "SELECT * FROM fact_revisions WHERE fact_id=? ORDER BY revision_no DESC LIMIT 1",
+        "SELECT * FROM fact_revisions WHERE fact_id=? "
+        "ORDER BY known_at DESC, revision_no DESC LIMIT 1",
         (fact_id,),
     ).fetchone()
 
@@ -298,7 +306,11 @@ def upsert_fact(conn: sqlite3.Connection, fact_id: str, snapshot_id: str | None,
         )
         if same:
             return False
-        revision_no = latest["revision_no"] + 1
+        # revision_no stays a monotonic append counter (PRIMARY KEY), so it
+        # comes from MAX(revision_no) — which is *not* necessarily `latest`.
+        revision_no = conn.execute(
+            "SELECT MAX(revision_no) m FROM fact_revisions WHERE fact_id=?", (fact_id,)
+        ).fetchone()["m"] + 1
         supersedes = latest["revision_no"]
     else:
         revision_no = 1
@@ -323,7 +335,15 @@ def upsert_fact(conn: sqlite3.Connection, fact_id: str, snapshot_id: str | None,
 
 def facts_as_of(conn: sqlite3.Connection, cutoff: datetime | str, **filters) -> list[sqlite3.Row]:
     """Point-in-time read: for each fact_id, the latest revision with
-    known_at <= cutoff. Revisions known after cutoff are never returned."""
+    known_at <= cutoff. Revisions known after cutoff are never returned.
+
+    "Latest" is ordered by known_at (ties broken by revision_no), not by
+    revision_no alone (spec 백필 §4 S1). A backfill appends older vintages
+    *after* the live revision, so the highest revision_no can be an older
+    value — selecting it would let a backfilled past value mask today's
+    value (backfill spec 반증 2). The known_at <= cutoff filter stays on
+    both sides of the comparison: the barrier must never see a revision
+    that was not knowable at the cutoff."""
     cutoff_str = iso_utc(cutoff)
     clauses = ["known_at <= ?"]
     params: list = [cutoff_str]
@@ -335,11 +355,12 @@ def facts_as_of(conn: sqlite3.Connection, cutoff: datetime | str, **filters) -> 
     where = " AND ".join(clauses)
     query = f"""
         SELECT fr.* FROM fact_revisions fr
-        INNER JOIN (
-            SELECT fact_id, MAX(revision_no) AS max_rev
-            FROM fact_revisions
-            WHERE {where}
-            GROUP BY fact_id
-        ) latest ON fr.fact_id = latest.fact_id AND fr.revision_no = latest.max_rev
+        WHERE {where}
+          AND NOT EXISTS (
+            SELECT 1 FROM fact_revisions o
+            WHERE o.fact_id = fr.fact_id AND o.known_at <= ?
+              AND (o.known_at > fr.known_at
+                   OR (o.known_at = fr.known_at AND o.revision_no > fr.revision_no))
+          )
     """
-    return conn.execute(query, params).fetchall()
+    return conn.execute(query, [*params, cutoff_str]).fetchall()

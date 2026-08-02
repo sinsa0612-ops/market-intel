@@ -27,6 +27,7 @@ EXPECTED_EXTENSIONS = (
     "market_intel.cli_thesis",
     "market_intel.cli_interpret",
     "market_intel.cli_ops",
+    "market_intel.cli_backfill",
 )
 
 
