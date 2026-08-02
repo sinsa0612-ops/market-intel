@@ -165,9 +165,9 @@ def test_success_sets_generated_by_and_interpretation(monkeypatch, conn):
     report, result = apply_mod.fill(report, conn, cutoff=_cutoff(report), model="qwen3.5:9b")
 
     assert result["status"] == "ok"
-    assert report.interpretation.generated_by == "ai:qwen3.5:9b · interpretation_v1"
+    assert report.interpretation.generated_by == f"ai:qwen3.5:9b · {apply_mod.PROMPT_VERSION}"
     assert report.interpretation.generated_at
-    assert result["prompt_version"] == "interpretation_v1"
+    assert result["prompt_version"] == apply_mod.PROMPT_VERSION == "interpretation_v2"
     assert result["prompt_sha256"]
 
 
@@ -245,6 +245,54 @@ def test_never_raises_on_any_of_the_4_failure_paths(monkeypatch, conn):
         _patch_generate(monkeypatch, lambda n, exc=exc: exc)
         r2, result = apply_mod.fill(report, conn, cutoff=_cutoff(report))
         assert result["status"] in ("llm_unavailable", "llm_timeout", "bad_output")
+
+
+# --- re-running on the same report is idempotent ---------------------------
+
+def test_missing_entries_do_not_accumulate_across_reruns(monkeypatch, conn):
+    """judge.md §6-7: ST3's job pipeline writes the interpretation back into
+    the report file in place, so a catch-up or a retry re-runs `fill()` on a
+    report that already carries an `interp:*` gap — and the public site's
+    결측 list grew one identical line every time (3 runs -> 3 entries)."""
+    report = make_report()
+    _patch_generate(monkeypatch, lambda n: llm_mod.LLMUnavailable("connection refused"))
+    for _ in range(3):
+        report, _result = apply_mod.fill(report, conn, cutoff=_cutoff(report))
+
+    interp_gaps = [m for m in report.missing if m.gap_id.startswith("interp:")]
+    assert len(interp_gaps) == 1, [m.gap_id for m in report.missing]
+
+
+def test_rerun_does_not_drop_the_report_own_missing_items(monkeypatch, conn):
+    """The de-duplication must only reach `fill()`'s own `interp:*` rows —
+    the fact layer's gaps belong to the report, not to this stage."""
+    from market_intel.reporting.model import MissingItem
+
+    report = make_report()
+    report.missing.append(MissingItem(
+        area="한국 수급", reason="pykrx가 0건을 반환함", since="2026-08-01T00:00:00+00:00",
+        gap_id="flows:pykrx",
+    ))
+    _patch_generate(monkeypatch, lambda n: llm_mod.LLMUnavailable("x"))
+    for _ in range(2):
+        report, _result = apply_mod.fill(report, conn, cutoff=_cutoff(report))
+
+    assert [m.gap_id for m in report.missing] == ["flows:pykrx", "interp:llm_unavailable"]
+
+
+def test_rerun_replaces_a_stale_status_gap(monkeypatch, conn):
+    """A retry that succeeds must clear the previous run's failure line
+    instead of leaving 사장님 with a stale '해석 미생성' next to a filled field."""
+    report = make_report()
+    _patch_generate(monkeypatch, lambda n: llm_mod.LLMUnavailable("x"))
+    report, _ = apply_mod.fill(report, conn, cutoff=_cutoff(report))
+    assert any(m.gap_id == "interp:llm_unavailable" for m in report.missing)
+
+    _patch_generate(monkeypatch, lambda n: (dict(_OK_FIELDS), {"model": "qwen3.5:9b"}))
+    report, result = apply_mod.fill(report, conn, cutoff=_cutoff(report))
+
+    assert result["status"] == "ok"
+    assert [m.gap_id for m in report.missing if m.gap_id.startswith("interp:")] == []
 
 
 # --- structural boundary tests ---------------------------------------------

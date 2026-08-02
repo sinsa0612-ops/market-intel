@@ -24,7 +24,15 @@ from . import digest as digest_mod
 from . import llm as llm_mod
 from . import validate as validate_mod
 
-PROMPT_VERSION = "interpretation_v1"
+# v2 = v1 + one absolute rule: Hangul/digits/latin-abbreviation only, no
+# hanja or kana. `qwen3.5:9b` is Chinese-trained and leaked `持仓`/`背后` into
+# Korean prose in 2 of 8 real runs (judge.md §2-C), which the SA-5 validator
+# now rejects outright — the prompt rule stops those generations from being
+# produced in the first place instead of spending a repair round-trip on
+# them. v1 is left on disk untouched: SA-4 versions the prompt precisely so
+# an interpretation already published under `interpretation_v1` stays
+# reproducible from the file its `prompt_sha256` was taken over.
+PROMPT_VERSION = "interpretation_v2"
 _PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.txt"
 
 # Only 3 keys — `thesis_impact` is never LLM-authored (SA-8 design decision
@@ -106,6 +114,15 @@ def fill(
     same as `report.missing`'s matching `data_gaps` row (ST2 does not own
     `interp/store.py`)."""
     model = model or llm_mod.DEFAULT_MODEL
+    # This stage owns exactly the `interp:*` gaps and re-derives all of them
+    # below, so drop the previous run's before doing anything else. ST3's job
+    # pipeline lays the interpretation onto the report file in place, so a
+    # catch-up or a retry calls `fill()` on a report that already carries
+    # one; without this, the public site's 결측 목록 grew an identical line per
+    # run (judge.md §6-7, reproduced at 3 runs -> 3 lines), and a retry that
+    # succeeded still showed the failed run's "해석 미생성" reason. Other
+    # areas' gaps belong to the fact layer and are left untouched.
+    report.missing = [m for m in report.missing if not m.gap_id.startswith("interp:")]
     digest_text, findex = digest_mod.build(report)
     report_dict = _report_dict(report)
 
