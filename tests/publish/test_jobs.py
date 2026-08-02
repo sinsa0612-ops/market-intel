@@ -178,3 +178,139 @@ def test_every_job_name_has_a_launchd_template():
                  for p in (Path(jobs_mod.__file__).resolve().parents[2]
                            / "launchd").glob("*.plist.template")}
     assert set(jobs_mod.JOBS) == templates, (set(jobs_mod.JOBS) ^ templates)
+
+
+# --- interpret step + job_runs (2단계-B ST3) --------------------------------
+
+def _recorded(job_env) -> list[dict]:
+    from market_intel import db as db_mod
+    from market_intel.interp import store as store_mod
+
+    conn = db_mod.connect(job_env["settings"].db_path)
+    try:
+        return store_mod.last_job_runs(conn)
+    finally:
+        conn.close()
+
+
+def _fake_interpret(paths: list[Path], status: str = "ok"):
+    def interpret(settings, conn, path):
+        paths.append(Path(path))
+        return {"status": status}
+    return interpret
+
+
+def test_steps_include_interpret_between_report_and_site(job_env):
+    """spec ST3 What #2 — 출력 순서 collect report interpret site obsidian publish."""
+    seen: list[Path] = []
+    result = run(job_env, "morning", now=datetime(2026, 8, 7, 7, 40, tzinfo=KST),
+                 interpret=_fake_interpret(seen))
+    assert list(result["steps"]) == ["collect", "report", "interpret", "site", "obsidian", "publish"]
+    assert result["steps"]["interpret"] == "ok"
+    assert seen, "the interpret step never ran"
+
+
+def test_collect_only_job_skips_interpret(job_env):
+    result = run(job_env, "collect-am", now=datetime(2026, 8, 7, 6, 50, tzinfo=KST),
+                 interpret=_fake_interpret([]))
+    assert result["steps"]["interpret"] == "skip"
+
+
+def test_job_run_row_is_recorded_with_ok_status(job_env):
+    run(job_env, "morning", now=datetime(2026, 8, 7, 7, 40, tzinfo=KST),
+        interpret=_fake_interpret([]))
+    rows = _recorded(job_env)
+    assert [r["job"] for r in rows] == ["morning"]
+    row = rows[0]
+    assert row["status"] == "ok", row
+    assert row["finished_at"], "finish_job_run never ran"
+    assert row["steps"]["interpret"] == "ok"
+
+
+def test_job_run_status_is_fail_when_the_report_step_fails(job_env, monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("build exploded")
+
+    monkeypatch.setattr(jobs_mod, "generate_report", boom)
+    result = run(job_env, "morning", now=datetime(2026, 8, 7, 7, 40, tzinfo=KST),
+                 interpret=_fake_interpret([]))
+    assert result["steps"]["report"] == "fail"
+    assert _recorded(job_env)[0]["status"] == "fail"
+
+
+def test_job_run_status_is_partial_when_only_interpret_fails(job_env):
+    def boom(settings, conn, path):
+        raise RuntimeError("ollama is down")
+
+    result = run(job_env, "morning", now=datetime(2026, 8, 7, 7, 40, tzinfo=KST), interpret=boom)
+    assert result["steps"]["interpret"] == "fail"
+    assert _recorded(job_env)[0]["status"] == "partial"
+
+
+def test_interpretation_failure_never_blocks_report_or_site(job_env):
+    """spec SA-9 — 해석 생성 실패는 리포트 실패가 아니다. 리포트 파일과 사이트는
+    어떤 경우에도 정상 발행되고 exit 0이다."""
+    def boom(settings, conn, path):
+        raise RuntimeError("ollama is down")
+
+    now = datetime(2026, 8, 7, 7, 40, tzinfo=KST)
+    result = run(job_env, "morning", now=now, interpret=boom)
+    assert result["steps"]["report"] == "ok"
+    assert result["steps"]["site"] == "ok"
+    assert result["steps"]["obsidian"] == "ok"
+    assert result["exit"] == 0
+    assert (job_env["reports_root"] / "morning" / "2026-08-07.json").exists()
+    assert (job_env["docs_root"] / "index.html").exists()
+
+
+def test_transport_failure_status_marks_the_step_failed(job_env):
+    """An `llm_unavailable` result is a failed step even though no exception
+    was raised — spec ST3 성공기준: `interpret=fail site=ok … exit=0`."""
+    result = run(job_env, "morning", now=datetime(2026, 8, 7, 7, 40, tzinfo=KST),
+                 interpret=_fake_interpret([], status="llm_unavailable"))
+    assert result["steps"]["interpret"] == "fail"
+    assert result["steps"]["site"] == "ok"
+    assert result["exit"] == 0
+
+
+def test_interpret_budget_skips_the_oldest_but_never_today(job_env, monkeypatch):
+    """spec ST3 What #2 — `MI_INTERP_MAX_PER_RUN`을 넘으면 오래된 것부터
+    건너뛰고 건너뛴 수를 note에 남긴다. 오늘 리포트는 절대 건너뛰지 않는다."""
+    monkeypatch.setenv("MI_INTERP_MAX_PER_RUN", "3")
+    now = datetime(2026, 8, 7, 7, 40, tzinfo=KST)  # Fri: catch-up 08-04/05/06 + today
+    seen: list[Path] = []
+    result = run(job_env, "morning", now=now, interpret=_fake_interpret(seen))
+
+    assert result["catchup_generated"] == 3
+    stems = sorted(p.stem for p in seen)
+    assert stems == ["2026-08-05", "2026-08-06", "2026-08-07"], stems
+    assert "2026-08-07" in stems, "today's report must never be skipped"
+    assert "interp_skipped=1" in _recorded(job_env)[0]["note"]
+
+
+def test_interpret_budget_of_one_still_covers_today(job_env, monkeypatch):
+    monkeypatch.setenv("MI_INTERP_MAX_PER_RUN", "1")
+    seen: list[Path] = []
+    run(job_env, "morning", now=datetime(2026, 8, 7, 7, 40, tzinfo=KST),
+        interpret=_fake_interpret(seen))
+    assert [p.stem for p in seen] == ["2026-08-07"]
+
+
+def test_default_interpret_reads_each_reports_own_cutoff(job_env, monkeypatch):
+    """정보 차단선(SA-10): 캐치업으로 방금 만든 리포트도 자기 차단선으로 해석된다."""
+    cutoffs: list[str] = []
+    real = jobs_mod.ops_mod.interpret_report
+
+    def spy(conn, path, **kw):
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        cutoffs.append(data["cutoff_utc"])
+        return real(conn, path, use_llm=False)
+
+    monkeypatch.setattr(jobs_mod.ops_mod, "interpret_report", spy)
+    monkeypatch.setenv("MI_INTERP_MAX_PER_RUN", "9")
+    run(job_env, "morning", now=datetime(2026, 8, 7, 7, 40, tzinfo=KST), interpret=None)
+
+    assert len(cutoffs) == 4, cutoffs
+    for path in (job_env["reports_root"] / "morning").glob("*.json"):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        assert data["cutoff_utc"] in cutoffs

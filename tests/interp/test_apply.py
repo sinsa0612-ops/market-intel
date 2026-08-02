@@ -336,7 +336,11 @@ def test_interp_never_touches_fact_revisions_or_raw_sql():
         # 2B tables (theses / thesis_reviews / interpretations / job_runs) is
         # its job. Every other module stays SQL-free so the interpretation
         # path cannot grow a second way to reach the database.
-        if path.name != "store.py":
+        # `ops.py`(ST3)는 SA-12가 지정한 운영 상태 출처 — `provider_runs`/
+        # `collect_runs`/`data_gaps` — 를 읽는데, 이 셋은 2B 테이블이 아니어서
+        # `store.py`에 접근자가 없고 `store.py`는 ST1 소유라 ST3가 고칠 수 없다.
+        # 사실 원장 금지(위 4줄)는 `ops.py`에도 그대로 적용된다.
+        if path.name not in ("store.py", "ops.py"):
             assert "SELECT " not in code, f"{path} contains a raw SQL SELECT"
 
 

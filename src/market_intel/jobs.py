@@ -47,6 +47,8 @@ from . import db as db_mod
 from . import obsidian as obsidian_mod
 from . import site as site_mod
 from .config import PROJECT_ROOT
+from .interp import ops as ops_mod
+from .interp import store as store_mod
 from .reporting.build import build_report, stem_for
 from .reporting.cutoff import KST, cutoff_for
 
@@ -170,6 +172,56 @@ def _default_collect(settings, workflow: str) -> bool:
     return True
 
 
+def _default_interpret(settings, conn, path: Path) -> dict:
+    """해석 단계의 기본 구현. `settings`는 쓰지 않지만 `collect` 훅과 같은
+    자리를 지켜 테스트가 같은 방식으로 가짜를 주입할 수 있게 둔다(모델·호스트는
+    `interp/llm.py`가 `MI_LLM_*`에서 직접 읽는다)."""
+    return ops_mod.interpret_report(conn, path)
+
+
+def _select_for_interpretation(paths: list[Path], budget: int) -> tuple[list[Path], int]:
+    """예산을 넘으면 **오래된 것부터** 버린다(spec ST3 What #2). `paths`는
+    생성 순서(캐치업 과거분 → 오늘)이므로 뒤에서 자르면 오늘 리포트는 절대
+    빠지지 않는다 — 오늘 것을 건너뛰면 그날 사이트에 해석이 통째로 없어진다."""
+    if len(paths) <= budget:
+        return paths, 0
+    return paths[-budget:], len(paths) - budget
+
+
+def _interpret_step(settings, conn, paths: list[Path], interpret) -> tuple[str, int]:
+    """-> (step status, 예산 때문에 건너뛴 건수).
+
+    해석 실패는 job을 죽이지 않는다(spec SA-9): 리포트 파일은 이미 디스크에
+    있고, 사이트는 빈 해석 칸을 `AI 해석 미생성`으로 찍는다."""
+    if not paths:
+        return "skip", 0
+    targets, skipped = _select_for_interpretation(paths, ops_mod.interp_budget())
+    ok = True
+    for path in targets:
+        try:
+            result = interpret(settings, conn, path) or {}
+        except Exception as exc:  # ollama가 죽어도 다음 단계로 간다
+            print(f"  interpret({path.name}) failed: {type(exc).__name__}: {exc}")
+            ok = False
+            continue
+        status = result.get("status")
+        if status not in ops_mod.INTERPRET_OK_STATUSES:
+            # 성공은 조용히 — B13의 `job run` 출력 블록은 4줄 계약이다.
+            print(f"  interpret({path.name}) status={status}")
+            ok = False
+    return ("ok" if ok else "fail"), skipped
+
+
+def _job_status(steps: dict) -> str:
+    """spec ST3 What #2 — `report=fail`이면 `fail`, 그 외 `fail`이 하나라도
+    있으면 `partial`, 없으면 `ok`."""
+    if steps.get("report") == "fail":
+        return "fail"
+    if any(v == "fail" for v in steps.values()):
+        return "partial"
+    return "ok"
+
+
 def _run_publish(repo_root: Path) -> tuple[str, int]:
     script = repo_root / PUBLISH_SCRIPT
     if not script.exists():
@@ -189,7 +241,7 @@ def _run_publish(repo_root: Path) -> tuple[str, int]:
 
 def run_job(settings, name: str, *, publish: bool = True, now: datetime | None = None,
             reports_root: Path | None = None, docs_root: Path | None = None,
-            vault_root: Path | None = None, collect=None,
+            vault_root: Path | None = None, collect=None, interpret=None,
             repo_root: Path | None = None) -> dict:
     """Run one job end to end. Never raises for a dead source: each step is
     isolated and a failure is recorded, not propagated (spec ST3 What #3)."""
@@ -200,10 +252,11 @@ def run_job(settings, name: str, *, publish: bool = True, now: datetime | None =
     docs_root = Path(docs_root) if docs_root else PROJECT_ROOT / "docs"
     repo_root = Path(repo_root) if repo_root else PROJECT_ROOT
     collect = collect or _default_collect
+    interpret = interpret or _default_interpret
     now = now or datetime.now(KST)
     today = now.astimezone(KST).date()
 
-    steps = {k: "skip" for k in ("collect", "report", "site", "obsidian", "publish")}
+    steps = {k: "skip" for k in ("collect", "report", "interpret", "site", "obsidian", "publish")}
     result = {"job": name, "lock": "already_running", "catchup_generated": 0,
               "steps": steps, "exit": 0}
 
@@ -224,7 +277,12 @@ def run_job(settings, name: str, *, publish: bool = True, now: datetime | None =
 
         db_mod.init_db(settings.db_path)
         conn = db_mod.connect(settings.db_path)
+        job_run_id = store_mod.start_job_run(conn, name)
+        notes: list[str] = []
         try:
+            # 이번 실행이 만든 리포트들 — 캐치업 과거분이 앞, 오늘이 마지막.
+            # 해석 단계가 예산을 넘길 때 어느 것을 버릴지 이 순서로 정한다.
+            generated: list[Path] = []
             if spec["report"]:
                 try:
                     rtype = spec["report"]
@@ -233,16 +291,21 @@ def run_job(settings, name: str, *, publish: bool = True, now: datetime | None =
                             continue
                         if report_path(reports_root, rtype, d).exists():
                             continue
-                        generate_report(conn, rtype, d, reports_root, late=True)
+                        generated.append(generate_report(conn, rtype, d, reports_root, late=True))
                         result["catchup_generated"] += 1
-                    generate_report(conn, rtype, today, reports_root, late=False)
+                    generated.append(generate_report(conn, rtype, today, reports_root, late=False))
                     steps["report"] = "ok"
                 except Exception as exc:
                     print(f"  report failed: {type(exc).__name__}: {exc}")
                     steps["report"] = "fail"
 
+            # report와 site 사이 — 사이트가 해석이 채워진 JSON을 읽도록.
+            steps["interpret"], skipped = _interpret_step(settings, conn, generated, interpret)
+            if skipped:
+                notes.append(f"interp_skipped={skipped}")
+
             try:
-                site_mod.build_site(conn, reports_root=reports_root, docs_root=docs_root)
+                site_mod.build_site(conn, reports_root=reports_root, docs_root=docs_root, now=now)
                 steps["site"] = "ok"
             except Exception as exc:
                 print(f"  site failed: {type(exc).__name__}: {exc}")
@@ -259,5 +322,16 @@ def run_job(settings, name: str, *, publish: bool = True, now: datetime | None =
 
         if publish:
             steps["publish"], result["exit"] = _run_publish(repo_root)
+
+        # 마지막에 한 번 더 여는 이유: publish는 외부 프로세스(git)를 돌리므로
+        # 그 동안 DB 커넥션을 붙들고 있지 않는다(위 블록이 이미 그 형태였다).
+        conn = db_mod.connect(settings.db_path)
+        try:
+            store_mod.finish_job_run(
+                conn, job_run_id, steps, _job_status(steps),
+                catchup=bool(result["catchup_generated"]), note=" ".join(notes),
+            )
+        finally:
+            conn.close()
 
     return result

@@ -23,6 +23,7 @@ from pathlib import Path
 from . import db as db_mod
 from .config import PROJECT_ROOT
 from .interp import apply as apply_mod
+from .interp import ops as ops_mod
 from .reporting.model import Report
 
 DEFAULT_THESES_PATH = PROJECT_ROOT / "theses" / "theses.json"
@@ -154,6 +155,11 @@ def _cmd_interpret(conn, settings, args) -> int:
     if not args.dry_run:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(report.to_json(), encoding="utf-8")
+        # ST3 통합: 손으로 돌린 해석도 `interpretations`(+실패 시 `data_gaps`)에
+        # 남긴다. `apply.fill`은 DB에 쓰지 않는다고 자기 계약에 못박고 있고
+        # (호출자 책임), 이 기록이 없으면 `docs/status.html`의 `마지막 AI 해석`이
+        # 파이프라인 실행분만 보여 실제보다 낡은 상태를 말하게 된다.
+        ops_mod.record_outcome(conn, report, result)
 
     print(
         f"interpret_status={result['status']} model={result['model']} "

@@ -87,14 +87,21 @@ def test_job_run_output_format(monkeypatch, tmp_path, capsys):
     calls = []
     monkeypatch.setattr(jobs_mod, "_default_collect",
                         lambda settings, workflow: calls.append(workflow))
+    # 해석 단계도 collect와 같은 이유로 가짜다 — 진짜로 두면 이 형식 테스트가
+    # 로컬 ollama에 의존하고 리포트 한 건당 25~40초씩 걸린다.
+    monkeypatch.setattr(jobs_mod, "_default_interpret",
+                        lambda settings, conn, path: {"status": "ok"})
     code, out = run_cli(monkeypatch, tmp_path, capsys,
                         ["job", "run", "--name", "morning", "--no-publish"])
     lines = out.strip().splitlines()
     assert code == 0
     assert re.match(r"^job=morning lock=(acquired|already_running)$", lines[0]), lines
     assert re.match(r"^catchup_generated=\d+$", lines[1]), lines
+    # 2단계-B ST3가 `interpret`를 report와 site 사이에 끼워 넣었다(spec ST3
+    # What #2). B13의 5단계 줄은 그 시점에 대체된 계약이다.
     assert re.match(
-        r"^steps: collect=\w+ report=\w+ site=\w+ obsidian=\w+ publish=\w+$", lines[2]), lines
+        r"^steps: collect=\w+ report=\w+ interpret=\w+ site=\w+ obsidian=\w+ publish=\w+$",
+        lines[2]), lines
     assert lines[3] == "exit=0", lines
 
 

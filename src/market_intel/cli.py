@@ -28,12 +28,21 @@ STATUS_ORDER = ["source_verified", "partial", "reconstructed", "unverified"]
 # same lines (worktree merge-hell prevention). Each module registers its
 # own argparse subparser and handles its own subcommand; a module that
 # doesn't exist yet (later worktrees) is skipped silently.
-CLI_EXTENSIONS = ["market_intel.cli_schedule", "market_intel.cli_report", "market_intel.cli_publish"]
+CLI_EXTENSIONS = [
+    "market_intel.cli_schedule", "market_intel.cli_report", "market_intel.cli_publish",
+    # 2단계-B: ST1/ST2는 자기 서브커맨드 모듈만 만들 수 있었고(이 파일은 ST3 소유)
+    # 그 결과 `market-intel interpret`이 인도물 상태로 실행 불가능했다(judge.md 6-1).
+    "market_intel.cli_thesis", "market_intel.cli_interpret", "market_intel.cli_ops",
+]
 
 
 def _extension_modules() -> list:
     mods = []
-    for name in CLI_EXTENSIONS:
+    # dict.fromkeys = 순서 유지 중복 제거. ST1/ST2의 테스트들이 자기 모듈을
+    # `CLI_EXTENSIONS + [...]`로 덧붙여 등록하는데(그 시절엔 이 파일을 고칠 수
+    # 없었다), 이제 기본 목록에도 들어 있으므로 그대로 두면 argparse가 같은
+    # 서브커맨드를 두 번 등록하다 죽는다.
+    for name in dict.fromkeys(CLI_EXTENSIONS):
         try:
             mods.append(importlib.import_module(name))
         except ImportError as exc:

@@ -38,6 +38,15 @@ uv run market-intel db stats
 - `market-intel collect --workflow morning|close|all [--cutoff ISO8601]` — 워크플로 실행.
   `--cutoff`는 실행 기록용 시각(미지정 시 현재 시각)이며 수집 자체를 필터링하지 않습니다.
 - `market-intel db stats` — 누적 수집 현황 요약.
+- `market-intel ops status [--json]` — **지금 파이프라인이 살아 있는지** 한 화면으로.
+  job별 마지막 실행 시각·결과·밀린 실행 수, 마지막 수집의 provider별 상태, 마지막 AI 해석,
+  미해결 결측. 같은 내용이 사이트 `docs/status.html`에도 발행됩니다.
+- `market-intel thesis load|list|review` — 가설 원장(`theses/theses.json`) 적재/조회/판정.
+- `market-intel interpret --file <report.json>` — 리포트 하나에 AI 해석 4칸을 채웁니다.
+  `--no-llm`이면 모델을 부르지 않고, ollama가 꺼져 있으면 해석만 비운 채 종료코드 0입니다.
+
+리포트·사이트·자동 실행 명령(`report` / `site build` / `obsidian sync` / `job run` /
+`publish`)과 시간표는 `launchd/README.md`에 있습니다.
 
 ## 워크플로 구성
 

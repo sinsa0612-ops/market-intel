@@ -74,8 +74,11 @@ def _cmd_job_run(settings, args) -> int:
     print(f"catchup_generated={result['catchup_generated']}")
     print(
         "steps: "
+        # 2단계-B ST3: `interpret`가 report와 site 사이에 들어간다(spec ST3
+        # What #2의 출력 순서). B13의 원래 5단계 줄을 그대로 두면 해석이 며칠째
+        # 실패해도 `job run` 출력에는 아무 흔적이 없다.
         + " ".join(f"{k}={steps[k]}" for k in
-                   ("collect", "report", "site", "obsidian", "publish"))
+                   ("collect", "report", "interpret", "site", "obsidian", "publish"))
     )
     print(f"exit={result['exit']}")
     return result["exit"]

@@ -31,6 +31,8 @@ from pathlib import Path
 
 from . import schedule as schedule_mod
 from .config import PROJECT_ROOT
+from .interp import ops as ops_mod
+from .reporting.cutoff import KST
 from .reporting.model import Report
 from .reporting.render_html import render_html
 from .reporting.render_md import status_ko
@@ -38,6 +40,7 @@ from .reporting.render_md import status_ko
 SCHEDULE_WINDOW_DAYS = 60  # spec B8: 향후 60일 일정
 CHANGES_WINDOW_DAYS = 7  # spec B8: 최근 7일 일정 변경
 RECENT_CARDS = 20  # spec B8: index = 최신 리포트 본문 + 최근 20건 카드
+BANNER_CHANGE_DAYS = 7  # index 배너에 띄우는 가설 변화의 기간(전체 목록은 가설 페이지)
 
 TYPE_LABELS = {
     "morning": "모닝", "week_start": "주간 시작", "close_delta": "장마감 델타",
@@ -76,6 +79,18 @@ ul.cards li a:hover { text-decoration:underline; }
 .meta { color:var(--muted); font-size:.85rem; }
 footer.site { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line);
               color:var(--muted); font-size:.8rem; }
+/* 운영 상태(ST3) — 좁은 화면에서 표가 페이지를 밀어내지 않도록 표만 가로
+   스크롤시킨다. 아이폰에서 status.html이 읽혀야 한다는 요구(사람 확인 4). */
+.scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.stamp { font-size:1.25rem; font-weight:600; margin:.2rem 0 .1rem; }
+.banner { border-radius:4px; padding:.5rem .7rem; margin:.6rem 0; font-size:.95rem; }
+.banner.ok { background:#eaf6ec; color:var(--ok); }
+.banner.warn { background:var(--warn-bg); color:var(--warn); font-weight:600; }
+.banner.change { background:#eef3ff; color:var(--accent); }
+.state-ok { color:var(--ok); }
+.state-warn { color:var(--warn); background:var(--warn-bg); padding:0 .25rem;
+              border-radius:3px; font-weight:600; }
+.detail { color:var(--muted); font-size:.85rem; word-break:break-all; }
 """
 
 
@@ -99,6 +114,8 @@ def _page(title: str, body: str, depth: int) -> str:
         f'<a href="{up}index.html">최신</a>'
         f'<a href="{up}archive.html">전체 보고서</a>'
         f'<a href="{up}schedule.html">일정</a>'
+        f'<a href="{up}theses.html">가설</a>'
+        f'<a href="{up}status.html">상태</a>'
         "</nav></header>"
         f"{body}"
         '<footer class="site">사실 계층만 자동 생성 · 해석은 별도 단계에서 채웁니다.</footer>'
@@ -165,16 +182,37 @@ def _report_page(entry: dict) -> str:
     return _page(title, body, depth=2)
 
 
-def _index_page(entries: list[dict]) -> str:
+def _banner(state: dict, changes: list[dict]) -> str:
+    """index 최상단 한 줄(spec ST3 What #4). CEO는 푸시 알림을 받지 않기로
+    했으므로, 파이프라인이 죽었다는 사실과 가설 판정이 뒤집혔다는 사실이
+    사이트에서 눈에 띄는 것이 유일한 전달 경로다."""
+    if state["healthy"]:
+        line = (f'<p class="banner ok">마지막 실행 정상 · {_esc(state["generated_at_display"])} 기준 '
+                '<a href="status.html">운영 상태</a></p>')
+    else:
+        summary = " · ".join(state["alerts"][:3])
+        more = f" 외 {len(state['alerts']) - 3}건" if len(state["alerts"]) > 3 else ""
+        line = (f'<p class="banner warn">확인 필요 — {_esc(summary)}{_esc(more)} '
+                '<a href="status.html">운영 상태 보기</a></p>')
+    if changes:
+        moves = " · ".join(
+            f"{c['thesis_id']} {c['prev_verdict'] or '(없음)'} → {c['verdict']}" for c in changes[:3])
+        line += (f'<p class="banner change">가설 변화 {len(changes)}건 — {_esc(moves)} '
+                 '<a href="theses.html">가설 보기</a></p>')
+    return line
+
+
+def _index_page(entries: list[dict], banner: str = "") -> str:
     if not entries:
-        return _page("market-intel", "<p>아직 생성된 리포트가 없습니다.</p>", depth=0)
+        return _page("market-intel", banner + "<p>아직 생성된 리포트가 없습니다.</p>", depth=0)
     latest = entries[0]
     # The latest body is rendered with report-page-relative links rewritten
     # to root-relative ones is *not* needed: render_html emits no internal
     # links at all, only absolute source anchors.
     cards = "".join(_card_li(e) for e in entries[:RECENT_CARDS])
     body = (
-        render_html(latest["report"])
+        banner
+        + render_html(latest["report"])
         + "<h2>최근 보고서</h2>"
         + f'<ul class="cards">{cards}</ul>'
         + f'<p class="meta">전체 {len(entries)}건 — <a href="archive.html">과거 보고서 전체 보기</a></p>'
@@ -275,12 +313,179 @@ def _schedule_page(conn, cutoff: datetime | None) -> str:
     return _page("market-intel — 일정", "".join(parts), depth=0)
 
 
+# --- 운영 상태 / 가설 (2단계-B ST3) ----------------------------------------
+
+def _kst_display(iso: str | None) -> str:
+    """UTC 기록 시각을 화면용 KST 문자열로. 사장님이 보는 시간은 한국 시간이다."""
+    if not iso:
+        return "-"
+    try:
+        return datetime.fromisoformat(iso).astimezone(KST).strftime("%m-%d %H:%M")
+    except ValueError:
+        return str(iso)
+
+
+def _job_description(name: str) -> str:
+    """이 job이 실제로 무엇을 하는지 사람 말로 — job 이름만 늘어놓으면
+    비전공자에게는 아무 정보도 아니다."""
+    from .jobs import JOBS
+
+    spec = JOBS.get(name, {})
+    parts = []
+    if spec.get("collect"):
+        parts.append("수집: " + ", ".join(spec["collect"]))
+    if spec.get("report"):
+        parts.append("리포트: " + TYPE_LABELS.get(spec["report"], spec["report"]))
+    return " · ".join(parts) or "-"
+
+
+def _state_cell(state: str) -> str:
+    cls = "state-ok" if state == "정상" else "state-warn"
+    return f'<span class="{cls}">{_esc(state)}</span>'
+
+
+def _status_page(state: dict) -> str:
+    parts = [
+        "<h1>운영 상태</h1>",
+        f'<p class="stamp">이 페이지 생성 시각: {_esc(state["generated_at_display"])}</p>',
+        '<p class="meta">이 페이지는 자동 실행이 돌 때마다 다시 만들어집니다. '
+        "위 시각이 며칠 전이라면 자동 실행 자체가 멈춘 것입니다.</p>",
+    ]
+    if state["healthy"]:
+        parts.append('<p class="banner ok">지금 정상입니다 — 예정된 작업이 모두 제때 돌았습니다.</p>')
+    else:
+        items = "".join(f"<li>{_esc(a)}</li>" for a in state["alerts"])
+        parts.append(f'<p class="banner warn">확인 필요 — {len(state["alerts"])}건</p><ul>{items}</ul>')
+
+    rows = "".join(
+        "<tr>"
+        f"<td>{_esc(j['job'])}</td>"
+        f"<td>{_esc(_job_description(j['job']))}</td>"
+        f"<td>{_esc(_kst_display(j['last_started']))}</td>"
+        f"<td>{_state_cell(j['state'])}</td>"
+        f"<td>{_esc(j['overdue']) if j['overdue'] else '0'}</td>"
+        f"<td class=\"detail\">{_esc(j['steps_text'] or '-')}</td>"
+        f"<td class=\"detail\">{_esc(j['note'] or '-')}</td>"
+        "</tr>"
+        for j in state["jobs"]
+    )
+    parts.append(
+        "<h2>자동 실행</h2>"
+        '<div class="scroll"><table><thead><tr><th>작업</th><th>하는 일</th><th>마지막 실행</th>'
+        "<th>결과</th><th>밀린 실행</th><th>단계</th><th>비고</th></tr></thead>"
+        f"<tbody>{rows}</tbody></table></div>"
+        # 이 페이지를 만드는 것이 그 job 자신이므로, 방금 그 job은 아직 끝나지
+        # 않은 상태로 찍힌다. 설명이 없으면 매번 이상해 보인다.
+        '<p class="meta">지금 이 페이지를 만든 작업은 `실행 중`으로 보입니다 — '
+        "그 작업의 최종 결과는 다음 실행 때 반영됩니다. "
+        "`기록 없음`은 이 화면이 생긴 뒤로 아직 한 번도 돌지 않았다는 뜻입니다.</p>"
+    )
+
+    collect = state["collect"]
+    parts.append("<h2>마지막 수집</h2>")
+    if collect:
+        prows = "".join(
+            "<tr>"
+            f"<td>{_esc(p['provider'])}</td><td>{_esc(p['status'])}</td>"
+            f"<td>{_esc(p['reason_code'] or '-')}</td>"
+            f"<td class=\"detail\">{_esc(p['safe_detail'] or '-')}</td>"
+            "</tr>"
+            for p in collect["providers"]
+        )
+        parts.append(
+            f'<p class="meta">{_esc(collect["workflow"])} · {_esc(_kst_display(collect["started_at"]))}</p>'
+            '<div class="scroll"><table><thead><tr><th>제공자</th><th>상태</th><th>사유</th>'
+            f"<th>상세</th></tr></thead><tbody>{prows}</tbody></table></div>"
+        )
+    else:
+        parts.append("<p>(수집 기록 없음)</p>")
+
+    interp = state["interpretation"]
+    parts.append("<h2>마지막 AI 해석</h2>")
+    if interp:
+        fields = " ".join(f"{k}={v}" for k, v in (interp.get("fields") or {}).items())
+        parts.append(
+            f'<p>{_esc(interp["status"])} · {_esc(interp["report_type"])} '
+            f'{_esc(interp["report_date"])} · {_esc(_kst_display(interp["created_at"]))}</p>'
+            f'<p class="detail">모델 {_esc(interp.get("model") or "-")} · '
+            f'{_esc(interp.get("prompt_version") or "-")} · 칸별 {_esc(fields or "-")}</p>'
+        )
+    else:
+        parts.append("<p>(해석 기록 없음)</p>")
+
+    parts.append("<h2>미해결 결측</h2>")
+    if state["gaps"]:
+        grows = "".join(
+            "<tr>"
+            f"<td>{_esc(g['gap_id'])}</td><td>{_esc(g['subject'] or '-')}</td>"
+            f"<td class=\"detail\">{_esc(g['reason'] or '-')}</td><td>{_esc(g['status'] or '-')}</td>"
+            "</tr>"
+            for g in state["gaps"]
+        )
+        parts.append('<div class="scroll"><table><thead><tr><th>항목</th><th>대상</th>'
+                     f"<th>사유</th><th>상태</th></tr></thead><tbody>{grows}</tbody></table></div>")
+    else:
+        parts.append("<p>(해당 없음)</p>")
+
+    return _page("market-intel — 운영 상태", "".join(parts), depth=0)
+
+
+def _theses_page(conn, now: datetime) -> str:
+    overview = ops_mod.thesis_overview(conn)
+    changes = ops_mod.thesis_changes(conn, now=now)
+
+    parts = [
+        "<h1>가설</h1>",
+        '<p class="meta">가설 문장은 사람이 쓴 것이고, 판정은 코드가 규칙으로 매긴 것입니다. '
+        "판정 불가는 오류가 아니라 아직 판단할 관측이 모이지 않았다는 뜻입니다.</p>",
+        f"<h2>가설 변화 (최근 {ops_mod.THESIS_CHANGE_WINDOW_DAYS}일)</h2>",
+    ]
+    if changes:
+        rows = "".join(
+            "<tr>"
+            f"<td>{_esc(c['report_date'])}</td><td>{_esc(c['thesis_id'])}</td>"
+            f"<td>{_esc(c['prev_verdict'] or '(없음)')} → {_esc(c['verdict'])}</td>"
+            f"<td class=\"detail\">{_esc(c['statement'] or '-')}</td>"
+            "</tr>"
+            for c in changes
+        )
+        parts.append('<div class="scroll"><table><thead><tr><th>일자</th><th>가설</th>'
+                     f"<th>판정 변화</th><th>내용</th></tr></thead><tbody>{rows}</tbody></table></div>")
+    else:
+        parts.append("<p>(해당 없음 — 판정이 뒤집힌 가설이 없습니다.)</p>")
+
+    for theme in overview:
+        parts.append(f"<h2>{_esc(theme['label'])}</h2>")
+        if not theme["theses"]:
+            parts.append('<p class="meta">가설 없음</p>')
+            continue
+        for t in theme["theses"]:
+            verdict = t["verdict"] or "판정 없음"
+            cls = "state-ok" if verdict == "유지" or verdict == "강화" else "state-warn"
+            indicators = ", ".join(t["leading_indicators"]) if t["leading_indicators"] else "-"
+            parts.append(
+                f'<p><strong>{_esc(t["thesis_id"])}</strong> '
+                f'<span class="{cls}">{_esc(verdict)}</span></p>'
+                f"<p>{_esc(t['statement'])}</p>"
+                f'<p class="detail">근거: {_esc(t["reason"] or "-")} · 선행 지표: {_esc(indicators)} '
+                f'· 다음 점검일: {_esc(t["next_check_date"])}</p>'
+            )
+    return _page("market-intel — 가설", "".join(parts), depth=0)
+
+
 # --- entry point ----------------------------------------------------------
 
-def build_site(conn, reports_root: Path | None = None, docs_root: Path | None = None) -> dict:
-    """Regenerate `docs/` in full. Returns the B13 `site build` counters."""
+def build_site(conn, reports_root: Path | None = None, docs_root: Path | None = None,
+               now: datetime | None = None) -> dict:
+    """Regenerate `docs/` in full. Returns the B13 `site build` counters.
+
+    `now` is the wall clock **for the operational pages only** (`status.html`
+    의 생성 시각·지연 판정, `theses.html`의 최근 90일 창) — spec SA-12가 명시한
+    예외다. 리포트·일정 페이지의 기준선은 지금도 `schedule_cutoff()`, 즉 그
+    리포트들의 정보차단선이며 이 인자는 거기에 닿지 않는다."""
     reports_root = Path(reports_root) if reports_root else PROJECT_ROOT / "reports"
     docs_root = Path(docs_root) if docs_root else PROJECT_ROOT / "docs"
+    now = (now or datetime.now(KST)).astimezone(KST)
 
     entries = load_reports(reports_root) if reports_root.exists() else []
 
@@ -300,13 +505,17 @@ def build_site(conn, reports_root: Path | None = None, docs_root: Path | None = 
         out.write_text(_report_page(entry), encoding="utf-8")
         pages += 1
 
-    (docs_root / "index.html").write_text(_index_page(entries), encoding="utf-8")
+    ops_state = ops_mod.status(conn, now=now)
+    banner = _banner(ops_state, ops_mod.thesis_changes(conn, now=now, days=BANNER_CHANGE_DAYS))
+    (docs_root / "index.html").write_text(_index_page(entries, banner), encoding="utf-8")
     (docs_root / "archive.html").write_text(_archive_page(entries), encoding="utf-8")
     pages += 2
 
     cutoff = schedule_cutoff(entries)
     (docs_root / "schedule.html").write_text(_schedule_page(conn, cutoff), encoding="utf-8")
-    pages += 1
+    (docs_root / "status.html").write_text(_status_page(ops_state), encoding="utf-8")
+    (docs_root / "theses.html").write_text(_theses_page(conn, now), encoding="utf-8")
+    pages += 3
 
     latest = f"{entries[0]['report'].report_type}/{entries[0]['stem']}" if entries else ""
     return {
