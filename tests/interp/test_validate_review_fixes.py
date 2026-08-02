@@ -211,3 +211,60 @@ def test_entry_timing_recommendation_is_blocked():
 def test_entry_word_in_a_non_recommendation_sentence_passes():
     """`진입`이 들어갔다는 이유만으로 막으면 안 된다 — 규칙 4의 첫 교훈."""
     assert validate_mod.check(_report(), "신규 진입 기업이 늘어난 업종이다.") == []
+
+
+# --- 규칙 9: 인용에 붙은 숫자가 그 인용의 숫자인가 (발행 사고 2026-08-03) ----
+#
+# 2026-08-03 주간 시작 브리핑이 `KOSPI 가 F45 에 기록된 전일대비 26.81% 급등`
+# 을 `status=ok`로 발행했다. F45는 KOSPI(+17.91%)이고 26.81%는 **삼성전자**의
+# 등락률이다. 규칙 6은 26.81이 리포트 어딘가에 있다는 이유로(있다, 다른 행에)
+# 통과시켰고 규칙 8은 이름·종류어만 보고 숫자는 보지 않았다.
+
+def test_number_from_another_row_pinned_to_a_citation_is_blocked():
+    """발행된 그 문장의 구조 그대로 — F10은 KOSPI(+17.91%), 11.63%는 KOSDAQ."""
+    v = validate_mod.check(_report(), "KOSPI가 F10에 기록된 전일대비 11.63% 급등을 보였다.")
+    assert ("citation_num", "F10 11.63") in v, v
+
+
+def test_the_rows_own_number_next_to_its_citation_passes():
+    """같은 문장 구조라도 제 숫자를 말하면 통과해야 한다 — 안 그러면 이 규칙은
+    인용을 단 문장을 전부 죽인다."""
+    assert validate_mod.check(_report(), "KOSPI가 F10에 기록된 전일대비 17.91% 급등을 보였다.") == []
+    assert validate_mod.check(_report(), "KOSDAQ은 F11에서 11.63% 올랐다.") == []
+
+
+def test_number_the_report_never_states_stays_rule_6s_job():
+    """접지 자체가 안 되는 숫자는 규칙 6이 잡는다 — 규칙 9가 겹쳐 세지 않는다."""
+    v = validate_mod.check(_report(), "KOSPI가 F10에서 88.12% 급등했다.")
+    assert any(kind == "num" for kind, _t in v), v
+    assert not any(kind == "citation_num" for kind, _t in v), v
+
+
+def test_number_in_a_later_clause_is_not_pinned_to_the_citation():
+    """절 경계(쉼표) 뒤는 다른 얘기다. 여기서 막으면 정당한 비교 문장이 죽는다."""
+    assert validate_mod.check(
+        _report(), "F10은 강세였고, KOSDAQ은 11.63% 올랐다."
+    ) == []
+
+
+def test_citation_of_a_numberless_row_grounds_nothing():
+    """공시 행(F4)은 자기 숫자가 없다 — 창 안 숫자를 전부 거절하면 안 된다."""
+    assert not any(
+        kind == "citation_num"
+        for kind, _t in validate_mod.check(_report(), "F4 공시 이후 17.91% 올랐다.")
+    )
+
+
+def test_a_citation_list_grounds_against_the_whole_list():
+    """실 ollama 60필드 측정에서 규칙 9의 **유일한 오탐**이 이 모양이었다:
+
+        `F96 과 F103 에 따르면 KOSPI 가 17.9% 급등하고 원화가 약세인 …`
+
+    F103은 원/달러다. 17.9%는 앞의 F96(KOSPI) 것이고, 두 인용을 앞에 나란히
+    세운 뒤 순서대로 서술하는 정당한 문장이다. 나열은 한 무리로 접지한다."""
+    assert validate_mod.check(
+        _report(), "F10 과 F11 에 따르면 KOSDAQ이 11.63% 올랐다."
+    ) == []
+    # 나열이 아니면(사이에 다른 말이 끼면) 그대로 각자 접지한다
+    v = validate_mod.check(_report(), "F10은 강세였다 F11 기준 17.91% 급등이다.")
+    assert ("citation_num", "F11 17.91") in v, v

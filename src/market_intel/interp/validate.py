@@ -241,6 +241,15 @@ _ATTRIB_KIND_WINDOW = 20
 # 경계다 — `…에 발표될 X`는 인용한 사실이 아니라 다가오는 일정 얘기다. `.`는
 # 소수점에서도 걸리지만 창을 짧게 만들 뿐이라 오탐 방향으로만 작동한다.
 _ATTRIB_STOP_RE = re.compile(r"[,.\n·;]|\d{4}-\d{2}-\d{2}")
+# 규칙 9는 같은 경계를 쓰되 **소수점에서는 끊지 않는다**. 위의 `.`는 규칙 8을
+# 짧게 만들 뿐이지만(오탐 방향), 규칙 9에서 `26.81%`를 `26`으로 잘라 놓으면
+# 엉뚱한 토큰을 신고하고 맞는 문장(`29.95%` -> `29`)까지 거절한다 — 실측함.
+_ATTRIB_NUM_STOP_RE = re.compile(r"[,\n·;]|(?<!\d)\.|\.(?!\d)|\d{4}-\d{2}-\d{2}")
+# 인용 나열(`F96 과 F103 에 따르면 KOSPI 가 17.9% 급등하고 원화가 약세인`).
+# 뒤따르는 숫자는 **나열 전체**에 걸린 것이지 마지막 인용의 것이 아니다 —
+# 실 ollama 60필드 측정에서 규칙 9의 유일한 오탐이 이 모양이었다. 앞 인용과
+# 이 인용 사이에 접속 조사/기호밖에 없으면 한 무리로 보고 접지 집합을 합친다.
+_ATTRIB_JOINER_RE = re.compile(r"^\s*(?:[과와랑]|,|·|및|그리고)?\s*$")
 # 다이제스트와 동일한 F-번호 문법. 한국어 조사가 바로 붙으므로 오른쪽 `\b`는
 # 쓸 수 없다(digest._FNUM_RE와 같은 이유).
 _ATTRIB_FNUM_RE = re.compile(r"(?<![A-Za-z0-9])F(\d+)(?!\d)")
@@ -348,15 +357,54 @@ def _leading_name(window: str, names: list[str]) -> tuple[str, int] | None:
     return None
 
 
+def _row_numbers(row: dict) -> set[float]:
+    """그 행 **자신이** 말하는 숫자 전부 — 규칙 9의 접지 집합.
+
+    `label`/`value`/`comparison`에 적힌 숫자 + `raw_value` + `delta_pct` +
+    `series`(추이 그래프의 입력이고 전부 그 행의 관측값이다). 리포트 전체의
+    숫자 집합(`allowed_numbers`)과 달리 **행 단위**라서, 같은 리포트 안의
+    다른 종목 숫자를 이 행에 붙인 문장이 여기서 걸린다.
+
+    수량이 아닌 행 — 공시(`raw_value`가 접수번호 문자열) — 은 빈 집합이다.
+    접수번호의 자릿수를 "그 행의 숫자"로 세면 `0001628280-26-048078`이 1628280을
+    말한 것이 되고, 반대로 그 행을 인용한 문장의 숫자를 전부 거절하게 된다."""
+    raw = row.get("raw_value")
+    numeric_raw = isinstance(raw, (int, float)) and not isinstance(raw, bool)
+    if not numeric_raw and not isinstance(row.get("delta_pct"), (int, float)):
+        return set()
+    nums: set[float] = set()
+    for key in ("label", "value", "comparison"):
+        for _m, _tok, value, _dec, _hu, _uc, _latin in _numeric_tokens(str(row.get(key) or "")):
+            nums.add(value)
+    for key in ("raw_value", "delta_pct"):
+        v = row.get(key)
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            nums.add(float(v))
+    for v in row.get("series") or []:
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            nums.add(float(v))
+    return nums
+
+
+def _grounded_in(value: float, decimals: int, pool: set[float]) -> bool:
+    """규칙 6과 같은 반올림 규약: 정수 인용은 정확 일치, 소수 인용은 그 자릿수."""
+    if decimals == 0:
+        return value in pool
+    return any(round(a, decimals) == round(value, decimals) for a in pool)
+
+
 def _attribution(report: dict, text: str) -> list[tuple[str, str]]:
     index = fact_index(report)
     if not index:
         return []
     kinds = [_row_kinds(row) for row in index]
     names = [_row_names(row) for row in index]
+    row_nums = [_row_numbers(row) for row in index]
     all_names = sorted({n for group in names for n in group}, key=len, reverse=True)
+    report_nums = allowed_numbers(report)
 
     violations: list[tuple[str, str]] = []
+    text_no_dates = _DATE_RE.sub(lambda m: " " * len(m.group(0)), text)
     cites = list(_ATTRIB_FNUM_RE.finditer(text))
     for i, m in enumerate(cites):
         n = int(m.group(1))
@@ -381,7 +429,63 @@ def _attribution(report: dict, text: str) -> list[tuple[str, str]]:
             # 나왔다` 같은 정당한 문장이 매일 버려진다.
             if found and not any(c & kinds[n - 1] for _t, c in found):
                 violations.append(("attribution", f"F{n} {found[0][0]}"))
+
+        num_window = text_no_dates[m.end() : min(limit, m.end() + _ATTRIB_WINDOW)]
+        num_stop = _ATTRIB_NUM_STOP_RE.search(num_window)
+        if num_stop:
+            num_window = num_window[: num_stop.start()]
+        own = set(row_nums[n - 1])
+        for j in range(i - 1, -1, -1):  # 앞으로 이어진 인용 나열을 모두 흡수
+            prev = cites[j]
+            if not _ATTRIB_JOINER_RE.match(text[prev.end() : cites[j + 1].start()]):
+                break
+            p = int(prev.group(1))
+            if 1 <= p <= len(index):
+                own |= row_nums[p - 1]
+        violations.extend(_citation_numbers(num_window, n, own, report_nums))
     return violations
+
+
+def _citation_numbers(
+    window: str, n: int, own: set[float], report_nums: set[float]
+) -> list[tuple[str, str]]:
+    """규칙 9 (`citation_num`) — 인용에 붙은 숫자가 **그 인용의 숫자**인가.
+
+    2026-08-03 발행 사고: 주간 시작 브리핑이
+
+        `KOSPI 가 F45 에 기록된 전일대비 26.81% 급등과 함께 …`
+
+    를 `status=ok`로 내보냈다. F45는 KOSPI(`^KS11`, 전일대비 +17.91%)이고
+    26.81%는 **삼성전자**의 등락률이다. 규칙 6은 26.81이 리포트 어딘가에
+    있다는 이유로 통과시켰고(있긴 하다, 다른 행에), 규칙 8은 이름·종류어만
+    보고 숫자는 보지 않았다. 즉 접지 검사에 "그 숫자가 누구 것인가"라는
+    축이 통째로 비어 있었다.
+
+    막는 조건을 좁게 잡는다 — 창 안의 숫자가
+      (1) 그 행 자신의 숫자가 아니고,
+      (2) 리포트의 **다른** 곳에는 있는(= 규칙 6이 통과시킬) 숫자이며,
+      (3) 그 행이 자기 숫자를 하나라도 갖고 있을 때
+    만 위반이다. (2)를 요구하는 이유: 접지 자체가 안 되는 숫자는 이미 규칙 6이
+    잡으므로 여기서 또 잡으면 위반만 두 번 세는 것이고, 리포트에 없는 어림수
+    (`목표 2%`)까지 이 규칙이 떠안으면 오탐 발생기가 된다. (3)은 공시 행처럼
+    숫자가 없는 행에서 창 안 숫자를 전부 거절하는 것을 막는다.
+
+    못 막는 것은 그대로다: F-번호를 인용하지 않은 귀속 오류(strict xfail이
+    지키는 그 구멍)와, 창(40자·절 경계) 밖으로 나간 숫자."""
+    if not own:
+        return []
+    out: list[tuple[str, str]] = []
+    for _m, tok, value, decimals, has_unit, _uc, _latin in _numeric_tokens(window):
+        if decimals == 0 and abs(value) <= _SMALL_INT_EXEMPT_MAX and not has_unit:
+            continue  # 규칙 6과 같은 면제: 개수 세는 말("2개 분기")
+        if _grounded_in(value, decimals, own):
+            continue
+        # 부호를 뒤집은 재표현(`-0.21%`를 `0.21% 하락`)도 그 행의 숫자다.
+        if _grounded_in(-value, decimals, own):
+            continue
+        if _grounded_in(value, decimals, report_nums):
+            out.append(("citation_num", f"F{n} {tok}"))
+    return out
 
 
 def _unit_class(after: str) -> str | None:
