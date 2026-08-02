@@ -1,12 +1,12 @@
 {
   "schema_version": "2a.2",
   "report_type": "morning",
-  "report_date": "2026-08-01",
-  "cutoff_kst": "2026-08-02T22:00:00+09:00",
-  "cutoff_utc": "2026-08-02T13:00:00+00:00",
-  "generated_at": "2026-08-02T12:37:01+00:00",
+  "report_date": "2026-08-02",
+  "cutoff_kst": "2026-08-02T23:30:00+09:00",
+  "cutoff_utc": "2026-08-02T14:30:00+00:00",
+  "generated_at": "2026-08-02T12:43:06+00:00",
   "title": "모닝",
-  "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · 달러/원 1,436.6원(+1.1%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
+  "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · 달러/원 1,436.6원(+0.0%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
   "breadth": "Core 16 중 14/16개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 4/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 2/2 · 헬스케어 0/1",
   "data_status": "source_verified",
   "facts": [
@@ -52,14 +52,14 @@
     {
       "label": "연방기금금리 상단(목표)",
       "value": "3.75 %",
-      "comparison": "직전 관측 없음",
+      "comparison": "직전 관측 대비 +0.00%",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DFEDTARU&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T10:20:16+00:00",
+      "known_at": "2026-08-02T12:42:56+00:00",
       "subject": "DFEDTARU",
       "metric": "value",
       "raw_value": 3.75,
-      "delta_pct": null,
+      "delta_pct": 0.0,
       "series": []
     },
     {
@@ -661,6 +661,44 @@
       ]
     },
     {
+      "label": "다우존스",
+      "value": "52,485.03",
+      "comparison": "전일대비 +0.53%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^DJI",
+      "data_status": "source_verified",
+      "known_at": "2026-08-02T12:42:35+00:00",
+      "subject": "^DJI",
+      "metric": "price_close",
+      "raw_value": 52485.03125,
+      "delta_pct": 0.5305170575393839,
+      "series": [
+        52210.078125,
+        52747.3203125,
+        51594.140625,
+        52208.05859375,
+        52485.03125
+      ]
+    },
+    {
+      "label": "러셀2000",
+      "value": "2,931.34",
+      "comparison": "전일대비 -0.50%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^RUT",
+      "data_status": "source_verified",
+      "known_at": "2026-08-02T12:42:35+00:00",
+      "subject": "^RUT",
+      "metric": "price_close",
+      "raw_value": 2931.340087890625,
+      "delta_pct": -0.5010016386533243,
+      "series": [
+        2948.0400390625,
+        2953.800048828125,
+        2906.31005859375,
+        2946.10009765625,
+        2931.340087890625
+      ]
+    },
+    {
       "label": "SOX(필라델피아 반도체)",
       "value": "11,311.08",
       "comparison": "전일대비 +0.07%",
@@ -720,20 +758,20 @@
     {
       "label": "달러/원",
       "value": "1,436.6원",
-      "comparison": "전일대비 +1.13%",
+      "comparison": "전일대비 +0.00%",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/KRW=X",
       "data_status": "source_verified",
-      "known_at": "2026-08-01T09:36:56+00:00",
+      "known_at": "2026-08-02T12:42:35+00:00",
       "subject": "KRW=X",
       "metric": "price_close",
       "raw_value": 1436.5999755859375,
-      "delta_pct": 1.126284687805987,
+      "delta_pct": 0.0,
       "series": [
-        1458.010009765625,
         1464.43994140625,
         1453.1600341796875,
         1442.280029296875,
         1420.5999755859375,
+        1436.5999755859375,
         1436.5999755859375
       ]
     },
@@ -1085,7 +1123,7 @@
     {
       "area": "한국 수급(외국인/기관/개인)",
       "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
-      "since": "2026-08-02T12:37:01+00:00",
+      "since": "2026-08-02T12:43:06+00:00",
       "gap_id": "kr_flows:net_buy"
     }
   ],
@@ -1159,7 +1197,7 @@
     "no_facts_before_cutoff": false,
     "counts": {
       "facts": 44,
-      "market_reaction": 19,
+      "market_reaction": 21,
       "events": 7,
       "schedule_changes": 6,
       "missing": 1

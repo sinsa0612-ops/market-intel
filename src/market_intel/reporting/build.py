@@ -74,9 +74,15 @@ _UNIVERSE_BY_SYMBOL = {m["symbol"]: m for m in UNIVERSE}
 
 # spec §6.1 "지수/위험선호/실물 변수" — everything that is not a Core16
 # equity but still belongs in the daily "시장의 체온" snapshot.
+#
+# **Derived from the universe, never hand-listed.** This was a second copy of
+# the symbol list, so adding an index to `universe.py` collected it but never
+# showed it — the failure mode is silent, and it is how a tracked index goes
+# missing from the report nobody notices. Declaration order in `universe.py`
+# is the display order (지수 → 위험선호 → 실물).
 _MARKET_REACTION_SYMBOLS = [
-    "^KS11", "^KQ11", "^GSPC", "^IXIC", "^SOX", "^VIX", "^TNX",
-    "KRW=X", "DX-Y.NYB", "CL=F", "GC=F", "HG=F",
+    m["symbol"] for m in UNIVERSE
+    if not m["core16"] and m["asset_type"] in ("index", "rate", "fx", "commodity")
 ]
 _CORE16_MOVE_THRESHOLD = 3.0  # spec §6.1 "Core 16 중 하루 3% 이상 움직인 기업만"
 _CLOSE_DELTA_MANDATORY = {"^KS11", "KRW=X"}  # spec B6 close_delta 선정 규칙

@@ -70,6 +70,13 @@ UNIVERSE: list[dict] = [
     _sym("^KQ11", "KR", "KR", "index", "KOSDAQ", unit="point", name_ko="KOSDAQ"),
     _sym("^GSPC", "US", "US", "index", "S&P 500", unit="point", name_ko="S&P 500"),
     _sym("^IXIC", "US", "US", "index", "Nasdaq Composite", unit="point", name_ko="나스닥"),
+    # CEO 요청(2026-08-02)으로 추가. 명세 §6.1의 지수 목록(KOSPI/KOSDAQ/
+    # S&P 500/Nasdaq/SOX)을 넓힌 것이며, §12 운영규칙의 "연간: 대표성을 잃은
+    # 기업·지표 교체 검토"가 관측군을 고정이 아니라 갱신 대상으로 두고 있다.
+    # 러셀2000은 중소형주라 대형주 중심인 S&P·나스닥이 못 보여주는 시장 폭을
+    # 드러낸다. 닛케이·항셍은 데이터는 오지만 §14의 범위(미국·한국) 밖이라 뺐다.
+    _sym("^DJI", "US", "US", "index", "Dow Jones Industrial Average", unit="point", name_ko="다우존스"),
+    _sym("^RUT", "US", "US", "index", "Russell 2000", unit="point", name_ko="러셀2000"),
     _sym("^SOX", "US", "US", "index", "PHLX Semiconductor", unit="point", name_ko="SOX(필라델피아 반도체)"),
     _sym("^VIX", "US", "US", "index", "CBOE VIX", unit="point", name_ko="VIX"),
     _sym("^TNX", "US", "US", "rate", "US 10Y Treasury Yield", unit="percent", name_ko="미 10년물"),
