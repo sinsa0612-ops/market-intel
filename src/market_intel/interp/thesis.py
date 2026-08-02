@@ -215,7 +215,11 @@ def evaluate_atom(conn, atom: dict, cutoff) -> tuple[str, dict]:
             return "UNKNOWN", {"observed": len(obs), "required": 1, "message": f"{subject} {metric} 관측 없음"}
         latest_at, latest_val = obs[0]
         ok = _cmp(latest_val, atom["op"], atom["value"])
-        msg = f"{subject} {metric} 최신값 {latest_val:g} {atom['op']} {atom['value']:g}"
+        # A bare comparison reads as an assertion. Printed without its truth
+        # value, a FALSE atom became the sentence "최신값 4.68 <= 3" — a false
+        # statement published as the reason for a verdict (final-review F1).
+        msg = (f"{subject} {metric} 최신값 {latest_val:g}"
+               f" (조건 {atom['op']} {atom['value']:g} {'충족' if ok else '미충족'})")
         return ("TRUE" if ok else "FALSE"), {
             "observed": len(obs), "latest_value": latest_val, "latest_event_at": latest_at, "message": msg,
         }
@@ -237,7 +241,8 @@ def evaluate_atom(conn, atom: dict, cutoff) -> tuple[str, dict]:
             }
         pct = (latest_val - base_val) / abs(base_val) * 100
         ok = _cmp(pct, atom["op"], atom["value"])
-        msg = f"{subject} {metric} {lookback}구간 전 대비 {pct:.2f}% {atom['op']} {atom['value']:g}%"
+        msg = (f"{subject} {metric} {lookback}구간 전 대비 {pct:.2f}%"
+               f" (조건 {atom['op']} {atom['value']:g}% {'충족' if ok else '미충족'})")
         return ("TRUE" if ok else "FALSE"), {"observed": len(obs), "change_pct": pct, "message": msg}
 
     if kind == "consecutive":
@@ -343,6 +348,15 @@ def review(conn, theses: list[dict], cutoff, report_type: str, report_date: str)
                 "evidence_json": json.dumps(evidence_payload, ensure_ascii=False),
                 "total_atoms": len(all_ev), "evaluable_atoms": evaluable,
                 "all_evals": falsify_ev + weaken_ev + strengthen_ev,
+                # Which group each verdict came from, so the printed reason can
+                # cite the atom that actually decided it. `all_evals` alone
+                # loses that: it is a flat concatenation, and reading the first
+                # entry off it published "강화 — DGS10 최신값 4.68 <= 3" — the
+                # verdict was right but the sentence cited a falsify condition
+                # that had NOT fired, stated as though it had (final-review F1).
+                "evals_by_group": {
+                    "falsify": falsify_ev, "weaken": weaken_ev, "strengthen": strengthen_ev,
+                },
             }
         )
     return results
@@ -353,9 +367,28 @@ def review(conn, theses: list[dict], cutoff, report_type: str, report_date: str)
 # and the next_check suffix)
 # ---------------------------------------------------------------------------
 
+_VERDICT_GROUP = {"무효": "falsify", "약화": "weaken", "강화": "strengthen"}
+
+
 def _first_reason(row: dict) -> str:
-    for e in row["all_evals"]:
-        if e["status"] != "UNKNOWN" or row["verdict"] == "판정 불가":
+    """The condition that actually produced this verdict — never merely the
+    first one in the list.
+
+    A verdict is caused by a TRUE atom in exactly one group: 무효 by falsify,
+    약화 by weaken, 강화 by strengthen. Reading `all_evals[0]` instead printed
+    whichever atom happened to come first, which is always a falsify atom, and
+    printed it whether it was true or false: the published line read
+    "강화 — DGS10 value 최신값 4.68 <= 3" (final-review F1). The verdict was
+    correct; the sentence was arithmetically false."""
+    group = _VERDICT_GROUP.get(row["verdict"])
+    evals = (row.get("evals_by_group") or {}).get(group, []) if group else []
+    fired = [e for e in evals if e["status"] == "TRUE"]
+    if fired:
+        return " · ".join(e["detail"]["message"] for e in fired)
+    # No group matched (or the row predates evals_by_group): fall back to any
+    # atom that is actually true, never to one that is false or unknown.
+    for e in row.get("all_evals", []):
+        if e["status"] == "TRUE":
             return e["detail"]["message"]
     return "근거 없음"
 

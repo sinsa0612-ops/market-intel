@@ -4,7 +4,7 @@
   "report_date": "2026-08-01",
   "cutoff_kst": "2026-08-02T12:00:00+09:00",
   "cutoff_utc": "2026-08-02T03:00:00+00:00",
-  "generated_at": "2026-08-02T01:57:53+00:00",
+  "generated_at": "2026-08-02T02:46:49+00:00",
   "title": "모닝",
   "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · 달러/원 1,436.6원(+1.1%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
   "breadth": "Core 16 중 14/16개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 4/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 2/2 · 헬스케어 0/1",
@@ -1085,7 +1085,7 @@
     {
       "area": "한국 수급(외국인/기관/개인)",
       "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
-      "since": "2026-08-02T01:57:53+00:00",
+      "since": "2026-08-02T02:46:49+00:00",
       "gap_id": "kr_flows:net_buy"
     }
   ],
@@ -1148,10 +1148,10 @@
   "interpretation": {
     "reading": "",
     "counter_reading": "",
-    "thesis_impact": "",
+    "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 0 · 약화 0 · 무효 0 · 판정 불가 1.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 판정 불가 — 관측 부족(MSFT free_cash_flow 관측 부족(1개, 필요 3개)).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.68 (조건 >= 4.5 충족).",
     "next_check": "",
-    "generated_by": "",
-    "generated_at": ""
+    "generated_by": "규칙 판정 · thesis/2b.1",
+    "generated_at": "2026-08-02T02:46:49+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -1163,6 +1163,43 @@
       "events": 7,
       "schedule_changes": 6,
       "missing": 1
+    },
+    "interpretation": {
+      "engine_version": "2b.1",
+      "status": "disabled",
+      "model": null,
+      "prompt_version": "interpretation_v2",
+      "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
+      "generated_at": "2026-08-02T02:46:49+00:00",
+      "elapsed_ms": 0,
+      "attempts": 0,
+      "fields": {
+        "reading": "empty",
+        "counter_reading": "empty",
+        "thesis_impact": "rules",
+        "next_check": "empty"
+      },
+      "violations": {},
+      "evidence": [],
+      "evidence_unresolved": [],
+      "digest_truncated": false,
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "강화",
+          "changed": 0
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "판정 불가",
+          "changed": 0
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": 0
+        }
+      ]
     }
   }
 }

@@ -582,3 +582,67 @@ def test_render_next_check_suffix_includes_reviewed_theses_date():
     results = [{"thesis_id": "t1", "theme": "ai_semi", "slot": 1, "verdict": "유지", "next_check_date": "2026-11-01"}]
     text = thesis_mod.render_next_check_suffix(results, report=None)
     assert "2026-11-01" in text
+
+
+# --- final-review.md F1: 판정과 사유의 정합 -------------------------------
+
+def _f1_thesis(tid, *, falsify, weaken=None, strengthen=None):
+    return {
+        "thesis_id": tid, "theme": "fin_credit", "slot": 1,
+        "statement": "테스트", "leading_indicators": ["X value"],
+        "next_check_date": "2026-12-01",
+        "conditions": {"falsify": falsify, "weaken": weaken or [], "strengthen": strengthen or []},
+    }
+
+
+def _f1_atom(op, value, aid):
+    return {"id": aid, "kind": "threshold", "subject": "X", "metric": "value",
+            "category": "macro", "op": op, "value": value}
+
+
+def test_reason_cites_the_condition_that_actually_fired(conn, raw_dir):
+    """사유는 판정을 만든 조건이어야 한다 — 목록의 첫 조건이 아니라.
+
+    발행된 실물이 `강화 — DGS10 value 최신값 4.68 <= 3` 이었다(final-review F1).
+    판정(강화)은 옳았지만 인용된 것은 **발동하지 않은 반증 조건**이었고,
+    4.68 <= 3 은 산술적으로 거짓인 문장이 매일 리포트에 실린 것이다.
+    """
+    from market_intel.interp import thesis as T
+
+    seed_fact(conn, raw_dir, "fred", macro_fc("X", "2026-07-01T00:00:00+00:00", 4.68),
+              "2026-07-02T00:00:00+00:00")
+    cutoff = datetime(2026, 8, 1, tzinfo=timezone.utc)
+
+    # falsify(<=3)는 거짓, strengthen(>=4.5)은 참 -> 판정은 강화
+    reviews = T.review(
+        conn,
+        [_f1_thesis("t1", falsify=[_f1_atom("<=", 3, "f1")], strengthen=[_f1_atom(">=", 4.5, "s1")])],
+        cutoff, "morning", "2026-08-01",
+    )
+    assert reviews[0]["verdict"] == "강화"
+    text = T.render_impact(reviews)
+
+    # 발동한 조건(>= 4.5)이 인용되고, 발동하지 않은 반증 조건은 인용되지 않는다
+    assert ">= 4.5" in text
+    assert "<= 3" not in text, f"발동하지 않은 조건이 사유로 실렸다: {text}"
+
+
+def test_comparison_never_printed_without_its_truth_value(conn, raw_dir):
+    """비교식은 충족/미충족 없이 단정문으로 찍히면 안 된다.
+
+    `최신값 4.68 <= 3` 처럼 참·거짓 표시 없는 비교식은 그 자체로 거짓 진술이
+    된다. 조건이 거짓인 원자가 어떤 경로로든 출력되더라도 문장은 참이어야 한다.
+    """
+    from market_intel.interp import thesis as T
+
+    seed_fact(conn, raw_dir, "fred", macro_fc("X", "2026-07-01T00:00:00+00:00", 4.68),
+              "2026-07-02T00:00:00+00:00")
+    cutoff = datetime(2026, 8, 1, tzinfo=timezone.utc)
+
+    reviews = T.review(
+        conn, [_f1_thesis("t2", falsify=[_f1_atom("<=", 3, "f1")])], cutoff, "morning", "2026-08-01",
+    )
+    messages = [e["detail"]["message"] for e in reviews[0]["all_evals"]]
+    for msg in messages:
+        if "<=" in msg or ">=" in msg:
+            assert "충족" in msg or "미충족" in msg, f"참·거짓 표시 없는 비교식: {msg}"
