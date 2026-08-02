@@ -76,7 +76,20 @@ JOBS: dict[str, dict] = {
 PUBLISH_SCRIPT = "scripts/publish.sh"
 # publish.sh exit codes that mean "a safety gate fired", as opposed to
 # "the network was down". Only the former makes the job itself fail.
-PUBLISH_HARD_FAILURES = {3, 4}
+#
+# 5(미결재 소스가 원격보다 앞서 푸시 거부)가 빠져 있어서, 가드가 매 실행마다
+# 푸시를 거부하는 동안에도 job은 초록이었다(final-review.md F6). 이 상태는
+# 오프라인과 성질이 다르다 — 사람이 결재해 밀기 전까지 **스스로 풀리지 않고**,
+# 그동안 공개 사이트는 조용히 갱신을 멈춘다. 알림 없이 며칠이 지나는 것이
+# 이 시스템에서 가장 조용한 실패라 5를 실패로 올린다.
+PUBLISH_BLOCKED_EXIT = 5
+PUBLISH_HARD_FAILURES = {3, 4, PUBLISH_BLOCKED_EXIT}
+# `job_runs.note`에 남기는 사유. 운영 상태 페이지(`docs/status.html`)의 사유
+# 칸이 이 문자열을 그대로 싣는다(`interp/ops.py:status` -> `site._status_page`).
+PUBLISH_BLOCKED_NOTE = (
+    "publish_blocked=미결재 소스가 원격보다 앞서 있어 푸시를 거부했다 — "
+    "사람이 그 커밋을 결재해 밀기 전까지 사이트는 갱신되지 않는다"
+)
 
 
 # --- lock -----------------------------------------------------------------
@@ -322,6 +335,8 @@ def run_job(settings, name: str, *, publish: bool = True, now: datetime | None =
 
         if publish:
             steps["publish"], result["exit"] = _run_publish(repo_root)
+            if result["exit"] == PUBLISH_BLOCKED_EXIT:
+                notes.append(PUBLISH_BLOCKED_NOTE)
 
         # 마지막에 한 번 더 여는 이유: publish는 외부 프로세스(git)를 돌리므로
         # 그 동안 DB 커넥션을 붙들고 있지 않는다(위 블록이 이미 그 형태였다).

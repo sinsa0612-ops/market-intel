@@ -56,6 +56,30 @@ of them is pinned by `tests/interp/test_validate_adversarial.py`:
   Korean rendering. Absolute-value restatements are now accepted *only*
   when the surrounding wording states the matching direction, which as a
   side effect catches the inverse hallucination (`0.21% 상승`).
+
+--- 2026-08-02 최종 검수 수리 (final-review.md F2 · F5) ---
+
+적대 검수가 실 LLM 생성물에서 재현한 것: 이 검증기는 **숫자의 실재**만 보고
+**그 숫자가 무엇인지**는 아무도 보지 않는다. 발행된 문장 —
+
+    "F84 JPMorgan Chase의 영업현금흐름은 분기별로 큰 폭으로 감소했으나 …"
+
+F84는 SEC 접수번호(`filing_event`)였다. 현금흐름 수치는 어디에도 없고, 그
+문단에는 숫자가 아예 없어 규칙 6이 볼 것도 없었다(`status=ok`로 발행).
+
+- 규칙 8 (`attribution`, 신규): 다이제스트가 이미 붙여 준 F-번호를 그 항목의
+  실제 `label`/`metric`과 대조한다. 접지 가능한 등급만 막고(주체 이름 바꿔치기,
+  항목 종류 바꿔치기) 나머지는 남긴다 — 아래 규칙 8 주석의 잔여 위험 목록.
+- 규칙 3: `[조억만]`에 `천`이 없어 `4천억원`이 통과했다(미탐 C10).
+- 규칙 4: `지금 사도 괜찮은 국면` / `신규 진입에 유리한 구간` 같은 완곡한 매매
+  권유가 패턴 밖이었다(미탐 G4/G5).
+- 규칙 6: 정수 인용의 ±0.5 반올림 허용이 `실업률 15%`(실제 15.3)와
+  `S&P500 18% 상승`(실제 17.9)을 흡수했다(미탐 A4/A5). 정수만 정확 일치로
+  좁혔고, 소수 인용의 반올림(`약 4.7%` <- 4.68)은 그대로 둔다.
+
+오탐 비용 실측(수리 전/후 동일 생성물): 자작 코퍼스 57건 오탐 0 -> 0,
+실 ollama 20회(quarterly 10 + morning 10, 60필드) 거부 0 -> 2 — 2건 모두
+규칙 8이 `filing_event`를 실적/현금흐름이라 부른 문장을 잡은 것이다.
 """
 from __future__ import annotations
 
@@ -91,7 +115,10 @@ _MAX_LEN = 600
 # interpretation that does is re-expressing a number in a form nothing in the
 # report actually states, which is exactly the failure mode this validator
 # exists to catch even when the digits involved are individually real.
-_KO_MAGNITUDE_RE = re.compile(r"\d[\d,.]*\s*[조억만]")
+# `천`은 원래 빠져 있었고, 그래서 `4천억원`이 그대로 발행됐다(final-review.md
+# 미탐 C10). 나머지 세 글자와 같은 근거로 추가한다 — 리포트 계층은 `천`을
+# 쓰지 않으므로 해석문에 나오면 그것도 재표현이다.
+_KO_MAGNITUDE_RE = re.compile(r"\d[\d,.]*\s*[조억만천]")
 
 # Rule 4 — banned trade-recommendation / price-target / return-forecast
 # phrasing (BRIEF rule 5, spec §1/§6.1). Context-sensitive regexes, not bare
@@ -104,6 +131,12 @@ _BANNED_PATTERNS: tuple[tuple[re.Pattern, str], ...] = (
     (re.compile(r"(매수|매도)\s*(하|해|할|한다|하라|권|추천|의견|타이밍|시점|구간|기회|시그널|신호)"), "매매권유"),
     (re.compile(r"사야|팔아야|담아야|비중을\s*(늘|줄)"), "매매권유"),
     (re.compile(r"손절|익절"), "매매권유"),
+    # 완곡한 매매 권유 (final-review.md 미탐 G4/G5). `매수/매도`라는 말을
+    # 쓰지 않아도 "지금 사도 괜찮은 국면" / "신규 진입에 유리한 구간"은 명세가
+    # 금지하는 그 판단 그대로다. 규칙 4의 첫 교훈대로 문구 전체로 걸어
+    # `신규 진입 기업이 늘었다` 같은 서술은 통과시킨다.
+    (re.compile(r"(사도|사기에|사기엔|담아도|들어가도)\s*(괜찮|좋|무방|나쁘지)"), "매매권유"),
+    (re.compile(r"진입\s*(시점|타이밍|기회|적기|구간)|진입에\s*(유리|좋)"), "매매권유"),
     (re.compile(r"목표\s*수익률|기대\s*수익률|예상\s*주가|주가\s*전망치"), "수익예측"),
     # Unit substitution — the one real error the empirical test caught (a 27b
     # output that restated "전일대비 +1.76%" as "1.76%포인트 상승"). Numeric
@@ -177,6 +210,178 @@ _OTHER_UNIT_RE = re.compile(r"^[ ]?[A-Za-z가-힣]")
 _DOWN_RE = re.compile(r"하락|하회|내렸|내려|내리|떨어|감소|급락|하향|약세|낙폭|밀렸|빠졌|마이너스|줄었|축소|둔화")
 _UP_RE = re.compile(r"상승|상회|올랐|올라|오르|증가|급등|확대|강세|반등|뛰었|늘었|플러스")
 _DIRECTION_WINDOW = 30
+
+# --- Rule 8 — F-번호 귀속 대조 (final-review.md F2) -------------------------
+#
+# 검증기가 "이 숫자가 리포트에 있는가"만 보고 "그 숫자가 무엇인가"는 아무도 보지
+# 않아서, 실 LLM 생성물이 SEC 접수번호(`filing_event`)를 "JPMorgan 영업현금흐름
+# 급감"이라 서술한 문단이 `status=ok`로 발행됐다. 그 문단에는 숫자가 아예 없어
+# 규칙 6이 볼 것도 없었다.
+#
+# 접지할 수 있는 것만 막는다: 다이제스트가 이미 F-번호를 붙여 모델에게 주므로
+# (`digest.build` — facts[] 다음 market_reaction[], 연속 번호), 해석문이 인용한
+# F-번호 **바로 뒤**에 오는 주체 이름과, 같은 절 안에서 말하는 항목 종류를 그
+# F-번호의 실제 `label`/`metric`과 대조할 수 있다. 어휘는 전부 리포트 자신에게서
+# 나온다 — 이름은 라벨에서 뽑고, 종류어는 라벨/metric이 실제로 쓰는 것만 안다.
+#
+# 의미 검증 일반이 아니다(그건 불가능하다). 못 막는 것은 그대로 남는다:
+#   * F-번호를 인용하지 않은 귀속 오류 (`S&P500은 6,595.45를 기록했다` —
+#     `test_attribution_error_still_missed`가 strict xfail로 지키고 있는 그 구멍),
+#   * 라벨에도 metric에도 종류어가 없는 행(FRED `value` 계열 상당수),
+#   * 한 창 안에 맞는 종류어와 틀린 종류어가 함께 있는 문장(아래 보류 규칙).
+# 이 잔여 위험은 `AI 자동판정` 배지가 감당한다.
+_ATTRIB_WINDOW = 40
+# 종류어를 그 인용에 귀속시키는 창은 **주체 이름 바로 뒤부터** 20자다(이름이
+# 안 붙었으면 F-번호 바로 뒤부터). 인용에서 바로 세어 넓게 잡으면
+# `F98 등 지수 변동과 함께 2026-08-04 에 발표될 실업률 데이터`처럼 앞의 인용과
+# 무관한 뒷말까지 끌어와 오탐이 된다 — 실 ollama 10회 중 1건에서 실제로 그랬다.
+_ATTRIB_KIND_WINDOW = 20
+# 절 경계. 쉼표 뒤는 다른 절이므로 거기 나온 지표를 앞의 F-번호에 귀속시키면
+# 오탐이 된다(`F10 KOSPI가 올랐는데, 실업률은 4.20%다`). 날짜도 같은 이유로
+# 경계다 — `…에 발표될 X`는 인용한 사실이 아니라 다가오는 일정 얘기다. `.`는
+# 소수점에서도 걸리지만 창을 짧게 만들 뿐이라 오탐 방향으로만 작동한다.
+_ATTRIB_STOP_RE = re.compile(r"[,.\n·;]|\d{4}-\d{2}-\d{2}")
+# 다이제스트와 동일한 F-번호 문법. 한국어 조사가 바로 붙으므로 오른쪽 `\b`는
+# 쓸 수 없다(digest._FNUM_RE와 같은 이유).
+_ATTRIB_FNUM_RE = re.compile(r"(?<![A-Za-z0-9])F(\d+)(?!\d)")
+
+# 종류어 -> 그 말이 가리킬 수 있는 항목 종류. 리포트 라벨과 metric이 실제로
+# 쓰는 것만 있다. 포괄어(`현금흐름`)는 여러 종류를 가리킬 수 있으므로 집합이다.
+# `금리`/`주가`처럼 정상 서술에 흔히 섞이는 포괄어는 일부러 넣지 않았다 —
+# 넣는 순간 판단 근거가 아니라 오탐 발생기가 된다.
+_KIND_TERMS: tuple[tuple[str, frozenset], ...] = (
+    ("영업활동현금흐름", frozenset({"ocf"})),
+    ("영업활동 현금흐름", frozenset({"ocf"})),
+    ("영업현금흐름", frozenset({"ocf"})),
+    ("영업 현금흐름", frozenset({"ocf"})),
+    ("잉여현금흐름", frozenset({"fcf"})),
+    ("잉여 현금흐름", frozenset({"fcf"})),
+    ("현금흐름", frozenset({"ocf", "fcf"})),
+    ("현금 흐름", frozenset({"ocf", "fcf"})),
+    ("매출액", frozenset({"revenue"})),
+    ("매출", frozenset({"revenue"})),
+    ("영업이익", frozenset({"operating_income"})),
+    ("CAPEX", frozenset({"capex"})),
+    ("설비투자", frozenset({"capex"})),
+    ("자본지출", frozenset({"capex"})),
+    ("종가", frozenset({"price"})),
+    ("실적발표", frozenset({"earnings"})),
+    ("실적 발표", frozenset({"earnings"})),
+    ("공시", frozenset({"filing"})),
+    ("기준금리", frozenset({"policy_rate"})),
+    ("실업률", frozenset({"unemployment"})),
+    ("환율", frozenset({"fx"})),
+)
+
+# metric -> 종류. `earnings_release_8k`가 `filing`도 갖는 것은 사실이라서다 —
+# 8-K는 공시다. 한쪽만 인정하면 `F4 JPMorgan 공시`라는 맞는 문장이 매일 버려진다.
+# `value`(FRED/ECOS 거시)는 metric만으로는 무엇인지 알 수 없으므로 여기 없고,
+# 라벨에서만 종류를 얻는다.
+_METRIC_KINDS = {
+    "operating_cash_flow": frozenset({"ocf"}),
+    "free_cash_flow": frozenset({"fcf"}),
+    "capex": frozenset({"capex"}),
+    "revenue": frozenset({"revenue"}),
+    "operating_income": frozenset({"operating_income"}),
+    "price_close": frozenset({"price"}),
+    "filing_event": frozenset({"filing"}),
+    "earnings_release_8k": frozenset({"earnings", "filing"}),
+}
+
+_TICKER_RE = re.compile(r"^[A-Z0-9][A-Z0-9.\-]{0,9}$")
+_NAME_LATIN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 &._\-]*$")
+_NAME_HANGUL_RE = re.compile(r"^[가-힣A-Za-z0-9]{2,}$")
+_LABEL_HEAD_RE = re.compile(r"^(.*?)\(([^)]*)\)")
+# F-번호와 이름 사이에 허용하는 것: 공백뿐이거나, 한국어 조사 한두 자 + 공백
+# (`F84 JPMorgan`, `F84의 JPMorgan`). 이름은 인용 **바로 뒤**에 있을 때만
+# 그 인용의 주체로 읽는다 — 같은 문장 어딘가에 다른 종목이 나왔다는 이유로
+# 막으면 정당한 비교 문장이 전부 걸린다.
+_ATTRIB_LEAD_RE = re.compile(r"^(?:[가-힣]{1,2}\s+|\s+)?")
+
+
+def fact_index(report: dict) -> list[dict]:
+    """F1..Fn -> 행. `digest.build`의 번호 매김(facts[] 다음 market_reaction[],
+    연속 번호)을 리포트 dict에서 되짚는다. 두 순서가 어긋나면 규칙 8은 엉뚱한
+    항목과 대조하게 되므로 `test_fact_index_follows_the_digest_numbering`이
+    둘을 직접 맞대어 못박는다."""
+    return list(report.get("facts") or []) + list(report.get("market_reaction") or [])
+
+
+def _row_kinds(row: dict) -> frozenset:
+    kinds = set(_METRIC_KINDS.get(str(row.get("metric") or ""), ()))
+    label = str(row.get("label") or "")
+    for term, classes in _KIND_TERMS:
+        if term in label:
+            kinds |= classes
+    return frozenset(kinds)
+
+
+def _row_names(row: dict) -> frozenset:
+    """라벨이 그 행을 부르는 이름들(표시명 + 티커). 종류어가 섞인 이름
+    (`한국 기준금리`)이나 공백이 낀 한글 서술(`연방기금금리 상단`)은 이름이
+    아니라 설명이므로 뽑지 않는다."""
+    head = str(row.get("label") or "").split(" · ")[0].strip()
+    names: set[str] = set()
+    m = _LABEL_HEAD_RE.match(head)
+    if m:
+        inner = m.group(2).strip()
+        if _TICKER_RE.match(inner):
+            names.add(inner)
+        head = m.group(1).strip()
+    if len(head) >= 2 and not any(term in head for term, _c in _KIND_TERMS):
+        if _NAME_LATIN_RE.match(head) or _NAME_HANGUL_RE.match(head):
+            names.add(head)
+    return frozenset(names)
+
+
+def _leading_name(window: str, names: list[str]) -> tuple[str, int] | None:
+    """창 맨 앞의 주체 이름과 그 이름이 끝나는 위치(창 기준)."""
+    lead = _ATTRIB_LEAD_RE.match(window).end()
+    rest = window[lead:]
+    for name in names:  # 긴 이름 우선 — `S&P 500`이 `S&P`보다 먼저 맞아야 한다
+        if not rest.startswith(name):
+            continue
+        after = rest[len(name) : len(name) + 1]
+        if name[-1].isascii() and after.isascii() and after.isalnum():
+            continue  # `KOSPI`가 `KOSPI200`의 앞부분으로 맞은 것
+        return name, lead + len(name)
+    return None
+
+
+def _attribution(report: dict, text: str) -> list[tuple[str, str]]:
+    index = fact_index(report)
+    if not index:
+        return []
+    kinds = [_row_kinds(row) for row in index]
+    names = [_row_names(row) for row in index]
+    all_names = sorted({n for group in names for n in group}, key=len, reverse=True)
+
+    violations: list[tuple[str, str]] = []
+    cites = list(_ATTRIB_FNUM_RE.finditer(text))
+    for i, m in enumerate(cites):
+        n = int(m.group(1))
+        if not 1 <= n <= len(index):
+            continue  # 없는 F-번호는 digest.resolve_evidence의 몫(SA-6)
+        limit = cites[i + 1].start() if i + 1 < len(cites) else len(text)
+        window = text[m.end() : min(limit, m.end() + _ATTRIB_WINDOW)]
+        stop = _ATTRIB_STOP_RE.search(window)
+        if stop:
+            window = window[: stop.start()]
+
+        hit = _leading_name(window, all_names)
+        name, name_end = hit if hit else ("", 0)
+        if name and names[n - 1] and name not in names[n - 1]:
+            violations.append(("attribution", f"F{n} {name}"))
+
+        if kinds[n - 1]:
+            kind_window = window[name_end : name_end + _ATTRIB_KIND_WINDOW]
+            found = [(t, c) for t, c in _KIND_TERMS if t in kind_window]
+            # 맞는 종류어가 하나라도 같이 있으면 보류한다: 어느 쪽에 걸린 말인지
+            # 문법적으로 가릴 수 없고, 여기서 막으면 `F5 …공시에서 매출 얘기가
+            # 나왔다` 같은 정당한 문장이 매일 버려진다.
+            if found and not any(c & kinds[n - 1] for _t, c in found):
+                violations.append(("attribution", f"F{n} {found[0][0]}"))
+    return violations
 
 
 def _unit_class(after: str) -> str | None:
@@ -317,7 +522,17 @@ def check(report: dict, text: str) -> list[tuple[str, str]]:
         if decimals == 0 and abs(value) <= _SMALL_INT_EXEMPT_MAX and not has_unit:
             continue  # counts ("7종목", "2개 분기") need no grounding.
 
-        if not any(round(allowed, decimals) == round(value, decimals) for allowed in nums_ok):
+        # 정수 인용은 반올림을 허용하지 않는다. `round(15.3, 0) == 15`라는
+        # ±0.5 허용 때문에 `실업률 15%`(실제 15.3)와 `S&P500 18% 상승`(실제
+        # 17.9)이 통과했다(final-review.md 미탐 A4/A5). 정수로 깎으면 남는
+        # 정보가 너무 적어 "리포트가 말한 그 숫자"라고 볼 수 없다. 소수 인용의
+        # 반올림(`약 4.7%` <- 4.68)은 그대로 둔다 — 좁히면 정당한 표현이 죽는다.
+        def _grounded(allowed: float) -> bool:
+            if decimals == 0:
+                return allowed == value
+            return round(allowed, decimals) == round(value, decimals)
+
+        if not any(_grounded(allowed) for allowed in nums_ok):
             signed = tok[0] in "+-"
             mirrored = any(round(allowed, decimals) == round(-value, decimals) for allowed in nums_ok)
             # `0.21% 하락` for a report that says `-0.21%` is correct Korean,
@@ -340,6 +555,8 @@ def check(report: dict, text: str) -> list[tuple[str, str]]:
             if exact and None not in exact and unit_cls not in exact:
                 written = _KNOWN_UNIT_RE.match(text_no_dates[m.end() : m.end() + 8])
                 violations.append(("unit", tok + (written.group(1) if written else "")))
+
+    violations.extend(_attribution(report, text))
 
     return violations
 

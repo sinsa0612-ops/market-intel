@@ -173,3 +173,88 @@ def test_publish_aborts_when_gate_fires(repo):
     assert proc.returncode != 0, out
     assert staged(repo) == [], "index left staged after the secret gate fired"
     assert FAKE_SECRET not in out
+
+
+# --- spec B11 push guard: 미결재 소스가 앞서면 푸시 거부 (final-review.md F3) --
+#
+# 이 가드는 "미결재 소스 66개 파일이 첫 예약 발행에 실려 나갈 뻔한" 사고를 막으려
+# 넣은 것인데(publish.sh 주석), 검수에서 테스트가 0건임이 드러났다: 변이
+# `if [ -n "$ahead" ]` -> `if false`에 tests/publish/ 125건이 전원 통과했다.
+# 아래 두 건은 베어 원격을 실제로 만들어 **양방향**을 본다 — 막아야 할 때 막고,
+# 막지 말아야 할 때 발행한다. 어느 한쪽만 보면 `exit 5`를 상수로 만들어도,
+# 가드를 지워도 초록이 된다.
+
+@pytest.fixture
+def repo_with_remote(repo, tmp_path):
+    """`repo`에 진짜 베어 원격을 붙이고 첫 푸시까지 끝낸 상태."""
+    bare = tmp_path / "origin.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(bare)], check=True,
+                   capture_output=True, text=True)
+    git(repo, "remote", "add", "origin", str(bare))
+    pushed = git(repo, "push", "-q", "-u", "origin", "main")
+    assert pushed.returncode == 0, pushed.stderr
+    return repo, bare
+
+
+def remote_head(bare: Path) -> str:
+    return subprocess.run(["git", "rev-parse", "main"], cwd=bare,
+                          capture_output=True, text=True, check=True).stdout.strip()
+
+
+def remote_files(bare: Path) -> list[str]:
+    out = subprocess.run(["git", "ls-tree", "-r", "--name-only", "main"], cwd=bare,
+                         capture_output=True, text=True, check=True).stdout
+    return [l for l in out.splitlines() if l]
+
+
+def test_publish_refuses_to_push_while_unreviewed_source_is_ahead(repo_with_remote):
+    """(a) 미결재 소스 커밋이 원격보다 앞서 있으면 exit 5 · 원격 불변.
+    리포트 커밋 자체는 로컬에 남아 사람이 결재 후 밀 수 있어야 한다."""
+    repo, bare = repo_with_remote
+    before = remote_head(bare)
+
+    (repo / "src" / "app.py").write_text("print('unreviewed')\n", encoding="utf-8")
+    git(repo, "add", "src/app.py")
+    git(repo, "commit", "-q", "-m", "source change (unreviewed)")
+    (repo / "reports" / "morning" / "2026-08-01.json").write_text("{}\n", encoding="utf-8")
+
+    proc = run_publish(repo)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 5, out
+    assert "refusing to push" in out, out
+    assert "src/app.py" in out, out
+    assert remote_head(bare) == before, "가드가 떴는데 원격이 움직였다"
+    assert "reports/morning/2026-08-01.json" not in remote_files(bare)
+    remote_app = subprocess.run(["git", "show", "main:src/app.py"], cwd=bare,
+                                capture_output=True, text=True, check=True).stdout
+    assert "unreviewed" not in remote_app, "미결재 소스 내용이 원격에 도달했다"
+
+    committed = git(repo, "show", "--name-only", "--format=", "HEAD").stdout
+    assert "reports/morning/2026-08-01.json" in committed, (
+        "리포트는 로컬 커밋으로 남아 있어야 한다 (사람이 결재 후 푸시)")
+
+
+def test_publish_pushes_the_report_when_nothing_unreviewed_is_ahead(repo_with_remote):
+    """(b) 정상 상태에서는 리포트만 커밋·푸시된다 — 가드가 상시 거부로
+    굳어버리면 사이트가 조용히 갱신을 멈춘다."""
+    repo, bare = repo_with_remote
+    before = remote_head(bare)
+
+    (repo / "reports" / "morning" / "2026-08-01.json").write_text("{}\n", encoding="utf-8")
+    proc = run_publish(repo)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out
+    assert "pushed" in proc.stdout, out
+    assert remote_head(bare) != before, "정상인데 아무것도 푸시되지 않았다"
+    assert "reports/morning/2026-08-01.json" in remote_files(bare)
+    assert "src/app.py" in remote_files(bare)  # 첫 푸시분 그대로
+
+
+def test_publish_guard_names_exit_5_in_its_own_contract():
+    """`jobs.PUBLISH_HARD_FAILURES`가 5를 실패로 취급하려면(F6) 스크립트가
+    실제로 5로 끝나야 한다 — 두 파일이 같은 숫자를 말하는지 못박는다."""
+    from market_intel import jobs as jobs_mod
+
+    text = (SCRIPTS / "publish.sh").read_text(encoding="utf-8")
+    assert "exit 5" in text
+    assert 5 in jobs_mod.PUBLISH_HARD_FAILURES

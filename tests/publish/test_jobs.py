@@ -314,3 +314,62 @@ def test_default_interpret_reads_each_reports_own_cutoff(job_env, monkeypatch):
     for path in (job_env["reports_root"] / "morning").glob("*.json"):
         data = json.loads(path.read_text(encoding="utf-8"))
         assert data["cutoff_utc"] in cutoffs
+
+
+# --- publish 종료코드 -> job 성패 (final-review.md F6) ----------------------
+#
+# `exit 5`(미결재 소스가 앞서 푸시 거부)는 `PUBLISH_HARD_FAILURES`에 없어서
+# job이 초록으로 끝났다. 이 상태는 사람이 손대기 전까지 스스로 풀리지 않는데
+# ("오프라인이라 다음에 재시도"와 성질이 다르다) 그동안 공개 사이트는 조용히
+# 갱신을 멈춘다. 그래서 5는 실패로 올리고, 사유를 운영 상태 페이지가 읽는
+# `job_runs.note`에 남긴다.
+
+def _repo_with_publish(tmp_path, name: str, script: str) -> Path:
+    root = tmp_path / name
+    (root / "scripts").mkdir(parents=True)
+    (root / "scripts" / "publish.sh").write_text(script, encoding="utf-8")
+    return root
+
+
+def _run_with_publish(job_env, repo_root: Path, **kw):
+    kw.setdefault("interpret", _fake_interpret([]))  # 실 LLM을 부르지 않는다
+    return jobs_mod.run_job(
+        job_env["settings"], "morning",
+        reports_root=job_env["reports_root"], docs_root=job_env["docs_root"],
+        vault_root=job_env["vault_root"], publish=True, repo_root=repo_root,
+        now=datetime(2026, 8, 7, 7, 40, tzinfo=KST), **kw,
+    )
+
+
+def test_publish_push_refusal_fails_the_job(job_env, tmp_path):
+    repo_root = _repo_with_publish(
+        tmp_path, "repo5",
+        "#!/bin/bash\n"
+        "echo 'publish: refusing to push — unreviewed non-artefact changes are ahead' >&2\n"
+        "exit 5\n",
+    )
+    result = _run_with_publish(job_env, repo_root)
+    assert result["steps"]["publish"] == "fail"
+    assert result["exit"] == 5, "푸시가 거부됐는데 job이 성공으로 끝났다"
+
+
+def test_publish_push_refusal_says_why_on_the_status_page(job_env, tmp_path):
+    """`job_runs.note`는 `docs/status.html`의 사유 칸에 그대로 실린다
+    (`ops.status` -> `_status_page`) — 여기가 CEO가 이유를 읽는 유일한 자리다."""
+    repo_root = _repo_with_publish(
+        tmp_path, "repo5n", "#!/bin/bash\nexit 5\n")
+    _run_with_publish(job_env, repo_root)
+    note = _recorded(job_env)[0]["note"]
+    assert "publish_blocked" in note, note
+    assert "결재" in note, note
+
+
+def test_offline_push_failure_still_keeps_the_job_green(job_env, tmp_path):
+    """spec B11-5 — 오프라인은 스스로 풀리므로 실패로 올리지 않는다.
+    이 대조군이 없으면 `PUBLISH_HARD_FAILURES`를 전체 코드로 넓혀도 초록이다."""
+    repo_root = _repo_with_publish(
+        tmp_path, "repo1", "#!/bin/bash\necho 'push failed (offline)' >&2\nexit 1\n")
+    result = _run_with_publish(job_env, repo_root)
+    assert result["steps"]["publish"] == "fail"
+    assert result["exit"] == 0
+    assert "publish_blocked" not in _recorded(job_env)[0]["note"]

@@ -194,7 +194,14 @@ CASES: list[tuple[str, str, str, bool]] = [
     ("L3 latin접미 USD변조", "q", "환율은 1442USD로 마감했다.", True),
     ("L4 latin접미 pp", "q", "금리가 1.76pp 올랐다.", True),
     ("L5 latin접미 M", "q", "매출이 999M 늘었다.", True),
-    ("L6 F번호 인용", "q", "F3에 따르면 실업률은 4.20%다.", False),
+    # L6는 판정을 뒤집었다. 판정관의 의도는 "F-번호 인용 자체는 정당하다"였지만,
+    # 이 문장을 접지한 quarterly 픽스처에서 **F3은 KOSPI**다 — 실업률은 F1이다.
+    # 즉 이 문장은 실업률 값을 KOSPI 항목에 귀속시키는, 검수서 F2가 지목한 바로
+    # 그 조작이다. 규칙 8(귀속 대조)이 생긴 뒤로는 통과시키는 쪽이 미탐이므로
+    # 기대값을 True로 바꾸고, 원래 의도(정당한 F-번호 인용)는 L6b가 잇는다.
+    # 문장은 판정관이 쓴 그대로 두었다.
+    ("L6 F번호 인용(귀속 틀림: F3=KOSPI)", "q", "F3에 따르면 실업률은 4.20%다.", True),
+    ("L6b F번호 인용(귀속 맞음)", "q", "F1에 따르면 실업률은 4.20%다.", False),
 ]
 
 # §6-6 / spec §C: numbers that are real but attributed to the wrong subject.
