@@ -1,0 +1,1619 @@
+{
+  "schema_version": "2a.3",
+  "report_type": "week_start",
+  "report_date": "2026-08-03",
+  "cutoff_kst": "2026-08-03T07:15:00+09:00",
+  "cutoff_utc": "2026-08-02T22:15:00+00:00",
+  "generated_at": "2026-08-02T22:40:04+00:00",
+  "title": "주간 시작 브리핑",
+  "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · 달러/원 1,436.6원(+0.0%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
+  "breadth": "Core 16 중 14/16개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 4/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 2/2 · 헬스케어 0/1",
+  "data_status": "source_verified",
+  "facts": [
+    {
+      "label": "한국 기준금리",
+      "value": "2.50 연%",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://ecos.bok.or.kr/api/StatisticSearch/***/json/kr/1/100/722Y001/M/202601/202608/0101000",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:37:33+00:00",
+      "subject": "722Y001.0101000",
+      "metric": "value",
+      "raw_value": 2.5,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "원/달러 환율(ECOS)",
+      "value": "1,441 원",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://ecos.bok.or.kr/api/StatisticSearch/***/json/kr/1/100/731Y001/D/20260702/20260801/0000001",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:37:33+00:00",
+      "subject": "731Y001.0000001",
+      "metric": "value",
+      "raw_value": 1441.1,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "미국 CPI",
+      "value": "332.57 Index 1982-1984=100",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "CPIAUCSL",
+      "metric": "value",
+      "raw_value": 332.568,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "연방기금금리 상단(목표)",
+      "value": "3.75 %",
+      "comparison": "직전 관측 대비 +0.00%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DFEDTARU&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-02T12:42:56+00:00",
+      "subject": "DFEDTARU",
+      "metric": "value",
+      "raw_value": 3.75,
+      "delta_pct": 0.0,
+      "series": []
+    },
+    {
+      "label": "미국채 10년물 금리",
+      "value": "4.68 %",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "DGS10",
+      "metric": "value",
+      "raw_value": 4.68,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "미국채 2년물 금리",
+      "value": "4.23 %",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DGS2&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "DGS2",
+      "metric": "value",
+      "raw_value": 4.23,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "연방기금금리(실효)",
+      "value": "3.63 %",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=FEDFUNDS&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "FEDFUNDS",
+      "metric": "value",
+      "raw_value": 3.63,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "미국 산업생산지수",
+      "value": "102.64 Index 2017=100",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=INDPRO&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "INDPRO",
+      "metric": "value",
+      "raw_value": 102.6395,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "미국 비농업고용",
+      "value": "158,984 Thous. of Persons",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=PAYEMS&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "PAYEMS",
+      "metric": "value",
+      "raw_value": 158984.0,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "미국 PCE",
+      "value": "131.39 Index 2017=100",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=PCEPI&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "PCEPI",
+      "metric": "value",
+      "raw_value": 131.392,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "미국 소매판매",
+      "value": "768,553 Mil. of $",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=RSAFS&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "RSAFS",
+      "metric": "value",
+      "raw_value": 768553.0,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "미 10Y-2Y 금리차",
+      "value": "0.47 %",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=T10Y2Y&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "T10Y2Y",
+      "metric": "value",
+      "raw_value": 0.47,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "미국 실업률",
+      "value": "4.20 %",
+      "comparison": "직전 관측 없음",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=UNRATE&api_key=***&file_type=json&sort_order=desc&limit=1",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T10:20:16+00:00",
+      "subject": "UNRATE",
+      "metric": "value",
+      "raw_value": 4.2,
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Microsoft(MSFT) 실적 발표 공시(8-K)",
+      "value": "2026-07-29 제출 · 접수번호 0001193125-26-323632",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "MSFT",
+      "metric": "earnings_release_8k",
+      "raw_value": "0001193125-26-323632",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Alphabet(GOOGL) 실적 발표 공시(8-K)",
+      "value": "2026-07-22 제출 · 접수번호 0001652044-26-000066",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001652044.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "GOOGL",
+      "metric": "earnings_release_8k",
+      "raw_value": "0001652044-26-000066",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Amazon(AMZN) 실적 발표 공시(8-K)",
+      "value": "2026-07-30 제출 · 접수번호 0001018724-26-000024",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001018724.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "AMZN",
+      "metric": "earnings_release_8k",
+      "raw_value": "0001018724-26-000024",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Meta Platforms(META) 실적 발표 공시(8-K)",
+      "value": "2026-07-29 제출 · 접수번호 0001628280-26-050596",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001326801.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "META",
+      "metric": "earnings_release_8k",
+      "raw_value": "0001628280-26-050596",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "NVIDIA(NVDA) 실적 발표 공시(8-K)",
+      "value": "2026-05-20 제출 · 접수번호 0001045810-26-000051",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001045810.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "NVDA",
+      "metric": "earnings_release_8k",
+      "raw_value": "0001045810-26-000051",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "JPMorgan Chase(JPM) 실적 발표 공시(8-K)",
+      "value": "2026-07-14 제출 · 접수번호 0001628280-26-048078",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000019617.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "JPM",
+      "metric": "earnings_release_8k",
+      "raw_value": "0001628280-26-048078",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Exxon Mobil(XOM) 실적 발표 공시(8-K)",
+      "value": "2026-07-31 제출 · 접수번호 0002115436-26-000006",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0002115436.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "XOM",
+      "metric": "earnings_release_8k",
+      "raw_value": "0002115436-26-000006",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "American Electric Power(AEP) 실적 발표 공시(8-K)",
+      "value": "2026-07-30 제출 · 접수번호 0000004904-26-000055",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000004904.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "AEP",
+      "metric": "earnings_release_8k",
+      "raw_value": "0000004904-26-000055",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Caterpillar(CAT) 실적 발표 공시(8-K)",
+      "value": "2026-04-30 제출 · 접수번호 0000018230-26-000017",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000018230.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "CAT",
+      "metric": "earnings_release_8k",
+      "raw_value": "0000018230-26-000017",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Walmart(WMT) 실적 발표 공시(8-K)",
+      "value": "2026-05-21 제출 · 접수번호 0000104169-26-000095",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000104169.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "WMT",
+      "metric": "earnings_release_8k",
+      "raw_value": "0000104169-26-000095",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Eli Lilly(LLY) 실적 발표 공시(8-K)",
+      "value": "2026-04-30 제출 · 접수번호 0000059478-26-000043",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000059478.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:37:27+00:00",
+      "subject": "LLY",
+      "metric": "earnings_release_8k",
+      "raw_value": "0000059478-26-000043",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "삼성전자(005930.KS) 정기공시 제출",
+      "value": "2026-05-15 제출 · 접수번호 20260515002181",
+      "comparison": "DART",
+      "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00126380&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:37:38+00:00",
+      "subject": "005930.KS",
+      "metric": "filing_event",
+      "raw_value": "20260515002181",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "SK하이닉스(000660.KS) 정기공시 제출",
+      "value": "2026-05-15 제출 · 접수번호 20260515002287",
+      "comparison": "DART",
+      "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00164779&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:37:38+00:00",
+      "subject": "000660.KS",
+      "metric": "filing_event",
+      "raw_value": "20260515002287",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "KB금융(105560.KS) 정기공시 제출",
+      "value": "2026-06-19 제출 · 접수번호 20260619000667",
+      "comparison": "DART",
+      "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00688996&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:37:38+00:00",
+      "subject": "105560.KS",
+      "metric": "filing_event",
+      "raw_value": "20260619000667",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "현대차(005380.KS) 정기공시 제출",
+      "value": "2026-05-15 제출 · 접수번호 20260515002418",
+      "comparison": "DART",
+      "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00164742&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:37:38+00:00",
+      "subject": "005380.KS",
+      "metric": "filing_event",
+      "raw_value": "20260515002418",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "berkshire_hathaway 13F 보유내역",
+      "value": "2026-05-15 제출 · 접수번호 0001193125-26-226661",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&company=berkshire+hathaway",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:59+00:00",
+      "subject": "berkshire_hathaway",
+      "metric": "filing_event",
+      "raw_value": "0001193125-26-226661",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "pershing_square 13F 보유내역",
+      "value": "2026-05-15 제출 · 접수번호 0001172661-26-002336",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&company=pershing+square+capital",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:59+00:00",
+      "subject": "pershing_square",
+      "metric": "filing_event",
+      "raw_value": "0001172661-26-002336",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "baupost_group 13F 보유내역",
+      "value": "2026-05-14 제출 · 접수번호 0001061768-26-000007",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&CIK=0001061768",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:59+00:00",
+      "subject": "baupost_group",
+      "metric": "filing_event",
+      "raw_value": "0001061768-26-000007",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "lone_pine_capital 13F 보유내역",
+      "value": "2026-05-15 제출 · 접수번호 0000919574-26-003439",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&company=lone+pine+capital",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:59+00:00",
+      "subject": "lone_pine_capital",
+      "metric": "filing_event",
+      "raw_value": "0000919574-26-003439",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "tci_fund_management 13F 보유내역",
+      "value": "2026-05-15 제출 · 접수번호 0001647251-26-000004",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&company=tci+fund+management",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:59+00:00",
+      "subject": "tci_fund_management",
+      "metric": "filing_event",
+      "raw_value": "0001647251-26-000004",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Microsoft(MSFT) 연간보고서(10-K)",
+      "value": "2026-07-29 제출 · 접수번호 0001193125-26-323660",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "MSFT",
+      "metric": "filing_event",
+      "raw_value": "0001193125-26-323660",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Alphabet(GOOGL) 분기보고서(10-Q)",
+      "value": "2026-07-23 제출 · 접수번호 0001652044-26-000071",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001652044.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "GOOGL",
+      "metric": "filing_event",
+      "raw_value": "0001652044-26-000071",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Amazon(AMZN) 분기보고서(10-Q)",
+      "value": "2026-07-31 제출 · 접수번호 0001018724-26-000026",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001018724.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "AMZN",
+      "metric": "filing_event",
+      "raw_value": "0001018724-26-000026",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Meta Platforms(META) 분기보고서(10-Q)",
+      "value": "2026-07-30 제출 · 접수번호 0001628280-26-050705",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001326801.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "META",
+      "metric": "filing_event",
+      "raw_value": "0001628280-26-050705",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "NVIDIA(NVDA) 분기보고서(10-Q)",
+      "value": "2026-05-20 제출 · 접수번호 0001045810-26-000052",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001045810.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "NVDA",
+      "metric": "filing_event",
+      "raw_value": "0001045810-26-000052",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "TSMC ADR(TSM) 외국기업 수시보고(6-K)",
+      "value": "2026-07-24 제출 · 접수번호 0001046179-26-000459",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0001046179.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "TSM",
+      "metric": "filing_event",
+      "raw_value": "0001046179-26-000459",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "JPMorgan Chase(JPM) 분기보고서(10-Q)",
+      "value": "2026-05-01 제출 · 접수번호 0001628280-26-029344",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000019617.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "JPM",
+      "metric": "filing_event",
+      "raw_value": "0001628280-26-029344",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "American Electric Power(AEP) 분기보고서(10-Q)",
+      "value": "2026-07-30 제출 · 접수번호 0000004904-26-000059",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000004904.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "AEP",
+      "metric": "filing_event",
+      "raw_value": "0000004904-26-000059",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Caterpillar(CAT) 분기보고서(10-Q)",
+      "value": "2026-05-06 제출 · 접수번호 0000018230-26-000021",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000018230.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "CAT",
+      "metric": "filing_event",
+      "raw_value": "0000018230-26-000021",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Walmart(WMT) 분기보고서(10-Q)",
+      "value": "2026-05-29 제출 · 접수번호 0000104169-26-000102",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000104169.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "WMT",
+      "metric": "filing_event",
+      "raw_value": "0000104169-26-000102",
+      "delta_pct": null,
+      "series": []
+    },
+    {
+      "label": "Eli Lilly(LLY) 분기보고서(10-Q)",
+      "value": "2026-04-30 제출 · 접수번호 0000059478-26-000045",
+      "comparison": "SEC EDGAR",
+      "source_url": "https://data.sec.gov/submissions/CIK0000059478.json",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:57+00:00",
+      "subject": "LLY",
+      "metric": "filing_event",
+      "raw_value": "0000059478-26-000045",
+      "delta_pct": null,
+      "series": []
+    }
+  ],
+  "market_reaction": [
+    {
+      "label": "KOSPI",
+      "value": "6,595.45",
+      "comparison": "전일대비 +17.91%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^KS11",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "^KS11",
+      "metric": "price_close",
+      "raw_value": 6595.4501953125,
+      "delta_pct": 17.91149332846585,
+      "series": [
+        6755.75,
+        6023.66015625,
+        5663.240234375,
+        5593.56005859375,
+        6595.4501953125
+      ]
+    },
+    {
+      "label": "KOSDAQ",
+      "value": "719.76",
+      "comparison": "전일대비 +11.63%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^KQ11",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "^KQ11",
+      "metric": "price_close",
+      "raw_value": 719.760009765625,
+      "delta_pct": 11.628769047098867,
+      "series": [
+        764.8599853515625,
+        705.8499755859375,
+        662.6799926757812,
+        644.780029296875,
+        719.760009765625
+      ]
+    },
+    {
+      "label": "S&P 500",
+      "value": "7,489.72",
+      "comparison": "전일대비 +0.70%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^GSPC",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "^GSPC",
+      "metric": "price_close",
+      "raw_value": 7489.72021484375,
+      "delta_pct": 0.7003619815987983,
+      "series": [
+        7413.18017578125,
+        7428.77978515625,
+        7316.14990234375,
+        7437.6298828125,
+        7489.72021484375
+      ]
+    },
+    {
+      "label": "나스닥",
+      "value": "25,373.85",
+      "comparison": "전일대비 +1.00%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^IXIC",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "^IXIC",
+      "metric": "price_close",
+      "raw_value": 25373.849609375,
+      "delta_pct": 1.0017837823213365,
+      "series": [
+        24932.080078125,
+        24876.91015625,
+        24442.939453125,
+        25122.1796875,
+        25373.849609375
+      ]
+    },
+    {
+      "label": "다우존스",
+      "value": "52,485.03",
+      "comparison": "전일대비 +0.53%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^DJI",
+      "data_status": "source_verified",
+      "known_at": "2026-08-02T12:42:35+00:00",
+      "subject": "^DJI",
+      "metric": "price_close",
+      "raw_value": 52485.03125,
+      "delta_pct": 0.5305170575393839,
+      "series": [
+        52210.078125,
+        52747.3203125,
+        51594.140625,
+        52208.05859375,
+        52485.03125
+      ]
+    },
+    {
+      "label": "러셀2000",
+      "value": "2,931.34",
+      "comparison": "전일대비 -0.50%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^RUT",
+      "data_status": "source_verified",
+      "known_at": "2026-08-02T12:42:35+00:00",
+      "subject": "^RUT",
+      "metric": "price_close",
+      "raw_value": 2931.340087890625,
+      "delta_pct": -0.5010016386533243,
+      "series": [
+        2948.0400390625,
+        2953.800048828125,
+        2906.31005859375,
+        2946.10009765625,
+        2931.340087890625
+      ]
+    },
+    {
+      "label": "SOX(필라델피아 반도체)",
+      "value": "11,311.08",
+      "comparison": "전일대비 +0.07%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^SOX",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "^SOX",
+      "metric": "price_close",
+      "raw_value": 11311.080078125,
+      "delta_pct": 0.07157259789004258,
+      "series": [
+        11554.8798828125,
+        11035.6796875,
+        10447.490234375,
+        11302.990234375,
+        11311.080078125
+      ]
+    },
+    {
+      "label": "VIX",
+      "value": "15.99",
+      "comparison": "전일대비 -6.44%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^VIX",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "^VIX",
+      "metric": "price_close",
+      "raw_value": 15.989999771118164,
+      "delta_pct": -6.436514755110501,
+      "series": [
+        18.670000076293945,
+        18.209999084472656,
+        20.65999984741211,
+        17.09000015258789,
+        15.989999771118164
+      ]
+    },
+    {
+      "label": "미 10년물",
+      "value": "4.74%",
+      "comparison": "전일대비 +1.76%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^TNX",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "^TNX",
+      "metric": "price_close",
+      "raw_value": 4.744999885559082,
+      "delta_pct": 1.7585197698746908,
+      "series": [
+        4.640999794006348,
+        4.604000091552734,
+        4.622000217437744,
+        4.663000106811523,
+        4.744999885559082
+      ]
+    },
+    {
+      "label": "달러/원",
+      "value": "1,436.6원",
+      "comparison": "전일대비 +0.00%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/KRW=X",
+      "data_status": "source_verified",
+      "known_at": "2026-08-02T12:42:35+00:00",
+      "subject": "KRW=X",
+      "metric": "price_close",
+      "raw_value": 1436.5999755859375,
+      "delta_pct": 0.0,
+      "series": [
+        1464.43994140625,
+        1453.1600341796875,
+        1442.280029296875,
+        1420.5999755859375,
+        1436.5999755859375,
+        1436.5999755859375
+      ]
+    },
+    {
+      "label": "달러지수",
+      "value": "99.80",
+      "comparison": "전일대비 -0.21%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "DX-Y.NYB",
+      "metric": "price_close",
+      "raw_value": 99.80000305175781,
+      "delta_pct": -0.20997808217882258,
+      "series": [
+        101.51000213623047,
+        101.37999725341797,
+        100.80000305175781,
+        100.01000213623047,
+        99.80000305175781
+      ]
+    },
+    {
+      "label": "유가",
+      "value": "84.67 USD",
+      "comparison": "전일대비 +1.29%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/CL=F",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T09:36:56+00:00",
+      "subject": "CL=F",
+      "metric": "price_close",
+      "raw_value": 84.66999816894531,
+      "delta_pct": 1.2920228237468314,
+      "series": [
+        82.61000061035156,
+        79.26000213623047,
+        84.45999908447266,
+        83.58999633789062,
+        84.66999816894531
+      ]
+    },
+    {
+      "label": "금",
+      "value": "4,107.00 USD",
+      "comparison": "전일대비 +0.17%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/GC=F",
+      "data_status": "source_verified",
+      "known_at": "2026-08-02T21:50:11+00:00",
+      "subject": "GC=F",
+      "metric": "price_close",
+      "raw_value": 4107.0,
+      "delta_pct": 0.16828619251745117,
+      "series": [
+        4074.5,
+        4036.300048828125,
+        4034.699951171875,
+        4100.10009765625,
+        4107.0
+      ]
+    },
+    {
+      "label": "구리",
+      "value": "6.47 USD",
+      "comparison": "전일대비 +0.33%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/HG=F",
+      "data_status": "source_verified",
+      "known_at": "2026-08-02T21:50:11+00:00",
+      "subject": "HG=F",
+      "metric": "price_close",
+      "raw_value": 6.4654998779296875,
+      "delta_pct": 0.32585784074341756,
+      "series": [
+        6.339000225067139,
+        6.322000026702881,
+        6.273499965667725,
+        6.444499969482422,
+        6.4654998779296875
+      ]
+    },
+    {
+      "label": "Microsoft",
+      "value": "464.72 USD",
+      "comparison": "전일대비 +3.02%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/MSFT",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:51+00:00",
+      "subject": "MSFT",
+      "metric": "price_close",
+      "raw_value": 464.7200012207031,
+      "delta_pct": 3.019285066039673,
+      "series": [
+        389.1000061035156,
+        393.3500061035156,
+        390.5400085449219,
+        451.1000061035156,
+        464.7200012207031
+      ]
+    },
+    {
+      "label": "Alphabet",
+      "value": "356.13 USD",
+      "comparison": "전일대비 +6.73%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/GOOGL",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:51+00:00",
+      "subject": "GOOGL",
+      "metric": "price_close",
+      "raw_value": 356.1300048828125,
+      "delta_pct": 6.73440057965654,
+      "series": [
+        326.55999755859375,
+        333.7099914550781,
+        336.7099914550781,
+        333.6600036621094,
+        356.1300048828125
+      ]
+    },
+    {
+      "label": "Amazon",
+      "value": "271.58 USD",
+      "comparison": "전일대비 +15.32%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/AMZN",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:51+00:00",
+      "subject": "AMZN",
+      "metric": "price_close",
+      "raw_value": 271.5799865722656,
+      "delta_pct": 15.320588778032112,
+      "series": [
+        231.38999938964844,
+        230.86000061035156,
+        226.64999389648438,
+        235.5,
+        271.5799865722656
+      ]
+    },
+    {
+      "label": "Meta Platforms",
+      "value": "556.71 USD",
+      "comparison": "전일대비 +3.28%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/META",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:51+00:00",
+      "subject": "META",
+      "metric": "price_close",
+      "raw_value": 556.7100219726562,
+      "delta_pct": 3.279964327561397,
+      "series": [
+        593.8699951171875,
+        593.4099731445312,
+        585.6099853515625,
+        539.030029296875,
+        556.7100219726562
+      ]
+    },
+    {
+      "label": "삼성전자",
+      "value": "262,500.0원",
+      "comparison": "전일대비 +26.81%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/005930.KS",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:51+00:00",
+      "subject": "005930.KS",
+      "metric": "price_close",
+      "raw_value": 262500.0,
+      "delta_pct": 26.811594202898554,
+      "series": [
+        254000.0,
+        220000.0,
+        208500.0,
+        207000.0,
+        262500.0
+      ]
+    },
+    {
+      "label": "SK하이닉스",
+      "value": "1,718,000.0원",
+      "comparison": "전일대비 +29.95%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/000660.KS",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:51+00:00",
+      "subject": "000660.KS",
+      "metric": "price_close",
+      "raw_value": 1718000.0,
+      "delta_pct": 29.954614220877456,
+      "series": [
+        1816000.0,
+        1550000.0,
+        1401000.0,
+        1322000.0,
+        1718000.0
+      ]
+    },
+    {
+      "label": "현대차",
+      "value": "388,000.0원",
+      "comparison": "전일대비 +10.54%",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/005380.KS",
+      "data_status": "source_verified",
+      "known_at": "2026-08-01T02:34:51+00:00",
+      "subject": "005380.KS",
+      "metric": "price_close",
+      "raw_value": 388000.0,
+      "delta_pct": 10.541310541310542,
+      "series": [
+        403000.0,
+        364000.0,
+        353500.0,
+        351000.0,
+        388000.0
+      ]
+    }
+  ],
+  "events": [
+    {
+      "when": "2026-08-04",
+      "name": "Job Openings and Labor Turnover Survey",
+      "country": "US",
+      "subject": "fredrel:192",
+      "importance": "B",
+      "change": "",
+      "source_url": "https://api.stlouisfed.org/fred/release/dates?release_id=192&api_key=***&file_type=json&realtime_start=2026-01-01&realtime_end=2026-12-31&include_release_dates_with_no_data=true&sort_order=asc",
+      "data_status": "원자료 확인"
+    },
+    {
+      "when": "2026-08-04",
+      "name": "CAT 실적",
+      "country": "US",
+      "subject": "CAT",
+      "importance": "C",
+      "change": "",
+      "source_url": "",
+      "data_status": "부분 확인"
+    },
+    {
+      "when": "2026-08-05",
+      "name": "LLY 실적",
+      "country": "US",
+      "subject": "LLY",
+      "importance": "C",
+      "change": "",
+      "source_url": "",
+      "data_status": "부분 확인"
+    },
+    {
+      "when": "2026-08-07",
+      "name": "Employment Situation",
+      "country": "US",
+      "subject": "fredrel:50",
+      "importance": "A",
+      "change": "",
+      "source_url": "https://api.stlouisfed.org/fred/release/dates?release_id=50&api_key=***&file_type=json&realtime_start=2026-01-01&realtime_end=2026-12-31&include_release_dates_with_no_data=true&sort_order=asc",
+      "data_status": "원자료 확인"
+    },
+    {
+      "when": "2026-08-12",
+      "name": "Consumer Price Index",
+      "country": "US",
+      "subject": "fredrel:10",
+      "importance": "A",
+      "change": "",
+      "source_url": "https://api.stlouisfed.org/fred/release/dates?release_id=10&api_key=***&file_type=json&realtime_start=2026-01-01&realtime_end=2026-12-31&include_release_dates_with_no_data=true&sort_order=asc",
+      "data_status": "원자료 확인"
+    },
+    {
+      "when": "2026-08-14",
+      "name": "13F 제출 마감",
+      "country": "US",
+      "subject": "",
+      "importance": "B",
+      "change": "",
+      "source_url": "",
+      "data_status": "복원 완료"
+    },
+    {
+      "when": "2026-08-14",
+      "name": "Advance Monthly Sales for Retail and Food Services",
+      "country": "US",
+      "subject": "fredrel:9",
+      "importance": "B",
+      "change": "",
+      "source_url": "https://api.stlouisfed.org/fred/release/dates?release_id=9&api_key=***&file_type=json&realtime_start=2026-01-01&realtime_end=2026-12-31&include_release_dates_with_no_data=true&sort_order=asc",
+      "data_status": "원자료 확인"
+    }
+  ],
+  "schedule_changes": [
+    {
+      "when": "2026-08-04",
+      "name": "CAT 실적 → 2026-08-04",
+      "country": "",
+      "subject": "",
+      "importance": "",
+      "change": "신규",
+      "source_url": "",
+      "data_status": ""
+    },
+    {
+      "when": "2026-08-04",
+      "name": "Job Openings and Labor Turnover Survey → 2026-08-04",
+      "country": "",
+      "subject": "",
+      "importance": "",
+      "change": "신규",
+      "source_url": "",
+      "data_status": ""
+    },
+    {
+      "when": "2026-08-05",
+      "name": "LLY 실적 6.54902 → 6.58447",
+      "country": "",
+      "subject": "",
+      "importance": "",
+      "change": "consensus_revised",
+      "source_url": "",
+      "data_status": ""
+    },
+    {
+      "when": "2026-08-05",
+      "name": "LLY 실적 → 2026-08-05",
+      "country": "",
+      "subject": "",
+      "importance": "",
+      "change": "신규",
+      "source_url": "",
+      "data_status": ""
+    },
+    {
+      "when": "2026-08-07",
+      "name": "Employment Situation → 2026-08-07",
+      "country": "",
+      "subject": "",
+      "importance": "",
+      "change": "신규",
+      "source_url": "",
+      "data_status": ""
+    },
+    {
+      "when": "2026-08-12",
+      "name": "Consumer Price Index → 2026-08-12",
+      "country": "",
+      "subject": "",
+      "importance": "",
+      "change": "신규",
+      "source_url": "",
+      "data_status": ""
+    },
+    {
+      "when": "2026-08-14",
+      "name": "Advance Monthly Sales for Retail and Food Services → 2026-08-14",
+      "country": "",
+      "subject": "",
+      "importance": "",
+      "change": "신규",
+      "source_url": "",
+      "data_status": ""
+    }
+  ],
+  "missing": [
+    {
+      "area": "한국 수급(외국인/기관/개인)",
+      "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
+      "since": "2026-08-02T22:40:04+00:00",
+      "gap_id": "kr_flows:net_buy"
+    }
+  ],
+  "sector_summary": [
+    {
+      "sector": "플랫폼·AI 수익화",
+      "up": 4,
+      "down": 0,
+      "flat": 0,
+      "total": 4,
+      "median_pct": 5.007182453608968,
+      "small_sample": false
+    },
+    {
+      "sector": "반도체·공급망",
+      "up": 4,
+      "down": 0,
+      "flat": 0,
+      "total": 4,
+      "median_pct": 14.86960116995392,
+      "small_sample": false
+    },
+    {
+      "sector": "금융·신용",
+      "up": 2,
+      "down": 0,
+      "flat": 0,
+      "total": 2,
+      "median_pct": 0.46251508833894983,
+      "small_sample": true
+    },
+    {
+      "sector": "전력·산업",
+      "up": 2,
+      "down": 1,
+      "flat": 0,
+      "total": 3,
+      "median_pct": 0.054781417665469734,
+      "small_sample": false
+    },
+    {
+      "sector": "소비·수출",
+      "up": 2,
+      "down": 0,
+      "flat": 0,
+      "total": 2,
+      "median_pct": 5.315659085009232,
+      "small_sample": true
+    },
+    {
+      "sector": "헬스케어",
+      "up": 0,
+      "down": 1,
+      "flat": 0,
+      "total": 1,
+      "median_pct": -0.5307501526711265,
+      "small_sample": true
+    }
+  ],
+  "sector_index": [
+    {
+      "subject": "XLY",
+      "label": "경기소비재",
+      "market": "US",
+      "value": "116.09 USD",
+      "comparison": "전일대비 +3.29%",
+      "delta_pct": 3.2921051413253877,
+      "series": [
+        110.83999633789062,
+        112.4800033569336,
+        111.61000061035156,
+        112.38999938964844,
+        116.08999633789062
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLY",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLC",
+      "label": "커뮤니케이션",
+      "market": "US",
+      "value": "108.24 USD",
+      "comparison": "전일대비 +1.56%",
+      "delta_pct": 1.5575117322161307,
+      "series": [
+        107.66000366210938,
+        109.66999816894531,
+        109.51000213623047,
+        106.58000183105469,
+        108.23999786376953
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLC",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLE",
+      "label": "에너지",
+      "market": "US",
+      "value": "59.55 USD",
+      "comparison": "전일대비 +1.00%",
+      "delta_pct": 1.0006787003890396,
+      "series": [
+        58.36000061035156,
+        57.56999969482422,
+        58.650001525878906,
+        58.959999084472656,
+        59.54999923706055
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLE",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLI",
+      "label": "산업재",
+      "market": "US",
+      "value": "179.84 USD",
+      "comparison": "전일대비 +0.81%",
+      "delta_pct": 0.812824123102905,
+      "series": [
+        183.1999969482422,
+        182.49000549316406,
+        176.66000366210938,
+        178.38999938964844,
+        179.83999633789062
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLI",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLF",
+      "label": "금융",
+      "market": "US",
+      "value": "56.94 USD",
+      "comparison": "전일대비 -0.11%",
+      "delta_pct": -0.10526556717722041,
+      "series": [
+        56.880001068115234,
+        57.599998474121094,
+        56.68000030517578,
+        57.0,
+        56.939998626708984
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLF",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLK",
+      "label": "정보기술",
+      "market": "US",
+      "value": "175.35 USD",
+      "comparison": "전일대비 -0.22%",
+      "delta_pct": -0.21623492474932576,
+      "series": [
+        174.3000030517578,
+        171.08999633789062,
+        166.57000732421875,
+        175.72999572753906,
+        175.35000610351562
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLK",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLP",
+      "label": "필수소비재",
+      "market": "US",
+      "value": "85.05 USD",
+      "comparison": "전일대비 -0.49%",
+      "delta_pct": -0.49139834204609517,
+      "series": [
+        85.36000061035156,
+        87.05999755859375,
+        87.36000061035156,
+        85.47000122070312,
+        85.05000305175781
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLP",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLRE",
+      "label": "부동산",
+      "market": "US",
+      "value": "45.07 USD",
+      "comparison": "전일대비 -0.51%",
+      "delta_pct": -0.507725267350915,
+      "series": [
+        45.7599983215332,
+        46.0099983215332,
+        45.959999084472656,
+        45.29999923706055,
+        45.06999969482422
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLRE",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLV",
+      "label": "헬스케어",
+      "market": "US",
+      "value": "162.55 USD",
+      "comparison": "전일대비 -0.59%",
+      "delta_pct": -0.5932003396274903,
+      "series": [
+        163.39999389648438,
+        167.25999450683594,
+        166.24000549316406,
+        163.52000427246094,
+        162.5500030517578
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLV",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLU",
+      "label": "유틸리티",
+      "market": "US",
+      "value": "44.35 USD",
+      "comparison": "전일대비 -0.69%",
+      "delta_pct": -0.6941365301168471,
+      "series": [
+        45.68000030517578,
+        45.52000045776367,
+        44.90999984741211,
+        44.65999984741211,
+        44.349998474121094
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLU",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "XLB",
+      "label": "소재",
+      "market": "US",
+      "value": "50.43 USD",
+      "comparison": "전일대비 -2.34%",
+      "delta_pct": -2.343143103745288,
+      "series": [
+        51.38999938964844,
+        52.34000015258789,
+        51.7400016784668,
+        51.63999938964844,
+        50.43000030517578
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/XLB",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "091160.KS",
+      "label": "KODEX 반도체",
+      "market": "KR",
+      "value": "120,830.0원",
+      "comparison": "전일대비 +28.99%",
+      "delta_pct": 28.988524152655458,
+      "series": [
+        124470.0,
+        107230.0,
+        98335.0,
+        93675.0,
+        120830.0
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/091160.KS",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "102970.KS",
+      "label": "KODEX 증권",
+      "market": "KR",
+      "value": "19,090.0원",
+      "comparison": "전일대비 +11.51%",
+      "delta_pct": 11.507009345794392,
+      "series": [
+        20005.0,
+        18265.0,
+        17170.0,
+        17120.0,
+        19090.0
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/102970.KS",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "117680.KS",
+      "label": "KODEX 철강",
+      "market": "KR",
+      "value": "10,700.0원",
+      "comparison": "전일대비 +6.26%",
+      "delta_pct": 6.256206554121152,
+      "series": [
+        11010.0,
+        10255.0,
+        9805.0,
+        10070.0,
+        10700.0
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/117680.KS",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "117460.KS",
+      "label": "KODEX 에너지화학",
+      "market": "KR",
+      "value": "12,165.0원",
+      "comparison": "전일대비 +3.09%",
+      "delta_pct": 3.093220338983051,
+      "series": [
+        12920.0,
+        11910.0,
+        11455.0,
+        11800.0,
+        12165.0
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/117460.KS",
+      "data_status": "source_verified"
+    },
+    {
+      "subject": "227540.KS",
+      "label": "TIGER 헬스케어",
+      "market": "KR",
+      "value": "17,935.0원",
+      "comparison": "전일대비 +0.59%",
+      "delta_pct": 0.5888951205832866,
+      "series": [
+        18415.0,
+        18000.0,
+        17420.0,
+        17830.0,
+        17935.0
+      ],
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/227540.KS",
+      "data_status": "source_verified"
+    }
+  ],
+  "interpretation": {
+    "reading": "KOSPI 가 F45 에 기록된 전일대비 26.81% 급등과 함께 SK 하이닉스 (F64) 도 29.95% 상승하며 반도체 섹터가 주가를 견인하고 있습니다.",
+    "counter_reading": "미국 CPI(F3), PCE(F10), 소매판매 (F11) 등 주요 경제 지표들이 발표된 직후였음에도 불구하고 미국 주식은 F47 에서 0.7% 상승만 기록한 반면, 한국 증시는 비정상적으로 급등해 시장 심리가 과열되었을 가능성이 있습니다.",
+    "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 0 · 약화 0 · 무효 0 · 판정 불가 1.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 판정 불가 — 관측 부족(MSFT free_cash_flow 관측 부족(1개, 필요 3개)).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.68 (조건 >= 4.5 충족).",
+    "next_check": "다가오는 2026-08-12 의 소비자물가지수 (CPI) 발표와 같은 핵심 인플레이션 지표가 예상치보다 높게 나오거나 낮아지면, reading 이나 counter_reading 중 어떤 해석이 맞는지 갈릴 것입니다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
+    "generated_by": "ai:qwen3.5:9b · interpretation_v2",
+    "generated_at": "2026-08-02T22:40:27+00:00"
+  },
+  "meta": {
+    "generated_by": "reporting/build.py (2A)",
+    "late_generation": false,
+    "no_facts_before_cutoff": false,
+    "counts": {
+      "facts": 44,
+      "market_reaction": 21,
+      "events": 7,
+      "schedule_changes": 7,
+      "missing": 1,
+      "sector_index": 16
+    },
+    "interpretation": {
+      "engine_version": "2b.1",
+      "status": "ok",
+      "model": "qwen3.5:9b",
+      "prompt_version": "interpretation_v2",
+      "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
+      "generated_at": "2026-08-02T22:40:27+00:00",
+      "elapsed_ms": 22402,
+      "attempts": 1,
+      "fields": {
+        "reading": "ok",
+        "counter_reading": "ok",
+        "thesis_impact": "rules",
+        "next_check": "ok"
+      },
+      "violations": {},
+      "evidence": [
+        [
+          "F3",
+          "fred:CPIAUCSL:value:20260601",
+          2
+        ],
+        [
+          "F10",
+          "fred:PCEPI:value:20260601",
+          2
+        ],
+        [
+          "F11",
+          "fred:RSAFS:value:20260601",
+          2
+        ],
+        [
+          "F45",
+          "yfinance:^KS11:price_close:20260727",
+          2
+        ],
+        [
+          "F45",
+          "yfinance:^KS11:price_close:20260728",
+          2
+        ],
+        [
+          "F45",
+          "yfinance:^KS11:price_close:20260729",
+          2
+        ],
+        [
+          "F45",
+          "yfinance:^KS11:price_close:20260730",
+          2
+        ],
+        [
+          "F45",
+          "yfinance:^KS11:price_close:20260731",
+          2
+        ],
+        [
+          "F47",
+          "yfinance:^GSPC:price_close:20260727",
+          2
+        ],
+        [
+          "F47",
+          "yfinance:^GSPC:price_close:20260728",
+          2
+        ],
+        [
+          "F47",
+          "yfinance:^GSPC:price_close:20260729",
+          2
+        ],
+        [
+          "F47",
+          "yfinance:^GSPC:price_close:20260730",
+          2
+        ],
+        [
+          "F47",
+          "yfinance:^GSPC:price_close:20260731",
+          2
+        ],
+        [
+          "F64",
+          "yfinance:000660.KS:price_close:20260727",
+          1
+        ],
+        [
+          "F64",
+          "yfinance:000660.KS:price_close:20260728",
+          1
+        ],
+        [
+          "F64",
+          "yfinance:000660.KS:price_close:20260729",
+          1
+        ],
+        [
+          "F64",
+          "yfinance:000660.KS:price_close:20260730",
+          1
+        ],
+        [
+          "F64",
+          "yfinance:000660.KS:price_close:20260731",
+          1
+        ]
+      ],
+      "evidence_unresolved": [],
+      "digest_truncated": false,
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "판정 불가",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": false
+        }
+      ]
+    }
+  }
+}
