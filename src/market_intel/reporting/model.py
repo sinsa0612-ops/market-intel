@@ -26,7 +26,8 @@ from typing import Any
 # 옛 JSON도 그대로 읽히지만(`from_json` 참조), 스키마가 바뀐 사실 자체를
 # 버전에 남긴다.
 # 2a.3: Report에 sector_index(업종 지수 표)가 추가됐다. 역시 필드 추가뿐이다.
-SCHEMA_VERSION = "2a.3"
+# 2a.4: FactRow에 doc_url(공시 원문 주소)이 추가됐다. 역시 필드 추가뿐이다.
+SCHEMA_VERSION = "2a.4"
 
 
 @dataclass
@@ -48,6 +49,11 @@ class FactRow:
     # 오래된 값 -> 최신 값. `db.facts_as_of(cutoff)`가 이미 걸러준 것만
     # 담기므로 PIT 보장은 상속된다. 관측이 1개뿐이면 빈 리스트(= 그래프 없음).
     series: list[float] = field(default_factory=list)
+    # 사람이 실제로 읽을 수 있는 문서의 주소(공시 원문). `source_url`은 그
+    # 사실을 **어디서 가져왔는지**(API 엔드포인트)라서 감사 추적으로는 맞지만
+    # 클릭하면 JSON이 뜬다 — CEO 지적 2026-08-03. 둘을 바꾸지 않고 나란히
+    # 들고 다니다가, 렌더러가 있는 쪽(문서)을 링크한다.
+    doc_url: str = ""
 
 
 @dataclass

@@ -486,9 +486,7 @@ def test_filing_row_shows_when_not_an_accession_number():
     value = build_mod._filing_value(row)
     assert value.startswith("2026-07-30"), f"제출일이 앞에 오지 않는다: {value}"
     assert "제출" in value
-    # 접수번호는 버리지 않되 무엇인지 밝힌다 — 맨숫자로 두면 다시 수치로 읽힌다
-    assert "접수번호" in value
-    assert not value.startswith("0000004904"), "접수번호가 여전히 수치 자리에 있다"
+    assert "0000004904" not in value, "접수번호가 여전히 수치 자리에 있다"
 
 
 def test_filing_kind_labels_periodic_forms():
@@ -530,3 +528,80 @@ def test_report_actually_uses_the_readable_filing_labels(tmp_path, settings):
     assert "실적 발표" in row.label
     assert row.value.startswith("2026-07-30"), f"수치 칸이 제출일로 시작하지 않는다: {row.value}"
     assert not row.value.startswith("0000004904"), "접수번호가 여전히 수치 자리에 있다"
+
+
+# --- CEO 지적(2026-08-03): 제출일+접수번호만으로는 알 수 있는 게 없다 ---------
+
+
+def test_filing_row_says_what_the_document_is_and_how_old_it_is():
+    """1차 수리 후에도 공시 행은 `2026-07-29 제출 · 접수번호 0001193125-26-323632`
+    였다. 접수번호는 사람이 쓰는 정보가 아니고, 경과일이 없으니 사흘 전 8-K와
+    두 달 반 묵은 NVDA 8-K가 화면에서 구분되지 않았다(둘 다 그냥 날짜 한 줄)."""
+    from market_intel.reporting import build as build_mod
+
+    ref = date(2026, 8, 3)
+
+    # SEC 8-K: 항목 코드를 사람 말로
+    v = build_mod._filing_value({
+        "event_at": "2026-07-29T00:00:00+00:00", "value_text": "0001193125-26-323632",
+        "extra_json": '{"item": "2.02", "form": "8-K"}',
+    }, ref)
+    assert "5일 전" in v, v
+    assert "실적·재무상태" in v, v
+    assert "0001193125" not in v, f"접수번호가 아직 수치 칸에 있다: {v}"
+
+    # 두 달 반 묵은 공시는 그렇게 보여야 한다
+    stale = build_mod._filing_value({
+        "event_at": "2026-05-20T00:00:00+00:00", "value_text": "0001045810-26-000051",
+        "extra_json": '{"item": "2.02", "form": "8-K"}',
+    }, ref)
+    assert "75일 전" in stale, stale
+
+    # DART: 수집기가 이미 갖고 있던 보고서명을 쓴다
+    dart = build_mod._filing_value({
+        "event_at": "2026-05-15T00:00:00+00:00", "value_text": "20260515002181",
+        "extra_json": '{"report_name": "\\ubd84\\uae30\\ubcf4\\uace0\\uc11c (2026.03)"}',
+    }, ref)
+    assert "분기보고서 (2026.03)" in dart, dart
+
+
+def test_filing_row_links_the_document_not_the_api_endpoint():
+    """`source_url`은 `data.sec.gov/submissions/CIK*.json` — 클릭하면 JSON이
+    뜬다. 접수번호만으로 실제 문서를 열 수 있다(EDGAR Archives는 URL의 CIK
+    자리를 무시한다 — 2026-08-03 실측). `source_url`은 감사용으로 남긴다."""
+    from market_intel.reporting import build as build_mod
+
+    sec = build_mod._filing_doc_url({"value_text": "0001193125-26-323632"})
+    assert sec == ("https://www.sec.gov/Archives/edgar/data/1193125/"
+                   "000119312526323632/0001193125-26-323632-index.htm"), sec
+
+    dart = build_mod._filing_doc_url({"value_text": "20260515002181"})
+    assert dart == "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260515002181", dart
+
+    # 형태가 낯설면 지어내지 않는다
+    assert build_mod._filing_doc_url({"value_text": "acc"}) == ""
+
+
+def test_filing_row_uses_the_managers_name_not_its_slug(tmp_path, settings):
+    """13F 행 라벨이 `berkshire_hathaway 13F 보유내역`이었다 — 운용사 표시명은
+    수집기가 이미 `extra.manager`에 넣어 두고 아무도 안 썼다."""
+    db_path = str(tmp_path / "f13.db")
+    db_mod.init_db(db_path)
+    conn = db_mod.connect(db_path)
+    fc = FactCandidate(
+        raw_ref="13f:bh", subject="berkshire_hathaway", category="13f_filing",
+        metric="filing_event", event_at="2026-05-15T00:00:00+00:00", market="US", country="US",
+        value_text="0001193125-26-226661", unit="", publisher="SEC EDGAR",
+        data_status="source_verified", extra={"form": "13F-HR", "manager": "Berkshire Hathaway"},
+    )
+    seed_fact(conn, settings.raw_dir, "sec_edgar_13f", fc, known_at="2026-05-15T12:00:00+00:00")
+
+    rows = build_mod._filing_facts(conn, datetime(2026, 8, 3, tzinfo=timezone.utc))
+    conn.close()
+
+    assert rows
+    row = rows[0]
+    assert "berkshire_hathaway" not in row.label, f"슬러그 노출: {row.label}"
+    assert row.label.startswith("Berkshire Hathaway"), row.label
+    assert row.doc_url.startswith("https://www.sec.gov/Archives/"), row.doc_url
+    assert row.value == "2026-05-15 제출(80일 전)", row.value

@@ -58,6 +58,7 @@ calls the architect left to ST2, not things the spec pinned):
 from __future__ import annotations
 
 import json
+import re
 import statistics
 from datetime import date, datetime, timedelta
 
@@ -182,17 +183,20 @@ def _fmt_value_with_asof(row) -> str:
 
 def _row_from_fact(
     row, label: str, comparison: str, delta_pct: float | None = None,
-    value: str | None = None,
+    value: str | None = None, doc_url: str = "",
 ) -> FactRow:
     """`value`는 표시 문자열을 직접 지정할 때만 쓴다(공시 행처럼 `value_text`가
-    수치가 아닌 경우). 기본은 값+기준일 조합인 `_fmt_value_with_asof`."""
+    수치가 아닌 경우). 기본은 값+기준일 조합인 `_fmt_value_with_asof`.
+
+    `doc_url`은 사람이 읽는 문서 주소다. `source_url`(수집 엔드포인트)을
+    덮어쓰지 않고 나란히 싣는다 — 감사 추적은 그대로 두고 링크만 쓸모 있게."""
     return FactRow(
         label=label, value=value if value is not None else _fmt_value_with_asof(row),
         comparison=comparison,
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",
         known_at=row["known_at"], subject=row["subject"], metric=row["metric"],
         raw_value=row["value_num"] if row["value_num"] is not None else row["value_text"],
-        delta_pct=delta_pct,
+        delta_pct=delta_pct, doc_url=doc_url,
     )
 
 
@@ -522,13 +526,17 @@ _FILING_METRIC_LABELS = {
 }
 
 
+def _extra(row) -> dict:
+    try:
+        return (json.loads(row["extra_json"] or "{}") or {})
+    except (json.JSONDecodeError, TypeError):
+        return {}
+
+
 def _filing_kind(row) -> str:
     """"AMZN · earnings_release_8k" 대신 "Amazon(AMZN) 실적 발표 공시(8-K)"."""
     base = _FILING_METRIC_LABELS.get(row["metric"], row["metric"])
-    try:
-        form = (json.loads(row["extra_json"] or "{}") or {}).get("form")
-    except (json.JSONDecodeError, TypeError):
-        form = None
+    form = _extra(row).get("form")
     if row["metric"] == "filing_event" and form:
         return _FORM_LABELS.get(form, f"{base}({form})")
     if form and form not in base:
@@ -536,31 +544,97 @@ def _filing_kind(row) -> str:
     return base
 
 
-def _filing_value(row) -> str:
-    """공시 행에서 사실은 **언제 제출됐는가**다.
+# SEC 8-K 항목 코드 -> 그 공시가 무엇을 알리는 것인지. 지금 수집기가 감지하는
+# 것은 2.02 하나뿐이지만(sec_8k_events.ITEM_EARNINGS_RELEASE), 코드만 찍히면
+# `항목 2.02`는 접수번호와 똑같이 읽는 사람에게 아무 말도 하지 않는다.
+_ITEM_8K_LABELS = {
+    "1.01": "주요 계약 체결", "2.01": "자산 취득·처분", "2.02": "실적·재무상태 발표",
+    "5.02": "임원 변동", "7.01": "기업 설명자료", "8.01": "기타 주요 사항",
+    "9.01": "재무제표·첨부",
+}
 
-    이 fact들은 `value_num`이 없고 `value_text`에 SEC 접수번호가 들어 있다.
-    그것을 '수치' 칸에 그대로 실으면 화면에 `0000004904-26-000055`가 금액인
-    것처럼 뜬다(CEO 지적, 2026-08-02). 접수번호는 원자료 링크가 이미 가리키고
-    있으므로 여기서는 제출일을 싣고 번호는 작게 덧붙인다. AI 해석이 접수번호를
-    현금흐름이라 부르던 문제(최종검수 F2)의 표면적도 함께 줄어든다."""
-    when = (row["event_at"] or "")[:10]
+
+def _filing_detail(row) -> str:
+    """그 공시가 **무슨 문서인지** 한 마디로. 없으면 빈 문자열."""
+    extra = _extra(row)
+    report_name = str(extra.get("report_name") or "").strip()  # DART가 주는 보고서명
+    if report_name:
+        return report_name
+    items = [i.strip() for i in str(extra.get("item") or "").split(",") if i.strip()]
+    named = [f"{_ITEM_8K_LABELS[i]}(항목 {i})" for i in items if i in _ITEM_8K_LABELS]
+    # 13F는 라벨이 이미 `Berkshire Hathaway 13F 보유내역`이라 덧붙일 말이 없다.
+    return " · ".join(named)
+
+
+def _days_ago(when: str, ref) -> str:
+    """제출일 옆의 경과일. NVDA의 2026-05-20자 8-K가 사흘 전 것과 나란히
+    서 있어도 어느 쪽이 오늘 뉴스인지 한눈에 갈리게 하는 유일한 표시다."""
+    try:
+        days = (ref - date.fromisoformat(when)).days
+    except (TypeError, ValueError):
+        return ""
+    if days < 0:
+        return ""
+    return "오늘" if days == 0 else f"{days}일 전"
+
+
+def _filing_doc_url(row) -> str:
+    """접수번호 하나로 **사람이 읽는 공시 문서**를 연다.
+
+    `source_url`은 수집 엔드포인트(`data.sec.gov/submissions/CIK*.json`,
+    `opendart.fss.or.kr/api/list.json`)라서 클릭하면 JSON 원문이 뜬다.
+    실측 2026-08-03: EDGAR의 `Archives` 경로는 URL의 CIK 자리를 무시하고
+    접수번호만으로 문서를 찾아 준다(일부러 999999를 넣어도 200 + 올바른
+    Berkshire 13F). 그래서 접수번호 앞 10자리(제출 대행사 CIK)를 그대로 써도
+    되고, 별도 CIK 저장이 없는 13F 행까지 소급 적용된다.
+    DART는 접수번호(rcpNo)가 곧 뷰어 주소다."""
     acc = (row["value_text"] or "").strip()
-    if when and acc:
-        return f"{when} 제출 · 접수번호 {acc}"
-    return when or acc or "미확인"
+    if re.fullmatch(r"\d{10}-\d{2}-\d{6}", acc):  # SEC
+        return (f"https://www.sec.gov/Archives/edgar/data/{int(acc[:10])}/"
+                f"{acc.replace('-', '')}/{acc}-index.htm")
+    if re.fullmatch(r"\d{14}", acc):  # DART 접수번호
+        return f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={acc}"
+    return ""
+
+
+def _filing_value(row, ref=None) -> str:
+    """공시 행의 '수치' 칸.
+
+    1차(2026-08-02): 접수번호가 금액인 것처럼 실리던 문제를 고쳐 제출일을 앞에
+    세웠다. 2차(CEO 지적 2026-08-03): 제출일과 접수번호만 있으니 **그 회사에
+    대해 알 수 있는 게 아무것도 없다**. 그래서 (a) 경과일을 붙여 오늘 뉴스와
+    두 달 묵은 공시를 구분하고, (b) 이미 수집해 놓고 화면에 쓰지 않던 문서
+    설명(DART `report_name`, 8-K 항목명)을 싣는다. 접수번호는 사람이 쓰는
+    정보가 아니므로 이 칸에서 빼고, 리포트 JSON의 `raw_value`·DB·`doc_url`
+    링크에 그대로 남긴다(감사 추적 유지)."""
+    when = (row["event_at"] or "")[:10]
+    parts = []
+    if when:
+        ago = _days_ago(when, ref) if ref is not None else ""
+        parts.append(f"{when} 제출({ago})" if ago else f"{when} 제출")
+    detail = _filing_detail(row)
+    if detail:
+        parts.append(detail)
+    return " · ".join(parts) or (row["value_text"] or "미확인")
 
 
 def _filing_facts(conn, cutoff, since: str | None = None) -> list[FactRow]:
     rows = list(db_mod.facts_as_of(conn, cutoff, category="filing"))
     rows += list(db_mod.facts_as_of(conn, cutoff, category="13f_filing"))
     rows += list(db_mod.facts_as_of(conn, cutoff, category="event", metric="earnings_release_8k"))
+    ref = cutoff.date() if hasattr(cutoff, "date") else None
     out = []
     for row in rows:
         if since is not None and (row["known_at"] or "") < since:
             continue
-        label = f"{_subject_name(row['subject'])} {_filing_kind(row)}"
-        out.append(_row_from_fact(row, label, row["publisher"] or "", value=_filing_value(row)))
+        # 13F 행의 주체는 유니버스에 없는 운용사 슬러그(`berkshire_hathaway`)라
+        # `_subject_name`이 그대로 흘려보낸다. 수집기가 이미 표시명을 넣어 뒀다.
+        who = _extra(row).get("manager") or _subject_name(row["subject"])
+        label = f"{who} {_filing_kind(row)}"
+        out.append(_row_from_fact(
+            row, label, row["publisher"] or "",
+            value=_filing_value(row, ref), doc_url=_filing_doc_url(row),
+        ))
     out.sort(key=lambda r: r.known_at, reverse=True)
     return out
 

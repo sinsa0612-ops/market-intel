@@ -122,9 +122,13 @@ def _facts_table_html(rows: list[FactRow]) -> str:
         badge = status_ko(r.data_status)
         cls = "status-warn" if r.data_status in ("partial", "unverified") else "status-ok"
         value_cell = f'{_esc(r.value)} <span class="{cls}">{_esc(badge)}</span>' if badge else _esc(r.value)
-        href = safe_href(r.source_url)
+        # 문서가 있으면 문서를 건다. `source_url`(수집 엔드포인트)은 클릭하면
+        # JSON이 뜬다 — 감사용으로 리포트 JSON에는 남지만 화면 링크는 아니다.
+        href = safe_href(r.doc_url) or safe_href(r.source_url)
         if href:
-            src = f'<a href="{_esc(href)}" rel="noopener" target="_blank">원자료</a>'
+            text = "공시원문" if safe_href(r.doc_url) else "원자료"
+            title = f' title="접수번호 {_esc(str(r.raw_value))}"' if r.doc_url and r.raw_value else ""
+            src = f'<a href="{_esc(href)}"{title} rel="noopener" target="_blank">{text}</a>'
         else:
             # Not a link: an unsupported scheme (javascript:, data:, …) or a
             # relative/blank value. Shown as text so nothing is silently lost.

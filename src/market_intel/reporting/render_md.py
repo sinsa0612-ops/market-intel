@@ -311,8 +311,10 @@ def _facts_table_md(rows: list[FactRow]) -> str:
     for r in rows:
         badge = status_ko(r.data_status)
         value_cell = f"{r.value} · {badge}" if badge else r.value
-        href = safe_href(r.source_url)
-        src = f"[원자료]({href})" if href else (r.source_url or "-")
+        # 문서가 있으면 문서를 건다(render_html과 같은 규약).
+        doc = safe_href(r.doc_url)
+        href = doc or safe_href(r.source_url)
+        src = f"[{'공시원문' if doc else '원자료'}]({href})" if href else (r.source_url or "-")
         # 마크다운에는 색이 없으므로 방향은 화살표가 진다.
         mark = arrow(r.delta_pct)
         comparison = f"{mark} {r.comparison}".strip() if mark else r.comparison
