@@ -156,9 +156,15 @@ def _fmt_value_with_asof(row) -> str:
     return base
 
 
-def _row_from_fact(row, label: str, comparison: str, delta_pct: float | None = None) -> FactRow:
+def _row_from_fact(
+    row, label: str, comparison: str, delta_pct: float | None = None,
+    value: str | None = None,
+) -> FactRow:
+    """`value`는 표시 문자열을 직접 지정할 때만 쓴다(공시 행처럼 `value_text`가
+    수치가 아닌 경우). 기본은 값+기준일 조합인 `_fmt_value_with_asof`."""
     return FactRow(
-        label=label, value=_fmt_value_with_asof(row), comparison=comparison,
+        label=label, value=value if value is not None else _fmt_value_with_asof(row),
+        comparison=comparison,
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",
         known_at=row["known_at"], subject=row["subject"], metric=row["metric"],
         raw_value=row["value_num"] if row["value_num"] is not None else row["value_text"],
@@ -438,6 +444,46 @@ def _financials_facts(conn, cutoff, subjects: list[str] | None = None) -> list[F
     return out
 
 
+_FORM_LABELS = {
+    "10-K": "연간보고서(10-K)", "10-Q": "분기보고서(10-Q)", "8-K": "수시공시(8-K)",
+    "6-K": "외국기업 수시보고(6-K)", "20-F": "외국기업 연차보고(20-F)",
+    "13F-HR": "13F 보유내역", "13F-HR/A": "13F 보유내역(정정)",
+}
+_FILING_METRIC_LABELS = {
+    "earnings_release_8k": "실적 발표 공시",
+    "filing_event": "정기공시 제출",
+}
+
+
+def _filing_kind(row) -> str:
+    """"AMZN · earnings_release_8k" 대신 "Amazon(AMZN) 실적 발표 공시(8-K)"."""
+    base = _FILING_METRIC_LABELS.get(row["metric"], row["metric"])
+    try:
+        form = (json.loads(row["extra_json"] or "{}") or {}).get("form")
+    except (json.JSONDecodeError, TypeError):
+        form = None
+    if row["metric"] == "filing_event" and form:
+        return _FORM_LABELS.get(form, f"{base}({form})")
+    if form and form not in base:
+        return f"{base}({form})"
+    return base
+
+
+def _filing_value(row) -> str:
+    """공시 행에서 사실은 **언제 제출됐는가**다.
+
+    이 fact들은 `value_num`이 없고 `value_text`에 SEC 접수번호가 들어 있다.
+    그것을 '수치' 칸에 그대로 실으면 화면에 `0000004904-26-000055`가 금액인
+    것처럼 뜬다(CEO 지적, 2026-08-02). 접수번호는 원자료 링크가 이미 가리키고
+    있으므로 여기서는 제출일을 싣고 번호는 작게 덧붙인다. AI 해석이 접수번호를
+    현금흐름이라 부르던 문제(최종검수 F2)의 표면적도 함께 줄어든다."""
+    when = (row["event_at"] or "")[:10]
+    acc = (row["value_text"] or "").strip()
+    if when and acc:
+        return f"{when} 제출 · 접수번호 {acc}"
+    return when or acc or "미확인"
+
+
 def _filing_facts(conn, cutoff, since: str | None = None) -> list[FactRow]:
     rows = list(db_mod.facts_as_of(conn, cutoff, category="filing"))
     rows += list(db_mod.facts_as_of(conn, cutoff, category="13f_filing"))
@@ -446,8 +492,8 @@ def _filing_facts(conn, cutoff, since: str | None = None) -> list[FactRow]:
     for row in rows:
         if since is not None and (row["known_at"] or "") < since:
             continue
-        label = f"{_subject_name(row['subject'])} · {row['metric']}"
-        out.append(_row_from_fact(row, label, row["publisher"] or ""))
+        label = f"{_subject_name(row['subject'])} {_filing_kind(row)}"
+        out.append(_row_from_fact(row, label, row["publisher"] or "", value=_filing_value(row)))
     out.sort(key=lambda r: r.known_at, reverse=True)
     return out
 

@@ -2,9 +2,9 @@
   "schema_version": "2a.2",
   "report_type": "morning",
   "report_date": "2026-08-01",
-  "cutoff_kst": "2026-08-02T12:00:00+09:00",
-  "cutoff_utc": "2026-08-02T03:00:00+00:00",
-  "generated_at": "2026-08-02T02:46:49+00:00",
+  "cutoff_kst": "2026-08-02T20:00:00+09:00",
+  "cutoff_utc": "2026-08-02T11:00:00+00:00",
+  "generated_at": "2026-08-02T06:19:04+00:00",
   "title": "모닝",
   "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · 달러/원 1,436.6원(+1.1%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
   "breadth": "Core 16 중 14/16개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 4/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 2/2 · 헬스케어 0/1",
@@ -180,8 +180,8 @@
       "series": []
     },
     {
-      "label": "American Electric Power(AEP) · earnings_release_8k",
-      "value": "0000004904-26-000055",
+      "label": "American Electric Power(AEP) 실적 발표 공시(8-K)",
+      "value": "2026-07-30 제출 · 접수번호 0000004904-26-000055",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000004904.json",
       "data_status": "source_verified",
@@ -193,8 +193,8 @@
       "series": []
     },
     {
-      "label": "Amazon(AMZN) · earnings_release_8k",
-      "value": "0001018724-26-000024",
+      "label": "Amazon(AMZN) 실적 발표 공시(8-K)",
+      "value": "2026-07-30 제출 · 접수번호 0001018724-26-000024",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001018724.json",
       "data_status": "source_verified",
@@ -206,8 +206,8 @@
       "series": []
     },
     {
-      "label": "Caterpillar(CAT) · earnings_release_8k",
-      "value": "0000018230-26-000017",
+      "label": "Caterpillar(CAT) 실적 발표 공시(8-K)",
+      "value": "2026-04-30 제출 · 접수번호 0000018230-26-000017",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000018230.json",
       "data_status": "source_verified",
@@ -219,8 +219,8 @@
       "series": []
     },
     {
-      "label": "Alphabet(GOOGL) · earnings_release_8k",
-      "value": "0001652044-26-000066",
+      "label": "Alphabet(GOOGL) 실적 발표 공시(8-K)",
+      "value": "2026-07-22 제출 · 접수번호 0001652044-26-000066",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001652044.json",
       "data_status": "source_verified",
@@ -232,8 +232,8 @@
       "series": []
     },
     {
-      "label": "JPMorgan Chase(JPM) · earnings_release_8k",
-      "value": "0001628280-26-048078",
+      "label": "JPMorgan Chase(JPM) 실적 발표 공시(8-K)",
+      "value": "2026-07-14 제출 · 접수번호 0001628280-26-048078",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000019617.json",
       "data_status": "source_verified",
@@ -245,8 +245,8 @@
       "series": []
     },
     {
-      "label": "Eli Lilly(LLY) · earnings_release_8k",
-      "value": "0000059478-26-000043",
+      "label": "Eli Lilly(LLY) 실적 발표 공시(8-K)",
+      "value": "2026-04-30 제출 · 접수번호 0000059478-26-000043",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000059478.json",
       "data_status": "source_verified",
@@ -258,8 +258,8 @@
       "series": []
     },
     {
-      "label": "Meta Platforms(META) · earnings_release_8k",
-      "value": "0001628280-26-050596",
+      "label": "Meta Platforms(META) 실적 발표 공시(8-K)",
+      "value": "2026-07-29 제출 · 접수번호 0001628280-26-050596",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001326801.json",
       "data_status": "source_verified",
@@ -271,8 +271,8 @@
       "series": []
     },
     {
-      "label": "Microsoft(MSFT) · earnings_release_8k",
-      "value": "0001193125-26-323632",
+      "label": "Microsoft(MSFT) 실적 발표 공시(8-K)",
+      "value": "2026-07-29 제출 · 접수번호 0001193125-26-323632",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
       "data_status": "source_verified",
@@ -284,8 +284,8 @@
       "series": []
     },
     {
-      "label": "NVIDIA(NVDA) · earnings_release_8k",
-      "value": "0001045810-26-000051",
+      "label": "NVIDIA(NVDA) 실적 발표 공시(8-K)",
+      "value": "2026-05-20 제출 · 접수번호 0001045810-26-000051",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001045810.json",
       "data_status": "source_verified",
@@ -297,8 +297,8 @@
       "series": []
     },
     {
-      "label": "Walmart(WMT) · earnings_release_8k",
-      "value": "0000104169-26-000095",
+      "label": "Walmart(WMT) 실적 발표 공시(8-K)",
+      "value": "2026-05-21 제출 · 접수번호 0000104169-26-000095",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000104169.json",
       "data_status": "source_verified",
@@ -310,8 +310,8 @@
       "series": []
     },
     {
-      "label": "Exxon Mobil(XOM) · earnings_release_8k",
-      "value": "0002115436-26-000006",
+      "label": "Exxon Mobil(XOM) 실적 발표 공시(8-K)",
+      "value": "2026-07-31 제출 · 접수번호 0002115436-26-000006",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0002115436.json",
       "data_status": "source_verified",
@@ -323,8 +323,8 @@
       "series": []
     },
     {
-      "label": "SK하이닉스(000660.KS) · filing_event",
-      "value": "20260515002287",
+      "label": "SK하이닉스(000660.KS) 정기공시 제출",
+      "value": "2026-05-15 제출 · 접수번호 20260515002287",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00164779&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
       "data_status": "source_verified",
@@ -336,8 +336,8 @@
       "series": []
     },
     {
-      "label": "현대차(005380.KS) · filing_event",
-      "value": "20260515002418",
+      "label": "현대차(005380.KS) 정기공시 제출",
+      "value": "2026-05-15 제출 · 접수번호 20260515002418",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00164742&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
       "data_status": "source_verified",
@@ -349,8 +349,8 @@
       "series": []
     },
     {
-      "label": "삼성전자(005930.KS) · filing_event",
-      "value": "20260515002181",
+      "label": "삼성전자(005930.KS) 정기공시 제출",
+      "value": "2026-05-15 제출 · 접수번호 20260515002181",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00126380&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
       "data_status": "source_verified",
@@ -362,8 +362,8 @@
       "series": []
     },
     {
-      "label": "KB금융(105560.KS) · filing_event",
-      "value": "20260619000667",
+      "label": "KB금융(105560.KS) 정기공시 제출",
+      "value": "2026-06-19 제출 · 접수번호 20260619000667",
       "comparison": "DART",
       "source_url": "https://opendart.fss.or.kr/api/list.json?crtfc_key=***&corp_code=00688996&bgn_de=20260403&end_de=20260801&pblntf_ty=A&page_no=1&page_count=10",
       "data_status": "source_verified",
@@ -375,8 +375,8 @@
       "series": []
     },
     {
-      "label": "baupost_group · filing_event",
-      "value": "0001061768-26-000007",
+      "label": "baupost_group 13F 보유내역",
+      "value": "2026-05-14 제출 · 접수번호 0001061768-26-000007",
       "comparison": "SEC EDGAR",
       "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&CIK=0001061768",
       "data_status": "source_verified",
@@ -388,8 +388,8 @@
       "series": []
     },
     {
-      "label": "berkshire_hathaway · filing_event",
-      "value": "0001193125-26-226661",
+      "label": "berkshire_hathaway 13F 보유내역",
+      "value": "2026-05-15 제출 · 접수번호 0001193125-26-226661",
       "comparison": "SEC EDGAR",
       "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&company=berkshire+hathaway",
       "data_status": "source_verified",
@@ -401,8 +401,8 @@
       "series": []
     },
     {
-      "label": "lone_pine_capital · filing_event",
-      "value": "0000919574-26-003439",
+      "label": "lone_pine_capital 13F 보유내역",
+      "value": "2026-05-15 제출 · 접수번호 0000919574-26-003439",
       "comparison": "SEC EDGAR",
       "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&company=lone+pine+capital",
       "data_status": "source_verified",
@@ -414,8 +414,8 @@
       "series": []
     },
     {
-      "label": "pershing_square · filing_event",
-      "value": "0001172661-26-002336",
+      "label": "pershing_square 13F 보유내역",
+      "value": "2026-05-15 제출 · 접수번호 0001172661-26-002336",
       "comparison": "SEC EDGAR",
       "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&company=pershing+square+capital",
       "data_status": "source_verified",
@@ -427,8 +427,8 @@
       "series": []
     },
     {
-      "label": "tci_fund_management · filing_event",
-      "value": "0001647251-26-000004",
+      "label": "tci_fund_management 13F 보유내역",
+      "value": "2026-05-15 제출 · 접수번호 0001647251-26-000004",
       "comparison": "SEC EDGAR",
       "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=13F-HR&dateb=&owner=include&count=10&output=atom&company=tci+fund+management",
       "data_status": "source_verified",
@@ -440,8 +440,8 @@
       "series": []
     },
     {
-      "label": "American Electric Power(AEP) · filing_event",
-      "value": "0000004904-26-000059",
+      "label": "American Electric Power(AEP) 분기보고서(10-Q)",
+      "value": "2026-07-30 제출 · 접수번호 0000004904-26-000059",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000004904.json",
       "data_status": "source_verified",
@@ -453,8 +453,8 @@
       "series": []
     },
     {
-      "label": "Amazon(AMZN) · filing_event",
-      "value": "0001018724-26-000026",
+      "label": "Amazon(AMZN) 분기보고서(10-Q)",
+      "value": "2026-07-31 제출 · 접수번호 0001018724-26-000026",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001018724.json",
       "data_status": "source_verified",
@@ -466,8 +466,8 @@
       "series": []
     },
     {
-      "label": "Caterpillar(CAT) · filing_event",
-      "value": "0000018230-26-000021",
+      "label": "Caterpillar(CAT) 분기보고서(10-Q)",
+      "value": "2026-05-06 제출 · 접수번호 0000018230-26-000021",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000018230.json",
       "data_status": "source_verified",
@@ -479,8 +479,8 @@
       "series": []
     },
     {
-      "label": "Alphabet(GOOGL) · filing_event",
-      "value": "0001652044-26-000071",
+      "label": "Alphabet(GOOGL) 분기보고서(10-Q)",
+      "value": "2026-07-23 제출 · 접수번호 0001652044-26-000071",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001652044.json",
       "data_status": "source_verified",
@@ -492,8 +492,8 @@
       "series": []
     },
     {
-      "label": "JPMorgan Chase(JPM) · filing_event",
-      "value": "0001628280-26-029344",
+      "label": "JPMorgan Chase(JPM) 분기보고서(10-Q)",
+      "value": "2026-05-01 제출 · 접수번호 0001628280-26-029344",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000019617.json",
       "data_status": "source_verified",
@@ -505,8 +505,8 @@
       "series": []
     },
     {
-      "label": "Eli Lilly(LLY) · filing_event",
-      "value": "0000059478-26-000045",
+      "label": "Eli Lilly(LLY) 분기보고서(10-Q)",
+      "value": "2026-04-30 제출 · 접수번호 0000059478-26-000045",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000059478.json",
       "data_status": "source_verified",
@@ -518,8 +518,8 @@
       "series": []
     },
     {
-      "label": "Meta Platforms(META) · filing_event",
-      "value": "0001628280-26-050705",
+      "label": "Meta Platforms(META) 분기보고서(10-Q)",
+      "value": "2026-07-30 제출 · 접수번호 0001628280-26-050705",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001326801.json",
       "data_status": "source_verified",
@@ -531,8 +531,8 @@
       "series": []
     },
     {
-      "label": "Microsoft(MSFT) · filing_event",
-      "value": "0001193125-26-323660",
+      "label": "Microsoft(MSFT) 연간보고서(10-K)",
+      "value": "2026-07-29 제출 · 접수번호 0001193125-26-323660",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
       "data_status": "source_verified",
@@ -544,8 +544,8 @@
       "series": []
     },
     {
-      "label": "NVIDIA(NVDA) · filing_event",
-      "value": "0001045810-26-000052",
+      "label": "NVIDIA(NVDA) 분기보고서(10-Q)",
+      "value": "2026-05-20 제출 · 접수번호 0001045810-26-000052",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001045810.json",
       "data_status": "source_verified",
@@ -557,8 +557,8 @@
       "series": []
     },
     {
-      "label": "TSMC ADR(TSM) · filing_event",
-      "value": "0001046179-26-000459",
+      "label": "TSMC ADR(TSM) 외국기업 수시보고(6-K)",
+      "value": "2026-07-24 제출 · 접수번호 0001046179-26-000459",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0001046179.json",
       "data_status": "source_verified",
@@ -570,8 +570,8 @@
       "series": []
     },
     {
-      "label": "Walmart(WMT) · filing_event",
-      "value": "0000104169-26-000102",
+      "label": "Walmart(WMT) 분기보고서(10-Q)",
+      "value": "2026-05-29 제출 · 접수번호 0000104169-26-000102",
       "comparison": "SEC EDGAR",
       "source_url": "https://data.sec.gov/submissions/CIK0000104169.json",
       "data_status": "source_verified",
@@ -1085,7 +1085,7 @@
     {
       "area": "한국 수급(외국인/기관/개인)",
       "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
-      "since": "2026-08-02T02:46:49+00:00",
+      "since": "2026-08-02T06:19:04+00:00",
       "gap_id": "kr_flows:net_buy"
     }
   ],
@@ -1148,10 +1148,10 @@
   "interpretation": {
     "reading": "",
     "counter_reading": "",
-    "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 0 · 약화 0 · 무효 0 · 판정 불가 1.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 판정 불가 — 관측 부족(MSFT free_cash_flow 관측 부족(1개, 필요 3개)).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.68 (조건 >= 4.5 충족).",
+    "thesis_impact": "",
     "next_check": "",
-    "generated_by": "규칙 판정 · thesis/2b.1",
-    "generated_at": "2026-08-02T02:46:49+00:00"
+    "generated_by": "",
+    "generated_at": ""
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -1163,43 +1163,6 @@
       "events": 7,
       "schedule_changes": 6,
       "missing": 1
-    },
-    "interpretation": {
-      "engine_version": "2b.1",
-      "status": "disabled",
-      "model": null,
-      "prompt_version": "interpretation_v2",
-      "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
-      "generated_at": "2026-08-02T02:46:49+00:00",
-      "elapsed_ms": 0,
-      "attempts": 0,
-      "fields": {
-        "reading": "empty",
-        "counter_reading": "empty",
-        "thesis_impact": "rules",
-        "next_check": "empty"
-      },
-      "violations": {},
-      "evidence": [],
-      "evidence_unresolved": [],
-      "digest_truncated": false,
-      "thesis_reviews": [
-        {
-          "thesis_id": "ai_semi_1",
-          "verdict": "강화",
-          "changed": 0
-        },
-        {
-          "thesis_id": "ai_semi_2",
-          "verdict": "판정 불가",
-          "changed": 0
-        },
-        {
-          "thesis_id": "fin_credit_1",
-          "verdict": "강화",
-          "changed": 0
-        }
-      ]
     }
   }
 }

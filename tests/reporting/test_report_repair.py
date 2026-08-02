@@ -457,3 +457,76 @@ def test_previous_close_gap_is_named_honestly():
     assert "전일" not in gapped
     assert "4일 전 종가 대비" in gapped
     assert "직전 종가 대비" in _market_reaction_row("^KS11", info("2026-07-31", None, 1.5)).comparison
+
+
+# --- CEO 지적(2026-08-02): '수치' 칸에 문서번호가 실리던 문제 ---------------
+
+
+def test_filing_row_shows_when_not_an_accession_number():
+    """공시 행의 사실은 **언제 제출됐는가**다. 접수번호가 아니다.
+
+    발행된 화면에 `American Electric Power(AEP) · earnings_release_8k |
+    0000004904-26-000055` 이 떴다. '수치' 컬럼에 SEC 접수번호가 금액인 것처럼
+    실린 것이고, CEO가 "이 수치가 뭘 의미하는지 모르겠다"고 지적했다.
+    같은 혼동이 AI 해석에서도 나왔다(최종검수 F2: 접수번호를 '영업현금흐름'이라 부름).
+    """
+    from market_intel.reporting import build as build_mod
+
+    row = {
+        "subject": "AEP", "metric": "earnings_release_8k",
+        "event_at": "2026-07-30T00:00:00+00:00",
+        "value_num": None, "value_text": "0000004904-26-000055",
+        "extra_json": '{"form": "8-K"}',
+    }
+
+    kind = build_mod._filing_kind(row)
+    assert "earnings_release_8k" not in kind, f"기계 항목명이 그대로 노출: {kind}"
+    assert "실적 발표" in kind and "8-K" in kind
+
+    value = build_mod._filing_value(row)
+    assert value.startswith("2026-07-30"), f"제출일이 앞에 오지 않는다: {value}"
+    assert "제출" in value
+    # 접수번호는 버리지 않되 무엇인지 밝힌다 — 맨숫자로 두면 다시 수치로 읽힌다
+    assert "접수번호" in value
+    assert not value.startswith("0000004904"), "접수번호가 여전히 수치 자리에 있다"
+
+
+def test_filing_kind_labels_periodic_forms():
+    """정기공시도 기계 이름(`filing_event`)이 아니라 서식 이름으로 보인다."""
+    from market_intel.reporting import build as build_mod
+
+    for form, expect in (("10-K", "연간보고서"), ("10-Q", "분기보고서"), ("13F-HR", "13F")):
+        kind = build_mod._filing_kind({
+            "subject": "X", "metric": "filing_event", "event_at": "2026-07-30T00:00:00+00:00",
+            "value_num": None, "value_text": "acc", "extra_json": '{"form": "%s"}' % form,
+        })
+        assert "filing_event" not in kind, kind
+        assert expect in kind, f"{form} -> {kind}"
+
+
+def test_report_actually_uses_the_readable_filing_labels(tmp_path, settings):
+    """`_filing_facts`가 읽을 수 있는 라벨/값을 **실제로 쓰는지** 확인한다.
+
+    헬퍼만 단위 검사하면 호출부를 옛 동작으로 되돌려도 초록이다(실측: 변이
+    주입 후 49 passed). 이 계약은 리포트 행에서 검사해야 한다.
+    """
+    db_path = str(tmp_path / "filing.db")
+    db_mod.init_db(db_path)
+    conn = db_mod.connect(db_path)
+    fc = FactCandidate(
+        raw_ref="AEP:8k", subject="AEP", category="event", metric="earnings_release_8k",
+        event_at="2026-07-30T00:00:00+00:00", market="US", country="US",
+        value_text="0000004904-26-000055", unit="", publisher="SEC EDGAR",
+        data_status="source_verified", extra={"form": "8-K"},
+    )
+    seed_fact(conn, settings.raw_dir, "sec_edgar", fc, known_at="2026-07-30T12:00:00+00:00")
+
+    rows = build_mod._filing_facts(conn, datetime(2026, 8, 1, tzinfo=timezone.utc))
+    conn.close()
+
+    assert rows, "공시 행이 하나도 만들어지지 않았다"
+    row = rows[0]
+    assert "earnings_release_8k" not in row.label, f"기계 항목명 노출: {row.label}"
+    assert "실적 발표" in row.label
+    assert row.value.startswith("2026-07-30"), f"수치 칸이 제출일로 시작하지 않는다: {row.value}"
+    assert not row.value.startswith("0000004904"), "접수번호가 여전히 수치 자리에 있다"
