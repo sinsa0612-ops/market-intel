@@ -96,6 +96,17 @@ SECTOR_NOTE = ("업종 대표값은 평균이 아니라 중앙값입니다 — �
                "움직인 것처럼 보이기 때문입니다. 종목이 1~2개인 축(표본 적음)은 업종 신호가 아니라 "
                "그 개별 종목의 움직임으로 읽으십시오.")
 
+# 업종 표가 두 개인 이유를 CEO가 한 줄로 알 수 있어야 한다. 위 표는 시장을
+# 재는 자(업종 ETF), 아래 표는 내가 들여다보는 기업들이다.
+SECTOR_INDEX_TITLE = "업종 지수 — 시장 전체가 업종별로 어떻게 움직였나"
+SECTOR_TITLE = "업종 묶음 — 내가 관측하는 Core 16 기업은 어땠나"
+# 따옴표는 쓰지 않는다: HTML 렌더러가 `_esc(quote=True)`로 &#x27;로 바꿔버려
+# 같은 문장이 두 형식에서 다른 글자가 된다(테스트가 잡았다).
+SECTOR_INDEX_NOTE = ("이 표는 업종별 대표 ETF 한 종목으로 시장 전체가 업종별로 어떻게 움직였는지 봅니다. "
+                     "아래 업종 묶음 표는 그와 별개로, 제가 매일 들여다보는 기업 16곳만 묶은 것입니다.")
+# 업종 지수 표의 시장 구분 표기. 값은 `SectorIndexRow.market`.
+MARKET_LABELS = {"US": "미국", "KR": "한국"}
+
 
 def direction(delta_pct: float | None) -> str:
     """'up' | 'down' | 'flat' | '' — 마지막은 '등락을 모른다'(직전 값 없음).
@@ -173,11 +184,42 @@ def _sector(report: Report) -> dict:
     return {"kind": "sector", "rows": report.sector_summary}
 
 
+def _sector_index(report: Report) -> dict:
+    """업종 지수 표를 시장(미국/한국)별로 묶는다. 순서는 행이 들고 온 순서 —
+    `build.py`가 이미 시장별·등락률 내림차순으로 정렬해서 넘긴다."""
+    groups: list[tuple[str, list]] = []
+    for row in report.sector_index:
+        label = MARKET_LABELS.get(row.market, row.market)
+        if not groups or groups[-1][0] != label:
+            groups.append((label, []))
+        groups[-1][1].append(row)
+    return {"kind": "sector_index", "groups": groups}
+
+
+def _subheading(text: str) -> dict:
+    """표 제목(h3/###). 표가 둘이 되면서 어느 표가 무엇인지 이름이 필요해졌다.
+    제목을 표 렌더러 안이 아니라 **레이아웃에** 두는 이유는 시장 폭 한 줄이
+    자기 제목 **아래**에 붙어야 하기 때문이다 — 제목이 표 함수 안에 있으면 그
+    한 줄은 두 표 사이에 떠서 어느 쪽 이야기인지 알 수 없다.
+    빈 문자열이면 아무것도 내지 않는다(딸린 내용이 없는 제목은 안 낸다)."""
+    return {"kind": "subheading", "text": text}
+
+
 def _market_blocks(report: Report) -> list[dict]:
-    """"시장 반응" 계열 섹션의 본문: 개별 종목 표 + 시장 폭 한 줄 + 업종 요약.
-    5개 리포트 타입이 같은 조합을 쓰므로 한 곳에서만 만든다 — 타입마다 손으로
-    베낀 레이아웃이 예전에 두 타입의 해석 칸을 동시에 떨어뜨린 적이 있다."""
-    return [_facts(report.market_reaction), _breadth(report), _sector(report)]
+    """"시장 반응" 계열 섹션의 본문: 개별 종목 표 + 업종 지수 표 + 업종 묶음 표
+    (시장 폭 한 줄 포함). 5개 리포트 타입이 같은 조합을 쓰므로 한 곳에서만
+    만든다 — 타입마다 손으로 베낀 레이아웃이 예전에 두 타입의 해석 칸을 동시에
+    떨어뜨린 적이 있다.
+
+    순서는 넓은 것 → 좁은 것이다: 시장 전체(업종 지수) 다음에 내가 보는 16개
+    기업(시장 폭 + 업종 묶음). 두 업종 표는 붙어 있어야 비교가 된다."""
+    return [
+        _facts(report.market_reaction),
+        _subheading(SECTOR_INDEX_TITLE), _sector_index(report),
+        # 옛 리포트 JSON에는 sector_summary가 없다 — 딸린 표가 없으면 제목도 안 낸다.
+        _subheading(SECTOR_TITLE if report.sector_summary else ""),
+        _breadth(report), _sector(report),
+    ]
 
 
 def _interp(report: Report, field_name: str) -> dict:
@@ -278,6 +320,27 @@ def _facts_table_md(rows: list[FactRow]) -> str:
     return "\n".join(lines)
 
 
+def _sector_index_table_md(groups) -> str:
+    """업종 지수 표(마크다운). 관측이 0이어도 제목과 "관측 없음"은 낸다 —
+    표가 조용히 사라지면 독자는 그날 업종이 안 움직였다고 읽는다(§3.3)."""
+    parts = [SECTOR_INDEX_NOTE, ""]
+    if not groups:
+        parts.append("(관측 없음 — 차단선 이전에 알려진 업종 지수 종가가 없습니다)")
+        return "\n".join(parts)
+    for market_label, rows in groups:
+        parts += [f"**{market_label}**", "", "| 업종 | 수치 | 등락 | 원자료 |", "|---|---:|---|---|"]
+        for r in rows:
+            badge = status_ko(r.data_status)
+            value_cell = f"{r.value} · {badge}" if badge else r.value
+            href = safe_href(r.source_url)
+            src = f"[원자료]({href})" if href else (r.source_url or "-")
+            mark = arrow(r.delta_pct)
+            change = f"{mark} {r.comparison}".strip() if mark else r.comparison
+            parts.append(f"| {r.label} | {value_cell} | {change} | {src} |")
+        parts.append("")
+    return "\n".join(parts).rstrip()
+
+
 def _sector_table_md(rows) -> str:
     if not rows:
         return ""
@@ -316,6 +379,10 @@ def _block_md(block: dict) -> str:
         return block["text"]
     if kind == "sector":
         return _sector_table_md(block["rows"])
+    if kind == "sector_index":
+        return _sector_index_table_md(block["groups"])
+    if kind == "subheading":
+        return f"### {block['text']}" if block["text"] else ""
     if kind == "calendar":
         return _calendar_table_md(block["columns"], block["rows"])
     if kind == "missing":

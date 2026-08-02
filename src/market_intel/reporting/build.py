@@ -38,6 +38,11 @@ calls the architect left to ST2, not things the spec pinned):
   그 순간 리포트의 정보차단선 밖으로 나가고, "리포트가 정본이고 사이트는
   렌더러"라는 구조도 깨진다. `_price_map`이 쓰는 단 한 번의
   `facts_as_of(cutoff)` 결과에서 그대로 잘라내므로 PIT 규칙이 하나로 유지된다.
+- **업종 표가 둘인 이유**: `sector_index`(업종 지수 ETF 16개)는 "시장 전체가
+  업종별로 어떻게 움직였나"에, `sector_summary`(Core 16 기업 묶음)는 "내가
+  관측하는 16개 기업은 어땠나"에 답한다. 서로 다른 질문이라 합치면 둘 다
+  잃는다. **두 집계는 입력이 겹치지 않는다** — 지수 쪽은
+  `SECTOR_INDEX_SYMBOLS`만, 기업 쪽은 `CORE16_SYMBOLS`만 본다.
 - **monthly regime rule** (§6.3, spec B6): uses each series' latest stored
   observation vs. the one immediately before it in the PIT store. For the
   monthly FRED series (CPI/PCE/UNRATE) that already IS month-over-month
@@ -58,7 +63,13 @@ from datetime import date, datetime, timedelta
 
 from .. import db as db_mod
 from .. import schedule as schedule_mod
-from ..universe import CORE16_SYMBOLS, SECTOR_BY_SYMBOL, SECTORS, UNIVERSE
+from ..universe import (
+    CORE16_SYMBOLS,
+    SECTOR_BY_SYMBOL,
+    SECTOR_INDEX_SYMBOLS,
+    SECTORS,
+    UNIVERSE,
+)
 from .cutoff import KST
 from .model import (
     CalendarRow,
@@ -66,6 +77,7 @@ from .model import (
     Interpretation,
     MissingItem,
     Report,
+    SectorIndexRow,
     SectorSummary,
     worst_data_status,
 )
@@ -80,6 +92,12 @@ _UNIVERSE_BY_SYMBOL = {m["symbol"]: m for m in UNIVERSE}
 # showed it — the failure mode is silent, and it is how a tracked index goes
 # missing from the report nobody notices. Declaration order in `universe.py`
 # is the display order (지수 → 위험선호 → 실물).
+#
+# `sector_index`가 이 목록에 **일부러 없다**: 업종 지수 16개는 자기 표
+# (`_sector_index_rows`)에서 등락률 순으로 보이므로, 여기에도 넣으면 CEO가 같은
+# 16줄을 한 섹션 안에서 두 번 읽는다. 새 asset_type을 이 조건에 넣고 싶어질
+# 때를 대비해 남긴다 — 그 중복은 테스트가 잡는다
+# (test_sector_indices_do_not_enter_the_main_market_reaction_table).
 _MARKET_REACTION_SYMBOLS = [
     m["symbol"] for m in UNIVERSE
     if not m["core16"] and m["asset_type"] in ("index", "rate", "fx", "commodity")
@@ -240,24 +258,29 @@ def _session_gap_days(latest, prev) -> int | None:
     return abs((a - b).days)
 
 
+def _comparison_text(info: dict) -> str:
+    """"전일대비 +1.2%" 같은 비교 문구.
+
+    "전일대비" is only true when the two observations really are adjacent
+    sessions. After a holiday, a collection outage, or a backfill the
+    previous close can be many days back, and calling that "전일" states a
+    fact the data does not support (final-review.md F4). Name the actual
+    gap instead; one trading day keeps the familiar wording."""
+    if info["delta_pct"] is None:
+        return "전일 비교 불가(직전 종가 없음)"
+    gap = _session_gap_days(info["latest"], info.get("prev"))
+    if gap is None:
+        return f"직전 종가 대비 {info['delta_pct']:+.2f}%"
+    if gap <= 1:
+        return f"전일대비 {info['delta_pct']:+.2f}%"
+    return f"{gap}일 전 종가 대비 {info['delta_pct']:+.2f}%"
+
+
 def _market_reaction_row(subj: str, info: dict) -> FactRow:
     row = info["latest"]
     meta = _UNIVERSE_BY_SYMBOL.get(subj, {})
     label = meta.get("name_ko") or meta.get("name", subj)
-    # "전일대비" is only true when the two observations really are adjacent
-    # sessions. After a holiday, a collection outage, or a backfill the
-    # previous close can be many days back, and calling that "전일" states a
-    # fact the data does not support (final-review.md F4). Name the actual
-    # gap instead; one trading day keeps the familiar wording.
-    comparison = "전일 비교 불가(직전 종가 없음)"
-    if info["delta_pct"] is not None:
-        gap = _session_gap_days(row, info.get("prev"))
-        if gap is None:
-            comparison = f"직전 종가 대비 {info['delta_pct']:+.2f}%"
-        elif gap <= 1:
-            comparison = f"전일대비 {info['delta_pct']:+.2f}%"
-        else:
-            comparison = f"{gap}일 전 종가 대비 {info['delta_pct']:+.2f}%"
+    comparison = _comparison_text(info)
     return FactRow(
         label=label, value=_fmt_price_value(row), comparison=comparison,
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",
@@ -352,6 +375,44 @@ def _sector_summary(price_map: dict) -> list[SectorSummary]:
             median_pct=statistics.median(deltas) if deltas else None,
             small_sample=0 < len(deltas) <= _SMALL_SAMPLE_MAX,
         ))
+    return out
+
+
+def _sector_index_rows(price_map: dict) -> list[SectorIndexRow]:
+    """업종 지수 표: 어느 업종이 오르고 내렸나, 등락률 순으로.
+
+    **Core 16 집계와 완전히 분리된 계산이다.** 여기 쓰이는 심볼은
+    `SECTOR_INDEX_SYMBOLS`뿐이고, `_sector_summary`/`_breadth_line`/`_headline`
+    은 `CORE16_SYMBOLS`만 본다 — 두 집계가 서로의 입력에 닿지 않는다는 것이
+    "Core 16 중 4/6개 상승"이 계속 참인 이유다(회귀 테스트:
+    tests/reporting/test_sector_indices.py).
+
+    시장(미국/한국)별로 나눠 각각 등락률 내림차순. 등락을 모르는 행(직전 종가
+    없음)은 순위를 매길 수 없으므로 그 시장의 맨 뒤로 보낸다 — 0%로 취급해서
+    중간에 끼워 넣으면 모르는 것을 안다고 말하는 셈이다."""
+    by_market: dict[str, list[SectorIndexRow]] = {}
+    for symbol in SECTOR_INDEX_SYMBOLS:
+        meta = _UNIVERSE_BY_SYMBOL[symbol]
+        info = price_map.get(symbol)
+        if info is None:
+            continue
+        row = info["latest"]
+        by_market.setdefault(meta["market"], []).append(SectorIndexRow(
+            subject=symbol,
+            label=meta.get("name_ko") or meta.get("name", symbol),
+            market=meta["market"],
+            value=_fmt_price_value(row),
+            comparison=_comparison_text(info),
+            delta_pct=info["delta_pct"],
+            series=list(info.get("series") or []),
+            source_url=row["safe_source_url"] or "",
+            data_status=row["data_status"] or "unverified",
+        ))
+    out: list[SectorIndexRow] = []
+    for market in dict.fromkeys(_UNIVERSE_BY_SYMBOL[s]["market"] for s in SECTOR_INDEX_SYMBOLS):
+        rows = by_market.get(market, [])
+        rows.sort(key=lambda r: (r.delta_pct is None, -(r.delta_pct or 0.0)))
+        out += rows
     return out
 
 
@@ -643,6 +704,7 @@ def build_report(
     market_reaction_all = _market_reaction(price_map)
     headline = _headline(price_map)
     sector_summary = _sector_summary(price_map)
+    sector_index = _sector_index_rows(price_map)
     breadth = _breadth_line(sector_summary)
     win = _EVENTS_WINDOW_DAYS[report_type]
     events = _events_rows(conn, cutoff, win)
@@ -704,6 +766,7 @@ def build_report(
     meta["counts"] = {
         "facts": len(facts), "market_reaction": len(market_reaction),
         "events": len(events), "schedule_changes": len(schedule_changes), "missing": len(missing),
+        "sector_index": len(sector_index),
     }
 
     return Report(
@@ -722,6 +785,7 @@ def build_report(
         schedule_changes=schedule_changes,
         missing=missing,
         sector_summary=sector_summary,
+        sector_index=sector_index,
         interpretation=Interpretation(),
         meta=meta,
     )

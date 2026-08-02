@@ -120,6 +120,11 @@ footer.site { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line
    아니므로 어떤 화면 폭에서도 숨기지 않는다. */
 .legend { color:var(--muted); font-size:.85rem; margin:.4rem 0 .8rem; }
 .breadth { font-size:.95rem; margin:.6rem 0 .2rem; }
+/* 업종 표가 둘(업종 지수 / Core 16 기업 묶음)이라 각 표에 제목이 붙는다.
+   h2(섹션)보다 작고 본문보다 굵게 — 375px에서도 두 표가 구분돼야 한다. */
+article.mi-report h3 { font-size:.98rem; margin:1.4rem 0 .1rem; }
+article.mi-report p.group { font-size:.85rem; color:var(--muted); font-weight:600;
+                            margin:.7rem 0 -.2rem; }
 .hero { display:flex; gap:.5rem; flex-wrap:wrap; margin:.2rem 0 .6rem; }
 .hero .card { flex:1 1 9rem; border:1px solid var(--line); border-radius:10px;
               padding:.6rem .8rem; }

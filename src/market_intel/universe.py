@@ -28,7 +28,8 @@ def _sym(
     `sector` is the spec §12 axis and only Core 16 companies have one: an
     index, an FX pair or a commodity is not a 업종, and giving KOSPI a sector
     would put the market's own benchmark inside the breadth count that is
-    supposed to measure it."""
+    supposed to measure it. The same holds for the `sector_index` ETFs added
+    below — they *measure* a sector, they do not *belong* to one."""
     if sector is not None and sector not in SECTORS:
         raise ValueError(f"universe: {symbol} has a sector outside spec §12: {sector!r}")
     if sector is not None and not core16:
@@ -85,11 +86,42 @@ UNIVERSE: list[dict] = [
     _sym("CL=F", "US", "US", "commodity", "WTI Crude Oil", name_ko="유가"),
     _sym("GC=F", "US", "US", "commodity", "Gold", name_ko="금"),
     _sym("HG=F", "US", "US", "commodity", "Copper", name_ko="구리"),
+    # --- 업종 지수 (CEO 확정, 2026-08-02) ---------------------------------
+    # Core 16의 6축은 §12가 고른 **관측 기업군**이지 시장의 업종 지도가 아니다:
+    # 세계 표준 분류(GICS 11업종)에 대보면 소재(화학·철강)와 부동산(리츠)이
+    # 통째로 비어 있고, 헬스케어는 릴리 1종목이라 "헬스케어 상승"이 실은 그
+    # 회사 이야기다. 그래서 층을 나눈다 — Core 16은 **깊이**(분기 재무·가설
+    # 검증), 업종 지수는 **폭**(어느 업종이 주도하나, 순환).
+    #
+    # §14가 제한한 것은 기업 Core 16이지 지수가 아니고, §6.1의 업종 행이
+    # 요구하는 질문("시장 폭과 순환은 어떤가")·§12 운영규칙의 "월간: 섹터 상대
+    # 강도"는 지금 코드가 답하지 못하고 있었다.
+    #
+    # `sector`가 None인 것은 실수가 아니다: 이것들은 업종을 **측정하는 계기**지
+    # 업종에 **속하는 종목**이 아니다. sector를 주면 Core 16 시장 폭 집계에
+    # 섞여 들어가 자기 자신을 세게 되고, "Core 16 중 4/6개 상승"이 거짓이 된다.
+    _sym("XLK", "US", "US", "sector_index", "Technology Select Sector SPDR", name_ko="정보기술"),
+    _sym("XLV", "US", "US", "sector_index", "Health Care Select Sector SPDR", name_ko="헬스케어"),
+    _sym("XLF", "US", "US", "sector_index", "Financial Select Sector SPDR", name_ko="금융"),
+    _sym("XLE", "US", "US", "sector_index", "Energy Select Sector SPDR", name_ko="에너지"),
+    _sym("XLI", "US", "US", "sector_index", "Industrial Select Sector SPDR", name_ko="산업재"),
+    _sym("XLU", "US", "US", "sector_index", "Utilities Select Sector SPDR", name_ko="유틸리티"),
+    _sym("XLP", "US", "US", "sector_index", "Consumer Staples Select Sector SPDR", name_ko="필수소비재"),
+    _sym("XLY", "US", "US", "sector_index", "Consumer Discretionary Select Sector SPDR", name_ko="경기소비재"),
+    _sym("XLB", "US", "US", "sector_index", "Materials Select Sector SPDR", name_ko="소재"),
+    _sym("XLRE", "US", "US", "sector_index", "Real Estate Select Sector SPDR", name_ko="부동산"),
+    _sym("XLC", "US", "US", "sector_index", "Communication Services Select Sector SPDR", name_ko="커뮤니케이션"),
+    _sym("091160.KS", "KR", "KR", "sector_index", "KODEX Semiconductor", name_ko="KODEX 반도체"),
+    _sym("227540.KS", "KR", "KR", "sector_index", "TIGER Health Care", name_ko="TIGER 헬스케어"),
+    _sym("117460.KS", "KR", "KR", "sector_index", "KODEX Energy & Chemicals", name_ko="KODEX 에너지화학"),
+    _sym("102970.KS", "KR", "KR", "sector_index", "KODEX Securities", name_ko="KODEX 증권"),
+    _sym("117680.KS", "KR", "KR", "sector_index", "KODEX Steel", name_ko="KODEX 철강"),
 ]
 
 CORE16: list[dict] = [m for m in UNIVERSE if m["core16"]]
 CORE16_SYMBOLS: list[str] = [m["symbol"] for m in CORE16]
 SECTOR_BY_SYMBOL: dict[str, str] = {m["symbol"]: m["sector"] for m in CORE16 if m["sector"]}
+SECTOR_INDEX_SYMBOLS: list[str] = [m["symbol"] for m in UNIVERSE if m["asset_type"] == "sector_index"]
 
 # Korean Core 4 (subset of Core16) — used by pykrx investor-flow and DART filings.
 KR_CORE4_SYMBOLS: list[str] = ["005930.KS", "000660.KS", "105560.KS", "005380.KS"]

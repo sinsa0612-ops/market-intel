@@ -27,7 +27,10 @@ import html as html_mod
 from .model import FactRow, Report, SectorSummary
 from .render_md import (
     LEGEND_HTML,
+    SECTOR_INDEX_NOTE,
+    SECTOR_INDEX_TITLE,
     SECTOR_NOTE,
+    SECTOR_TITLE,
     arrow,
     direction,
     fmt_pct,
@@ -154,6 +157,39 @@ def _hero_html(rows: list[FactRow]) -> str:
     return f'<div class="hero">{"".join(cards)}</div>'
 
 
+def _sector_index_table_html(groups) -> str:
+    """업종 지수 표(HTML). 시장별로 표를 나누고, 각 표는 등락률 내림차순이라
+    맨 윗줄이 그날 주도 업종이다. 색·화살표·스파크라인 규약은 사실 표와 동일."""
+    parts = [f'<p class="meta">{_esc(SECTOR_INDEX_NOTE)}</p>']
+    if not groups:
+        parts.append("<p>(관측 없음 — 차단선 이전에 알려진 업종 지수 종가가 없습니다)</p>")
+        return "".join(parts)
+    for market_label, rows in groups:
+        has_spark = any(len(r.series) >= 2 for r in rows)
+        spark_head = "<th>추이</th>" if has_spark else ""
+        body = []
+        for r in rows:
+            badge = status_ko(r.data_status)
+            cls = "status-warn" if r.data_status in ("partial", "unverified") else "status-ok"
+            value_cell = (f'{_esc(r.value)} <span class="{cls}">{_esc(badge)}</span>'
+                          if badge else _esc(r.value))
+            href = safe_href(r.source_url)
+            src = (f'<a href="{_esc(href)}" rel="noopener" target="_blank">원자료</a>'
+                   if href else (_esc(r.source_url) if r.source_url else "-"))
+            spark_cell = (f'<td class="sp">{sparkline_svg(r.series, direction(r.delta_pct))}</td>'
+                          if has_spark else "")
+            body.append(
+                f"<tr><td>{_esc(r.label)}</td><td>{value_cell}</td>"
+                f"{_change_cell(r.delta_pct, r.comparison)}{spark_cell}<td>{src}</td></tr>"
+            )
+        parts.append(f'<p class="group">{_esc(market_label)}</p>')
+        parts.append(_scroll(
+            "<table><thead><tr><th>업종</th><th>수치</th><th>등락</th>"
+            f'{spark_head}<th>원자료</th></tr></thead><tbody>{"".join(body)}</tbody></table>'
+        ))
+    return "".join(parts)
+
+
 def _sector_table_html(rows: list[SectorSummary]) -> str:
     if not rows:
         return ""
@@ -195,6 +231,10 @@ def _block_html(block: dict) -> str:
         return f'<p class="breadth">{_esc(block["text"])}</p>' if block["text"] else ""
     if kind == "sector":
         return _sector_table_html(block["rows"])
+    if kind == "sector_index":
+        return _sector_index_table_html(block["groups"])
+    if kind == "subheading":
+        return f"<h3>{_esc(block['text'])}</h3>" if block["text"] else ""
     if kind == "calendar":
         return _calendar_table_html(block["columns"], block["rows"])
     if kind == "missing":

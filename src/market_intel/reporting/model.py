@@ -25,7 +25,8 @@ from typing import Any
 # (가독성 요구 — 등락 색·화살표, 업종·시장 폭, 추이 그래프). 필드 추가뿐이라
 # 옛 JSON도 그대로 읽히지만(`from_json` 참조), 스키마가 바뀐 사실 자체를
 # 버전에 남긴다.
-SCHEMA_VERSION = "2a.2"
+# 2a.3: Report에 sector_index(업종 지수 표)가 추가됐다. 역시 필드 추가뿐이다.
+SCHEMA_VERSION = "2a.3"
 
 
 @dataclass
@@ -88,6 +89,30 @@ class SectorSummary:
 
 
 @dataclass
+class SectorIndexRow:
+    """업종 지수 ETF 한 종목의 하루치 — 업종 지수 표의 한 행.
+
+    `SectorSummary`(Core 16 기업을 묶은 축)와 **다른 것을 잰다**: 저쪽은
+    "내가 관측하는 16개 기업이 업종별로 어땠나", 이쪽은 "시장 전체가 업종별로
+    어떻게 움직였나"다. 그래서 필드도 다르다 — 여기에는 묶을 종목이 없고
+    (ETF 한 종목이 그 업종 전체를 담는다) 대신 지수 값·등락·추이가 있다.
+
+    `FactRow`를 쓰지 않는 이유는 `market`이다. 표를 미국/한국으로 갈라
+    보이려면 렌더러가 시장을 알아야 하는데, 렌더러는 `Report` 말고는 아무것도
+    읽지 않는다(spec B5 계약 1) — universe를 import하는 순간 그 계약이 깨진다.
+    """
+    subject: str
+    label: str
+    market: str  # 'US' | 'KR'
+    value: str
+    comparison: str
+    delta_pct: float | None
+    series: list[float]
+    source_url: str
+    data_status: str
+
+
+@dataclass
 class Interpretation:
     reading: str = ""
     counter_reading: str = ""
@@ -118,6 +143,9 @@ class Report:
     schedule_changes: list[CalendarRow] = field(default_factory=list)
     missing: list[MissingItem] = field(default_factory=list)
     sector_summary: list[SectorSummary] = field(default_factory=list)
+    # 업종 지수(시장 전체). `sector_summary`(Core 16 기업 묶음)와 나란히 놓이는
+    # 별개의 표이며, 둘은 서로 다른 질문에 답한다 — `SectorIndexRow` 참조.
+    sector_index: list[SectorIndexRow] = field(default_factory=list)
     interpretation: Interpretation = field(default_factory=Interpretation)
     meta: dict = field(default_factory=dict)
 
@@ -137,6 +165,7 @@ class Report:
         d["schedule_changes"] = [CalendarRow(**e) for e in d["schedule_changes"]]
         d["missing"] = [MissingItem(**m) for m in d["missing"]]
         d["sector_summary"] = [SectorSummary(**s) for s in d.get("sector_summary", [])]
+        d["sector_index"] = [SectorIndexRow(**s) for s in d.get("sector_index", [])]
         d["interpretation"] = Interpretation(**d["interpretation"])
         return cls(**d)
 
