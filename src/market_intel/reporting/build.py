@@ -31,6 +31,13 @@ calls the architect left to ST2, not things the spec pinned):
   `schedule.changes()` row's old→new move is folded into `CalendarRow.name`
   (`"{name} {old} → {new}"`), mirroring the CLI's own
   `<name> <old> -> <new>` output (spec B13).
+- **업종·시장 폭·추이 (가독성 요구)**: 업종은 명세 §12 표를 `universe.py`가
+  들고, 여기서는 묶기만 한다(`_sector_summary`). 대표값은 평균이 아니라
+  중앙값이고 근거는 `model.SectorSummary`에 있다. 추이 그래프의 시계열은
+  **리포트 JSON에 담아** 내보낸다 — 사이트가 DB를 직접 뒤져 시계열을 만들면
+  그 순간 리포트의 정보차단선 밖으로 나가고, "리포트가 정본이고 사이트는
+  렌더러"라는 구조도 깨진다. `_price_map`이 쓰는 단 한 번의
+  `facts_as_of(cutoff)` 결과에서 그대로 잘라내므로 PIT 규칙이 하나로 유지된다.
 - **monthly regime rule** (§6.3, spec B6): uses each series' latest stored
   observation vs. the one immediately before it in the PIT store. For the
   monthly FRED series (CPI/PCE/UNRATE) that already IS month-over-month
@@ -46,13 +53,22 @@ calls the architect left to ST2, not things the spec pinned):
 from __future__ import annotations
 
 import json
+import statistics
 from datetime import date, datetime, timedelta
 
 from .. import db as db_mod
 from .. import schedule as schedule_mod
-from ..universe import CORE16_SYMBOLS, UNIVERSE
+from ..universe import CORE16_SYMBOLS, SECTOR_BY_SYMBOL, SECTORS, UNIVERSE
 from .cutoff import KST
-from .model import CalendarRow, FactRow, Interpretation, MissingItem, Report, worst_data_status
+from .model import (
+    CalendarRow,
+    FactRow,
+    Interpretation,
+    MissingItem,
+    Report,
+    SectorSummary,
+    worst_data_status,
+)
 
 _UNIVERSE_BY_SYMBOL = {m["symbol"]: m for m in UNIVERSE}
 
@@ -64,6 +80,13 @@ _MARKET_REACTION_SYMBOLS = [
 ]
 _CORE16_MOVE_THRESHOLD = 3.0  # spec §6.1 "Core 16 중 하루 3% 이상 움직인 기업만"
 _CLOSE_DELTA_MANDATORY = {"^KS11", "KRW=X"}  # spec B6 close_delta 선정 규칙
+# 스파크라인에 담을 종가 개수(최근 것부터). 현재 수집분이 심볼당 5~6일치라
+# 6이면 사실상 "있는 만큼 전부"이고, 수집이 쌓여도 리포트 JSON이 무한정
+# 커지지 않는다.
+SPARKLINE_POINTS = 6
+# n<=2인 축은 '업종'이 아니라 개별 종목이다(§12 기준 금융·신용 2, 소비·수출 2,
+# 헬스케어 1). 대표값을 지우지는 않되 표본이 적다는 사실을 함께 싣는다.
+_SMALL_SAMPLE_MAX = 2
 
 _MACRO_LABELS = {
     "CPIAUCSL": "미국 CPI", "PCEPI": "미국 PCE", "UNRATE": "미국 실업률",
@@ -133,23 +156,30 @@ def _fmt_value_with_asof(row) -> str:
     return base
 
 
-def _row_from_fact(row, label: str, comparison: str) -> FactRow:
+def _row_from_fact(row, label: str, comparison: str, delta_pct: float | None = None) -> FactRow:
     return FactRow(
         label=label, value=_fmt_value_with_asof(row), comparison=comparison,
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",
         known_at=row["known_at"], subject=row["subject"], metric=row["metric"],
         raw_value=row["value_num"] if row["value_num"] is not None else row["value_text"],
+        delta_pct=delta_pct,
     )
 
 
 # --- prices / market reaction -------------------------------------------
 
 def _price_map(conn, cutoff) -> dict[str, dict]:
-    """subject -> {latest, prev, delta_pct} using every price_close fact
-    known as of `cutoff` (spec A5-compliant: one `facts_as_of` call, no
+    """subject -> {latest, prev, delta_pct, series} using every price_close
+    fact known as of `cutoff` (spec A5-compliant: one `facts_as_of` call, no
     per-symbol filter, grouped in Python — one fact_id exists per trading
     day per symbol, so a subject filter alone would not collapse to
-    "today's close")."""
+    "today's close").
+
+    `series` (추이 그래프의 입력) is built from **these same rows**, i.e. from
+    the one `facts_as_of(cutoff)` read, so the sparkline inherits the report's
+    information barrier instead of needing a second PIT rule of its own. A
+    close known after the blackout is not in `rows` and therefore cannot be
+    in `series`."""
     rows = db_mod.facts_as_of(conn, cutoff, metric="price_close")
     by_subject: dict[str, list] = {}
     for r in rows:
@@ -161,7 +191,9 @@ def _price_map(conn, cutoff) -> dict[str, dict]:
         delta = None
         if prev is not None and prev["value_num"] not in (None, 0) and latest["value_num"] is not None:
             delta = (latest["value_num"] - prev["value_num"]) / prev["value_num"] * 100
-        out[subj] = {"latest": latest, "prev": prev, "delta_pct": delta}
+        series = [r["value_num"] for r in reversed(rs[:SPARKLINE_POINTS])
+                  if r["value_num"] is not None]
+        out[subj] = {"latest": latest, "prev": prev, "delta_pct": delta, "series": series}
     return out
 
 
@@ -174,6 +206,11 @@ def _fmt_price_value(row) -> str:
         return f"{v:.2f}%"
     if unit == "KRW":
         return f"{v:,.1f}원"
+    if unit == "point":
+        # An index is quoted in points by convention; printing the word made
+        # the card read "6,595.45 point" and pushed the value onto two lines
+        # on a phone. The unit still travels in the fact — this is display.
+        return f"{v:,.2f}"
     if unit:
         return f"{v:,.2f} {unit}"
     return f"{v:,.2f}"
@@ -194,7 +231,7 @@ def _session_gap_days(latest, prev) -> int | None:
 def _market_reaction_row(subj: str, info: dict) -> FactRow:
     row = info["latest"]
     meta = _UNIVERSE_BY_SYMBOL.get(subj, {})
-    label = meta.get("name", subj)
+    label = meta.get("name_ko") or meta.get("name", subj)
     # "전일대비" is only true when the two observations really are adjacent
     # sessions. After a holiday, a collection outage, or a backfill the
     # previous close can be many days back, and calling that "전일" states a
@@ -213,6 +250,7 @@ def _market_reaction_row(subj: str, info: dict) -> FactRow:
         label=label, value=_fmt_price_value(row), comparison=comparison,
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",
         known_at=row["known_at"], subject=subj, metric=row["metric"], raw_value=row["value_num"],
+        delta_pct=info["delta_pct"], series=list(info.get("series") or []),
     )
 
 
@@ -263,7 +301,7 @@ def _headline(price_map: dict) -> str:
 
     kospi = part("^KS11", "KOSPI", lambda v: f"{v:,.2f}")
     spx = part("^GSPC", "S&P500", lambda v: f"{v:,.2f}")
-    krw = part("KRW=X", "USD/KRW", lambda v: f"{v:,.1f}원")
+    krw = part("KRW=X", "달러/원", lambda v: f"{v:,.1f}원")
     us10y = part("^TNX", "미10Y", lambda v: f"{v:.2f}%")
     n_movers = sum(
         1 for s in CORE16_SYMBOLS
@@ -272,6 +310,52 @@ def _headline(price_map: dict) -> str:
     )
     n_missing = sum(1 for s in CORE16_SYMBOLS if s not in price_map)
     return f"{kospi} · {spx} · {krw} · {us10y} — Core16 중 ±3% 이상 {n_movers}종목, 결측 {n_missing}건"
+
+
+# --- 업종·시장 폭 (spec §12 표 + §6.1 "시장 폭과 순환은 어떤가") -----------
+
+def _sector_summary(price_map: dict) -> list[SectorSummary]:
+    """spec §12의 6축 전부를 항상, 표의 순서대로 낸다.
+
+    관측이 0인 축도 빼지 않는다: "헬스케어 관측 없음"은 노이즈가 아니라
+    결측이고, 축이 조용히 사라지면 독자는 시장 폭을 실제보다 넓게 읽는다
+    (§3.3 미확인은 채우지 않고 드러낸다).
+
+    대표값은 **평균이 아니라 중앙값**이다 — 근거는 `SectorSummary` 참조.
+    """
+    out: list[SectorSummary] = []
+    for sector in SECTORS:
+        deltas = [
+            price_map[s]["delta_pct"]
+            for s in CORE16_SYMBOLS
+            if SECTOR_BY_SYMBOL.get(s) == sector
+            and s in price_map and price_map[s]["delta_pct"] is not None
+        ]
+        out.append(SectorSummary(
+            sector=sector,
+            up=sum(1 for d in deltas if d > 0),
+            down=sum(1 for d in deltas if d < 0),
+            flat=sum(1 for d in deltas if d == 0),
+            total=len(deltas),
+            median_pct=statistics.median(deltas) if deltas else None,
+            small_sample=0 < len(deltas) <= _SMALL_SAMPLE_MAX,
+        ))
+    return out
+
+
+def _breadth_line(summaries: list[SectorSummary]) -> str:
+    """§6.1 "시장 전체인가, 대형주 쏠림인가"에 한 줄로 답한다: Core 16 전체의
+    상승 비율 + 축별 상승 비율. 한 축만 4/4이고 나머지가 0/n이면 그 한 줄이
+    이미 "반도체 쏠림"이라고 말한다."""
+    observed = sum(s.total for s in summaries)
+    if not observed:
+        return "Core 16 등락 관측 없음 — 시장 폭을 계산할 종가가 차단선 이전에 없습니다."
+    up = sum(s.up for s in summaries)
+    parts = [
+        f"{s.sector} {s.up}/{s.total}" if s.total else f"{s.sector} 관측 없음"
+        for s in summaries
+    ]
+    return f"Core 16 중 {up}/{observed}개 상승 · " + " · ".join(parts)
 
 
 # --- macro ----------------------------------------------------------------
@@ -319,7 +403,9 @@ def _macro_facts(mmap: dict) -> list[FactRow]:
     for subj, info in mmap.items():
         label = _macro_label(subj, info["latest"])
         comparison = f"직전 관측 대비 {info['delta_pct']:+.2f}%" if info["delta_pct"] is not None else "직전 관측 없음"
-        out.append(_row_from_fact(info["latest"], label, comparison))
+        # 거시지표는 관측이 1개씩이라 시계열 그래프는 나오지 않는다(series 없음).
+        # 방향(화살표·색)은 직전 관측이 있을 때만 붙는다.
+        out.append(_row_from_fact(info["latest"], label, comparison, delta_pct=info["delta_pct"]))
     out.sort(key=lambda r: r.subject)
     return out
 
@@ -335,7 +421,7 @@ def _subject_name(subject: str) -> str:
     Unknown symbols (fund managers in 13F rows, for instance) pass through
     unchanged rather than being invented."""
     meta = _UNIVERSE_BY_SYMBOL.get(subject)
-    name = (meta or {}).get("name")
+    name = (meta or {}).get("name_ko") or (meta or {}).get("name")
     return f"{name}({subject})" if name else subject
 
 
@@ -504,6 +590,8 @@ def build_report(
     filing_facts = _filing_facts(conn, cutoff)
     market_reaction_all = _market_reaction(price_map)
     headline = _headline(price_map)
+    sector_summary = _sector_summary(price_map)
+    breadth = _breadth_line(sector_summary)
     win = _EVENTS_WINDOW_DAYS[report_type]
     events = _events_rows(conn, cutoff, win)
     schedule_changes = _schedule_change_rows(conn, cutoff, win)
@@ -574,12 +662,14 @@ def build_report(
         generated_at=db_mod.iso_utc(),
         title=title,
         headline=headline,
+        breadth=breadth,
         data_status=status,
         facts=facts,
         market_reaction=market_reaction,
         events=events,
         schedule_changes=schedule_changes,
         missing=missing,
+        sector_summary=sector_summary,
         interpretation=Interpretation(),
         meta=meta,
     )

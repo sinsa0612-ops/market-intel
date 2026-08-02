@@ -76,6 +76,47 @@ def status_ko(status: str) -> str:
     return DATA_STATUS_KO.get(status, status or "")
 
 
+# --- 등락 방향 (색·화살표) -------------------------------------------------
+# 국내 증시 관례: 상승 = 빨강, 하락 = 파랑 (미국식 초록/빨강과 반대). 색은
+# `site.py`의 스타일시트가 `.up`/`.down` 클래스에 입히고, 여기서는 **방향만**
+# 정한다. 방향은 화살표로도 반드시 나가야 한다 — 색만으로 정보를 주면 흑백
+# 출력과 색각이상에서 그 행은 아무 말도 하지 않고, 마크다운(Obsidian)에는
+# 애초에 색이 없다.
+UP_MARK, DOWN_MARK, FLAT_MARK = "▲", "▼", "―"
+
+# 색은 방향이지 좋고 나쁨이 아니다: 환율 상승은 원화 약세고, VIX 하락은
+# 시장 안정이다. 형식마다 문장이 다르므로(마크다운에는 색이 없다) 렌더러가
+# 각자 쓴다.
+LEGEND_HTML = ("빨강 ▲ 상승 · 파랑 ▼ 하락 (국내 증시 관례) — "
+               "색은 방향일 뿐 좋고 나쁨이 아닙니다. 환율 상승은 원화 약세, VIX 하락은 시장 안정입니다.")
+LEGEND_MD = ("▲ 상승 · ▼ 하락 — 방향 표시일 뿐 좋고 나쁨이 아닙니다. "
+             "환율 상승은 원화 약세, VIX 하락은 시장 안정입니다.")
+
+SECTOR_NOTE = ("업종 대표값은 평균이 아니라 중앙값입니다 — 한 종목이 크게 튀면 평균은 축 전체가 "
+               "움직인 것처럼 보이기 때문입니다. 종목이 1~2개인 축(표본 적음)은 업종 신호가 아니라 "
+               "그 개별 종목의 움직임으로 읽으십시오.")
+
+
+def direction(delta_pct: float | None) -> str:
+    """'up' | 'down' | 'flat' | '' — 마지막은 '등락을 모른다'(직전 값 없음).
+    모르는 것에 방향을 지어내지 않는다."""
+    if delta_pct is None:
+        return ""
+    if delta_pct > 0:
+        return "up"
+    if delta_pct < 0:
+        return "down"
+    return "flat"
+
+
+def arrow(delta_pct: float | None) -> str:
+    return {"up": UP_MARK, "down": DOWN_MARK, "flat": FLAT_MARK}.get(direction(delta_pct), "")
+
+
+def fmt_pct(value: float | None) -> str:
+    return "-" if value is None else f"{value:+.2f}%"
+
+
 # --- layout (shared with render_html.py) ---------------------------------
 
 def heading(report: Report) -> dict:
@@ -104,6 +145,32 @@ def _missing(report: Report) -> dict:
     return {"kind": "missing", "items": report.missing}
 
 
+# 히어로 카드에 올릴 4가지 — 국내 지수, 미국 지수, 반도체, 환율. "오늘 시장이
+# 올랐나 내렸나"에 스크롤 없이 답하는 최소 조합이다(승인된 시안 기준).
+HERO_SYMBOLS = ("^KS11", "^GSPC", "^SOX", "KRW=X")
+
+
+def _hero(report: Report) -> dict:
+    by_subject = {r.subject: r for r in report.market_reaction}
+    rows = [by_subject[s] for s in HERO_SYMBOLS if s in by_subject]
+    return {"kind": "hero", "rows": rows}
+
+
+def _breadth(report: Report) -> dict:
+    return {"kind": "breadth", "text": report.breadth}
+
+
+def _sector(report: Report) -> dict:
+    return {"kind": "sector", "rows": report.sector_summary}
+
+
+def _market_blocks(report: Report) -> list[dict]:
+    """"시장 반응" 계열 섹션의 본문: 개별 종목 표 + 시장 폭 한 줄 + 업종 요약.
+    5개 리포트 타입이 같은 조합을 쓰므로 한 곳에서만 만든다 — 타입마다 손으로
+    베낀 레이아웃이 예전에 두 타입의 해석 칸을 동시에 떨어뜨린 적이 있다."""
+    return [_facts(report.market_reaction), _breadth(report), _sector(report)]
+
+
 def _interp(report: Report, field_name: str) -> dict:
     """spec B5 contract 2, per field: blank -> the literal placeholder,
     filled -> the AI badge + the text."""
@@ -129,7 +196,7 @@ def _lead_sections(report: Report) -> list[tuple[str, list[dict]]]:
     if rt == "weekly_review":  # §6.2, 5 headers in order
         return [
             ("이번 주 시장의 지배 변수", [_text(report.headline), _facts(report.facts), _missing(report)]),
-            ("자산·섹터 성과", [_facts(report.market_reaction)]),
+            ("자산·섹터 성과", _market_blocks(report)),
             ("다음 주에 뒤집힐 수 있는 변수", [_interp(report, "counter_reading")]),
             ("내가 놓친 변수", [_missing(report)]),
             ("다음 주 검증할 가설", [_interp(report, "next_check")]),
@@ -139,31 +206,37 @@ def _lead_sections(report: Report) -> list[tuple[str, list[dict]]]:
         return [
             ("실제치·예상치·가이던스", [_facts(report.facts), _missing(report)]),
             ("현금흐름과 투자", [_facts(cashflow_rows)]),
-            ("시장 반응과 반대 해석", [_facts(report.market_reaction), _interp(report, "counter_reading")]),
+            ("시장 반응과 반대 해석",
+             _market_blocks(report) + [_interp(report, "counter_reading")]),
             ("다음 분기 검증 조건", [_interp(report, "next_check")]),
         ]
     if rt == "monthly":
         return [
             (f"월간 거시 체제: {report.meta.get('regime_label', '')}", [_text(report.headline)]),
             ("핵심 지표", [_facts(report.facts), _missing(report)]),
-            ("자산 성과", [_facts(report.market_reaction)]),
+            ("자산 성과", _market_blocks(report)),
         ]
     if rt in ("quarterly", "annual"):
         return [
             ("핵심 사실", [_facts(report.facts), _missing(report)]),
-            ("시장 반응", [_facts(report.market_reaction)]),
+            ("시장 반응", _market_blocks(report)),
         ]
     # morning / week_start / close_delta — §4.2's first 3 headers.
     return [
         ("시장 한 줄", [_text(report.headline)]),
         ("핵심 사실", [_facts(report.facts), _missing(report)]),
-        ("시장 반응", [_facts(report.market_reaction)]),
+        ("시장 반응", _market_blocks(report)),
     ]
 
 
 def sections(report: Report) -> list[tuple[str, list[dict]]]:
     """The single layout description shared by render_markdown/render_html."""
     out = _lead_sections(report)
+    # 히어로 카드 + 색 범례는 **첫 섹션 안쪽에** 얹는다. 앞에 새 섹션을 만들면
+    # §4.2/§6.2/§7.2가 못박은 머리말 순서가 밀린다(그 순서는 테스트가 고정).
+    if out:
+        header, blocks = out[0]
+        out[0] = (header, [_hero(report), {"kind": "legend"}] + blocks)
     out += [(header, [_interp(report, field)]) for header, field in INTERPRETATION_HEADERS]
     out.append((
         "다가오는 일정",
@@ -189,8 +262,26 @@ def _facts_table_md(rows: list[FactRow]) -> str:
         value_cell = f"{r.value} · {badge}" if badge else r.value
         href = safe_href(r.source_url)
         src = f"[원자료]({href})" if href else (r.source_url or "-")
-        lines.append(f"| {r.label} | {value_cell} | {r.comparison} | {src} |")
+        # 마크다운에는 색이 없으므로 방향은 화살표가 진다.
+        mark = arrow(r.delta_pct)
+        comparison = f"{mark} {r.comparison}".strip() if mark else r.comparison
+        lines.append(f"| {r.label} | {value_cell} | {comparison} | {src} |")
     return "\n".join(lines)
+
+
+def _sector_table_md(rows) -> str:
+    if not rows:
+        return ""
+    lines = ["| 업종 | 상승/하락 | 중앙값 | 종목 |", "|---|---|---:|---|"]
+    for s in rows:
+        if not s.total:
+            lines.append(f"| {s.sector} | - | - | 관측 없음 |")
+            continue
+        count = f"{s.total}종목" + (" (표본 적음)" if s.small_sample else "")
+        mark = arrow(s.median_pct)
+        median = f"{mark} {fmt_pct(s.median_pct)}".strip() if mark else fmt_pct(s.median_pct)
+        lines.append(f"| {s.sector} | {s.up}↑ / {s.down}↓ | {median} | {count} |")
+    return "\n".join(lines) + f"\n\n{SECTOR_NOTE}"
 
 
 def _calendar_table_md(columns: list[str], rows: list[list[str]]) -> str:
@@ -205,6 +296,17 @@ def _block_md(block: dict) -> str:
     kind = block["kind"]
     if kind == "facts":
         return _facts_table_md(block["rows"])
+    if kind == "hero":
+        # 카드 배치는 화면(HTML)만의 것이다. 마크다운에는 바로 아래에
+        # `headline`이 같은 4개 숫자를 이미 한 줄로 싣고 있으므로, 여기서
+        # 또 찍으면 Obsidian 노트에는 같은 값이 두 번 나온다.
+        return ""
+    if kind == "legend":
+        return LEGEND_MD
+    if kind == "breadth":
+        return block["text"]
+    if kind == "sector":
+        return _sector_table_md(block["rows"])
     if kind == "calendar":
         return _calendar_table_md(block["columns"], block["rows"])
     if kind == "missing":

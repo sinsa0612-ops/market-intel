@@ -21,7 +21,11 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-SCHEMA_VERSION = "2a.1"
+# 2a.2: FactRow에 delta_pct/series, Report에 breadth/sector_summary가 추가됐다
+# (가독성 요구 — 등락 색·화살표, 업종·시장 폭, 추이 그래프). 필드 추가뿐이라
+# 옛 JSON도 그대로 읽히지만(`from_json` 참조), 스키마가 바뀐 사실 자체를
+# 버전에 남긴다.
+SCHEMA_VERSION = "2a.2"
 
 
 @dataclass
@@ -35,6 +39,14 @@ class FactRow:
     subject: str
     metric: str
     raw_value: Any = None
+    # 등락 방향(색·화살표)과 추이 그래프의 입력. 둘 다 **리포트가 계산해서
+    # 들고 다닌다** — 렌더러가 `comparison` 문자열에서 부호를 되파싱하거나,
+    # 사이트가 DB를 직접 뒤져 시계열을 만들면 그 순간 리포트의 정보차단선
+    # 밖으로 나간다(사이트는 렌더러이지 데이터 소스가 아니다).
+    delta_pct: float | None = None
+    # 오래된 값 -> 최신 값. `db.facts_as_of(cutoff)`가 이미 걸러준 것만
+    # 담기므로 PIT 보장은 상속된다. 관측이 1개뿐이면 빈 리스트(= 그래프 없음).
+    series: list[float] = field(default_factory=list)
 
 
 @dataclass
@@ -55,6 +67,24 @@ class MissingItem:
     reason: str
     since: str
     gap_id: str
+
+
+@dataclass
+class SectorSummary:
+    """spec §12의 한 축에 대한 하루치 요약 (§6.1 "시장 폭과 순환은 어떤가").
+
+    대표값이 평균이 아니라 **중앙값**인 이유: 축 하나에 종목이 1~4개뿐이라
+    4종목 축에서 한 종목이 +30% 튀면 평균은 +8%가 되어 "반도체 전면 급등"으로
+    읽힌다. 실제로 뛴 건 하나다. 중앙값은 그 한 종목에 흔들리지 않는다.
+    그래도 n=1~2인 축은 애초에 '업종'이 아니라 개별 종목이므로
+    `small_sample`로 표시해 독자가 스스로 할인해서 읽게 한다."""
+    sector: str
+    up: int
+    down: int
+    flat: int
+    total: int
+    median_pct: float | None
+    small_sample: bool
 
 
 @dataclass
@@ -80,12 +110,14 @@ class Report:
     generated_at: str = ""
     title: str = ""
     headline: str = ""
+    breadth: str = ""  # §6.1 "시장 전체인가, 대형주 쏠림인가" 한 줄 답
     data_status: str = ""
     facts: list[FactRow] = field(default_factory=list)
     market_reaction: list[FactRow] = field(default_factory=list)
     events: list[CalendarRow] = field(default_factory=list)
     schedule_changes: list[CalendarRow] = field(default_factory=list)
     missing: list[MissingItem] = field(default_factory=list)
+    sector_summary: list[SectorSummary] = field(default_factory=list)
     interpretation: Interpretation = field(default_factory=Interpretation)
     meta: dict = field(default_factory=dict)
 
@@ -94,12 +126,17 @@ class Report:
 
     @classmethod
     def from_json(cls, raw: str) -> "Report":
+        """`site build` deletes and rebuilds `docs/` from **every** JSON in
+        `reports/`, including the ones written before a field existed. A
+        missing key therefore has to fall back to the dataclass default
+        rather than raise, or one old artefact takes the whole site down."""
         d = json.loads(raw)
         d["facts"] = [FactRow(**f) for f in d["facts"]]
         d["market_reaction"] = [FactRow(**f) for f in d["market_reaction"]]
         d["events"] = [CalendarRow(**e) for e in d["events"]]
         d["schedule_changes"] = [CalendarRow(**e) for e in d["schedule_changes"]]
         d["missing"] = [MissingItem(**m) for m in d["missing"]]
+        d["sector_summary"] = [SectorSummary(**s) for s in d.get("sector_summary", [])]
         d["interpretation"] = Interpretation(**d["interpretation"])
         return cls(**d)
 
