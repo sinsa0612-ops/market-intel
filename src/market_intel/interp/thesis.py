@@ -226,7 +226,7 @@ def evaluate_atom(conn, atom: dict, cutoff) -> tuple[str, dict]:
         if len(obs) < required:
             return "UNKNOWN", {
                 "observed": len(obs), "required": required,
-                "message": f"{subject} {metric} 관측 부족({len(obs)}개 < 필요 {required}개)",
+                "message": f"{subject} {metric} 관측 부족({len(obs)}개, 필요 {required}개)",
             }
         latest_val = obs[0][1]
         base_val = obs[lookback][1]
@@ -247,7 +247,7 @@ def evaluate_atom(conn, atom: dict, cutoff) -> tuple[str, dict]:
         if len(obs) < required:
             return "UNKNOWN", {
                 "observed": len(obs), "required": required,
-                "message": f"{subject} {metric} 관측 부족({len(obs)}개 < 필요 {required}개)",
+                "message": f"{subject} {metric} 관측 부족({len(obs)}개, 필요 {required}개)",
             }
         ok = True
         for i in range(periods):
