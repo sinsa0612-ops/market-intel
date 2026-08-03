@@ -110,15 +110,50 @@ _FORMAT_MARKERS = ("<", ">", "](", "http://", "https://", "`")
 # generous room without allowing a runaway generation to dominate the report.
 _MAX_LEN = 600
 
-# Rule 3 — Korean order-of-magnitude words. 0 hits across all 4 generated
-# report types (grep-verified) — the report layer never writes these, so an
-# interpretation that does is re-expressing a number in a form nothing in the
-# report actually states, which is exactly the failure mode this validator
-# exists to catch even when the digits involved are individually real.
-# `천`은 원래 빠져 있었고, 그래서 `4천억원`이 그대로 발행됐다(final-review.md
-# 미탐 C10). 나머지 세 글자와 같은 근거로 추가한다 — 리포트 계층은 `천`을
-# 쓰지 않으므로 해석문에 나오면 그것도 재표현이다.
+# Rule 3 — Korean order-of-magnitude words. 잡으려는 것은 **리포트가 말하지
+# 않은 형태로 숫자를 다시 쓰는 것**이다 — 자릿수 하나하나는 진짜여도 형태가
+# 지어낸 것이면 그것도 없는 사실이다. `4천억원`이 그렇게 발행됐다
+# (final-review.md 미탐 C10).
+#
+# 원래는 "리포트 계층은 조/억/만/천을 절대 안 쓴다(grep으로 확인)"는 사실에
+# 기대어 **무조건 금지**로 구현돼 있었다. 2026-08-03에 그 전제가 깨졌다:
+# 수급·재무 금액이 자릿수 12~15개라 읽히지 않는다는 CEO 지적으로 리포트가
+# `2.2조 원`을 직접 쓰기 시작했다. 전제가 사라졌는데 금지를 그대로 두면
+# **리포트의 표현을 그대로 인용한 해석문이 반려된다** — 근거를 대라고 요구해
+# 놓고 근거대로 쓰면 막는 셈이다(실측: 해석 13회 중 3회가 이 규칙으로 partial).
+#
+# 그래서 프록시를 직접 검사로 바꾼다: 리포트가 **실제로 쓴** 자릿수 표현만
+# 허용한다. 규칙의 이빨은 그대로다 — 리포트에 없는 `4천억`은 여전히 걸리고,
+# `2.2조`를 `2조`로 반올림한 것도 (표현이 다르므로) 걸린다.
 _KO_MAGNITUDE_RE = re.compile(r"\d[\d,.]*\s*[조억만천]")
+
+
+def _magnitude_token(text: str) -> str:
+    """`2.2 조` -> `2.2조`. 리포트와 해석문의 띄어쓰기가 달라도 같은 표현은
+    같게 본다 — 공백 하나 때문에 인용이 반려되면 안 된다."""
+    return re.sub(r"\s+", "", text)
+
+
+def allowed_magnitudes(report: dict) -> set[str]:
+    """리포트가 실제로 쓴 자릿수 표현들. `_occurrences`가 숫자를 긁는 것과
+    같은 자리를 같은 순서로 훑는다 — 한쪽만 보는 필드가 생기면 그 필드를
+    인용한 해석문이 이유 없이 반려된다."""
+    found: set[str] = set()
+
+    def scan(text: str) -> None:
+        for m in _KO_MAGNITUDE_RE.finditer(str(text or "")):
+            found.add(_magnitude_token(m.group(0)))
+
+    scan(report.get("headline"))
+    for key in ("facts", "market_reaction"):
+        for row in report.get(key) or []:
+            scan(row.get("value"))
+            scan(row.get("comparison"))
+            scan(row.get("label"))
+    for key in ("events", "schedule_changes"):
+        for row in report.get(key) or []:
+            scan(row.get("name"))
+    return found
 
 # Rule 4 — banned trade-recommendation / price-target / return-forecast
 # phrasing (BRIEF rule 5, spec §1/§6.1). Context-sensitive regexes, not bare
@@ -128,7 +163,15 @@ _BANNED_PATTERNS: tuple[tuple[re.Pattern, str], ...] = (
     (re.compile(r"적정\s*주가"), "적정주가"),
     (re.compile(r"투자\s*의견"), "투자의견"),
     (re.compile(r"비중\s*(확대|축소)"), "비중조절"),
-    (re.compile(r"(매수|매도)\s*(하|해|할|한다|하라|권|추천|의견|타이밍|시점|구간|기회|시그널|신호)"), "매매권유"),
+    # `매수하다`는 **권유의 말이자 서술의 말**이다. 원래 이 규칙은 어간까지
+    # (`매수` + `하`) 막고 있었는데, 그러면 "개인이 매수하고 기관은 매도했다"와
+    # "순매수하는 흐름"처럼 **그날 일어난 일을 적은 문장**이 권유로 걸린다.
+    # 2026-08-03에 수급이 리포트 앞줄로 오면서 이 오탐이 매일 나게 됐다(실측:
+    # 그날 해석문이 `매수하`로 반려). 막아야 하는 것은 "사라/살 때다"이지
+    # "샀다"가 아니므로, 어미로 갈라 **권유·시점 지목만** 남긴다.
+    (re.compile(r"(매수|매도)\s*(하라|하세요|하십시오|해라|해야|하는\s*게\s*(좋|낫)|"
+                r"하기\s*(좋|적절|유리)|권|추천|의견|타이밍|시점|구간|기회|시그널|신호)"), "매매권유"),
+    (re.compile(r"(매수|매도)\s*할\s*(때|시점|자리|구간|타이밍|기회|만하)"), "매매권유"),
     (re.compile(r"사야|팔아야|담아야|비중을\s*(늘|줄)"), "매매권유"),
     (re.compile(r"손절|익절"), "매매권유"),
     # 완곡한 매매 권유 (final-review.md 미탐 G4/G5). `매수/매도`라는 말을
@@ -611,8 +654,10 @@ def check(report: dict, text: str) -> list[tuple[str, str]]:
     if len(text) > _MAX_LEN:
         violations.append(("length", str(len(text))))
 
+    magnitudes_ok = allowed_magnitudes(report)
     for m in _KO_MAGNITUDE_RE.finditer(text):
-        violations.append(("ko_magnitude", m.group(0)))
+        if _magnitude_token(m.group(0)) not in magnitudes_ok:
+            violations.append(("ko_magnitude", m.group(0)))
 
     for pattern, name in _BANNED_PATTERNS:
         m = pattern.search(text)

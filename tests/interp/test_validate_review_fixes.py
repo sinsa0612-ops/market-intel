@@ -287,3 +287,82 @@ def test_calling_the_fx_row_an_exchange_rate_is_not_an_attribution_error():
         kind == "attribution"
         for kind, _t in validate_mod.check(d, "F10 KOSPI 환율이 올랐다.")
     )
+
+
+# --- 규칙 3의 전제가 바뀐 뒤 (2026-08-03) ---------------------------------
+# 리포트가 금액을 `2.2조 원`으로 쓰기 시작하면서 "리포트 계층은 조/억을 절대
+# 안 쓴다"는 전제가 깨졌다. 무조건 금지를 **리포트가 실제로 쓴 표현만 허용**
+# 으로 바꿨으므로, 이빨이 그대로인지와 인용이 통과하는지를 같이 못박는다.
+
+def _report_with_flow() -> dict:
+    report = _report_obj()
+    report.facts = list(report.facts) + [
+        _row("삼성전자(005930.KS) 개인 순매수(금액)", "2.1조 원",
+             subject="005930.KS", metric="net_buy_individual_value",
+             raw_value=2_100_000_000_000.0),
+        _row("삼성전자(005930.KS) 기관 순매수(금액)", "-1.2조 원",
+             subject="005930.KS", metric="net_buy_institution_value",
+             raw_value=-1_220_000_000_000.0),
+    ]
+    return dataclasses.asdict(report)
+
+
+def test_magnitude_quoted_from_the_report_now_passes():
+    """근거를 대라고 요구해 놓고 근거대로 쓰면 막던 자리 — 해석 13회 중 3회가
+    이 규칙으로 partial이었다."""
+    v = validate_mod.check(_report_with_flow(), "개인이 2.1조 원을 담았다.")
+    assert not any(kind == "ko_magnitude" for kind, _tok in v), v
+
+
+def test_magnitude_the_report_never_wrote_is_still_blocked():
+    """이빨은 그대로다 — 리포트에 없는 자릿수 표현은 지어낸 것이다."""
+    for text in ("외국인 순매수는 4천억원 규모다.",
+                 "개인이 5.7조 원을 담았다.",
+                 "기관은 3억 주를 팔았다."):
+        v = validate_mod.check(_report_with_flow(), text)
+        assert any(kind == "ko_magnitude" for kind, _tok in v), (text, v)
+
+
+def test_rounding_a_reported_magnitude_is_still_blocked():
+    """리포트가 `2.1조`라고 썼는데 `2조`로 줄이면 그것도 재표현이다 — 정수
+    인용에 반올림을 허용하지 않는 규칙 6과 같은 자세."""
+    v = validate_mod.check(_report_with_flow(), "개인이 2조 원을 담았다.")
+    assert any(kind == "ko_magnitude" for kind, _tok in v), v
+
+
+def test_magnitude_match_ignores_only_whitespace():
+    """공백 하나 때문에 인용이 반려되면 안 된다. 숫자가 다르면 여전히 걸린다."""
+    assert not any(k == "ko_magnitude"
+                   for k, _t in validate_mod.check(_report_with_flow(), "개인이 2.1 조 원 담았다."))
+
+
+# --- 규칙 4: 권유와 서술을 가른다 (2026-08-03) ------------------------------
+# `매수하다`는 권유의 말이자 서술의 말이다. 어간까지 막으면 "그날 누가 샀나"를
+# 적을 수 없는데, 수급이 리포트 앞줄로 온 뒤로는 그것이 매일 쓸 문장이다.
+
+def test_describing_who_bought_is_not_a_recommendation():
+    """리포트의 수급 섹션이 답하는 바로 그 문장들 — 사실이지 권유가 아니다."""
+    for text in ("개인이 대규모로 매수하고 기관은 매도했다.",
+                 "외국인이 순매수하는 흐름이 이어졌다.",
+                 "개인은 2.1조 원을 매수했다.",
+                 "기관이 매도한 규모가 컸다.",
+                 "신규 진입 기업이 늘었다."):
+        v = validate_mod.check(_report_with_flow(), text)
+        assert not any(kind.startswith("banned") for kind, _tok in v), (text, v)
+
+
+def test_recommending_a_trade_is_still_blocked():
+    """이빨은 그대로다 — 사라고 하거나 살 때를 짚으면 걸린다."""
+    for text in ("지금 매수하라.",
+                 "매수하세요.",
+                 "이 구간에서 매수해야 한다.",
+                 "매수 추천 의견이다.",
+                 "지금이 매수 타이밍이다.",
+                 "매수할 때다.",
+                 "매수하는 게 좋다.",
+                 "반도체는 사야 한다.",
+                 "비중을 늘려야 한다.",
+                 "지금 사도 괜찮은 국면이다.",
+                 "신규 진입에 유리한 구간이다."):
+        v = validate_mod.check(_report_with_flow(), text)
+        assert any(kind.startswith("banned") for kind, _tok in v), (text, v)

@@ -82,6 +82,12 @@ from .model import (
     SectorSummary,
     worst_data_status,
 )
+# 표시 형식은 렌더러 계층이 정한다(`render_md`가 두 렌더러의 공용 서식 자리).
+# 여기서 쓰는 이유: 자릿수 12~15개짜리 금액은 **리포트 JSON 단계에서** 읽을 수
+# 있는 형태여야 한다. 그 문자열이 곧 LLM에게 가는 다이제스트 줄이기 때문이다
+# (`interp/digest.py`가 `row.value`를 그대로 싣는다) — 원본 숫자를 넘기면
+# 모델이 스스로 "2조"로 바꿔 쓰다가 검증기 rule 3에 걸린다(실측 3회).
+from .render_md import fmt_money
 
 _UNIVERSE_BY_SYMBOL = {m["symbol"]: m for m in UNIVERSE}
 
@@ -160,6 +166,16 @@ _EVENTS_WINDOW_DAYS = {
 
 # --- generic fact -> FactRow -------------------------------------------
 
+def _with_asof(base: str, row) -> str:
+    """불완전·미확인 값에는 **언제 기준인지**를 붙인다. 이 꼬리표가 없으면
+    몇 년 전 값이 오늘 값처럼 읽힌다(`test_data_status_surfaced`가 지킨다).
+    조/억으로 줄여 쓰는 자리에서도 같은 꼬리표가 따라와야 하므로 서식과
+    분리해 둔다."""
+    if row["data_status"] in ("partial", "unverified") and row["event_at"]:
+        return f"{base} (기준일 {row['event_at'][:10]})"
+    return base
+
+
 def _fmt_value_with_asof(row) -> str:
     val = row["value_num"]
     unit = row["unit"] or ""
@@ -176,9 +192,7 @@ def _fmt_value_with_asof(row) -> str:
             base = f"{val:,.4g}"
     else:
         base = row["value_text"] or "미확인"
-    if row["data_status"] in ("partial", "unverified") and row["event_at"]:
-        base = f"{base} (기준일 {row['event_at'][:10]})"
-    return base
+    return _with_asof(base, row)
 
 
 def _row_from_fact(
@@ -527,7 +541,12 @@ def _financials_facts(conn, cutoff, subjects: list[str] | None = None) -> list[F
         for row in group[:2]:
             label = f"{_subject_name(subject)} {_FINANCIALS_LABELS.get(metric, metric)}"
             basis = _COMPARISON_BASIS_KO.get(row["comparison_basis"], row["comparison_basis"] or "")
-            out.append(_row_from_fact(row, label, basis, group="financials"))
+            # 재무도 자릿수가 12~15개다(삼성전자 매출 333,605,938,000,000).
+            # 상세 페이지가 이미 `333.6조 원`으로 쓰므로 같은 함수를 쓴다 —
+            # 두 화면이 같은 금액을 다른 자릿수로 쓰면 대조가 안 된다.
+            out.append(_row_from_fact(row, label, basis, group="financials",
+                                      value=_with_asof(
+                                          fmt_money(row["value_num"], row["unit"] or ""), row)))
     out.sort(key=lambda r: (r.subject, r.metric))
     return out
 
@@ -729,6 +748,10 @@ def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
             _row_from_fact(
                 r, f"{_subject_name(r['subject'])} {_FLOW_LABELS.get(r['metric'], r['metric'])}",
                 f"{(r['event_at'] or '')[:10]} · {r['publisher'] or ''}".strip(" ·"),
+                # 금액 행만 조/억으로 줄인다. 주식 수는 `1,368,737 shares`가
+                # 이미 읽히고, 통화가 아니라 수량이라 조/억이 붙으면 틀린다.
+                value=(_with_asof(fmt_money(r["value_num"], r["unit"] or ""), r)
+                       if (r["metric"] or "").endswith("_value") else None),
                 # 막대는 **금액 행에만** 붙인다. 막대 길이는 서로 더할 수 있는
                 # 양이라는 뜻인데, 주식 수는 종목이 다르면 더할 수도 비교할
                 # 수도 없다. 갈래가 없는 행은 지금까지 쓰던 표로 떨어진다.
