@@ -662,6 +662,18 @@ def _register_gap(conn, gap_id: str, subject: str, metric: str, reason: str) -> 
     conn.commit()
 
 
+# 투자자별 수급 항목명. 수량과 금액을 둘 다 싣는 이유는 서로 다른 질문에 답하기
+# 때문이다 — 수량은 "몇 주를 담았나", 금액은 "얼마를 넣었나".
+_FLOW_LABELS = {
+    "net_buy_foreign": "외국인 순매수(주)",
+    "net_buy_institution": "기관 순매수(주)",
+    "net_buy_individual": "개인 순매수(주)",
+    "net_buy_foreign_value": "외국인 순매수(금액)",
+    "net_buy_institution_value": "기관 순매수(금액)",
+    "net_buy_individual_value": "개인 순매수(금액)",
+}
+
+
 def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
     """spec B7/R7: KR investor flows are 0 facts today; the report must
     still build, with the gap named in both `missing` and `data_gaps`
@@ -671,7 +683,29 @@ def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
     fact presence, not a feature flag."""
     rows = db_mod.facts_as_of(conn, cutoff, category="flow")
     if rows:
-        out = [_row_from_fact(r, f"{r['subject']} {r['metric']}", "") for r in rows]
+        # **표시 가드.** KIS는 한 번 호출에 30거래일을 준다. 그대로 실으면 리포트
+        # 하나에 900행(5종목 x 30일 x 6지표)이 들어가고 같은 라벨이 30번 반복돼
+        # 아무도 못 읽는다(실측 2026-08-03). 표는 "오늘 누가 사고 누가 팔았나"에
+        # 답하는 자리이므로 **(종목, 지표)당 가장 최근 하루**만 싣는다.
+        # 나머지 29일은 버리는 게 아니라 DB에 그대로 있고, 가설 판정과 상세
+        # 페이지가 그것을 쓴다 — 표는 읽히는 것이 목적이다.
+        latest: dict[tuple, object] = {}
+        for r in rows:
+            key = (r["subject"], r["metric"])
+            prev = latest.get(key)
+            if prev is None or (r["event_at"] or "") > (prev["event_at"] or ""):
+                latest[key] = r
+        # `005930.KS net_buy_foreign`이 아니라 `삼성전자(005930.KS) 외국인 순매수`.
+        # 공시 행에서 겪은 것과 같은 문제다 — 기계 항목명을 그대로 화면에 실으면
+        # 읽는 사람이 무슨 숫자인지 알 수 없다(CEO 지적 2026-08-02·08-03).
+        out = [
+            _row_from_fact(
+                r, f"{_subject_name(r['subject'])} {_FLOW_LABELS.get(r['metric'], r['metric'])}",
+                f"{(r['event_at'] or '')[:10]} · {r['publisher'] or ''}".strip(" ·"),
+            )
+            for r in latest.values()
+        ]
+        out.sort(key=lambda x: (x.subject, x.label))
         return out, []
     _register_gap(conn, KR_FLOW_GAP_ID, "kr_flows", "net_buy", KR_FLOW_GAP_REASON)
     missing = [MissingItem(area="한국 수급(외국인/기관/개인)", reason=KR_FLOW_GAP_REASON,

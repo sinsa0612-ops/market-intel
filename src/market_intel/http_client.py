@@ -36,7 +36,10 @@ HOST_WHITELIST: dict[str, set[str]] = {
 
 SECRET_PARAM_NAMES = {"api_key", "apikey", "key", "authkey", "servicekey", "crtfc_key"}
 
-RATE_LIMITS = {"sec_edgar": 8.0}
+# KIS는 토큰 발급과 조회 양쪽에 빈도 제한을 건다(실측 2026-08-03: 빠르게
+# 두드리니 발급 403, 조회 500). 한국 관측 종목이 5개뿐이라 초당 1건으로 낮춰도
+# 수집이 5초 늘 뿐이다 — 조용히 절반만 받아오는 것보다 낫다.
+RATE_LIMITS = {"sec_edgar": 8.0, "kis": 1.0}
 DEFAULT_RATE = 2.0
 
 CONNECT_TIMEOUT = 10.0

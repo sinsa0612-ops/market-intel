@@ -7,6 +7,7 @@ from .earnings_calendar import EarningsCalendarProvider
 from .ecos import EcosProvider
 from .fred import FredProvider
 from .fred_calendar import FredCalendarProvider
+from .kis_flows import KisFlowsProvider
 from .policy_calendar import PolicyCalendarProvider
 from .pykrx_flows import PykrxProvider
 from .sec_8k_events import Sec8kEventsProvider
@@ -26,4 +27,5 @@ PROVIDERS: dict = {
     "earnings_calendar": EarningsCalendarProvider(),
     "policy_calendar": PolicyCalendarProvider(),
     "sec_8k_events": Sec8kEventsProvider(),
+    "kis": KisFlowsProvider(),
 }

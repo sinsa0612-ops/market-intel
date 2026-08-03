@@ -12,14 +12,50 @@ scope here, so it is reported honestly as PARTIAL/NO_DATA rather than
 papered over — see HANDOFF for the data-gap note."""
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import logging
+import os
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from pykrx import stock
-
 from ..models import CollectContext, FactCandidate, ProviderResult, RawItem
 from ..universe import KR_CORE_SYMBOLS
+
+_log = logging.getLogger(__name__)
+
+
+def _mask_credentials(text: str) -> str:
+    """`KRX_ID`/`KRX_PW` 값이 문자열에 있으면 가린다 (`http_client.safe_url`과 같은 규약)."""
+    for value in (os.environ.get("KRX_ID"), os.environ.get("KRX_PW")):
+        if value:
+            text = text.replace(value, "***")
+    return text
+
+
+def _import_pykrx_quietly():
+    """pykrx를 import하되 그 배너를 stdout에 흘리지 않는다.
+
+    pykrx는 **import 시점에** `build_krx_session()`을 부르고 그 과정을 stdout에
+    찍는다. 그중 한 줄이 `  로그인 ID: <아이디>`다 — 자격증명을 넣는 순간부터
+    **매 수집마다 `var/logs/job-*.log`에 계정 아이디가 평문으로 남는다**
+    (실측 2026-08-03: 자격증명이 없는 지금도 배너가 이미 로그에 쌓여 있다).
+
+    배너를 버리지는 않는다 — 로그인 성공/실패는 운영자가 알아야 할 정보다.
+    stdout 대신 로거로 보내고, 그 과정에서 아이디·비밀번호를 가린다. stdout을
+    막는 것 자체도 원래 필요했다: `cli.py`가 이미 "pykrx가 stdout에 배너를 써서
+    파싱 가능한 출력을 오염시킨다"는 이유로 import를 지연시키고 있다."""
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        from pykrx import stock as _stock
+    for line in buffer.getvalue().splitlines():
+        if line.strip():
+            _log.info("pykrx: %s", _mask_credentials(line.strip()))
+    return _stock
+
+
+stock = _import_pykrx_quietly()
 
 KR_TZ = ZoneInfo("Asia/Seoul")
 MARKETS = ["KOSPI", "KOSDAQ"]

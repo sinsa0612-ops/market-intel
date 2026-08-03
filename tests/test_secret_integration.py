@@ -33,6 +33,8 @@ from market_intel.providers.earnings_calendar import EarningsCalendarProvider
 from market_intel.providers.ecos import EcosProvider
 from market_intel.providers.fred import FredProvider
 from market_intel.providers.fred_calendar import FredCalendarProvider
+from market_intel.providers.kis_flows import KisFlowsProvider
+from market_intel.universe import UNIVERSE
 from market_intel.providers.policy_calendar import PolicyCalendarProvider
 from market_intel.providers.sec_8k_events import Sec8kEventsProvider
 from market_intel.providers.sec_edgar import SecEdgarProvider
@@ -42,7 +44,11 @@ FAKE_FRED = "FAKEFRED_INTEG"
 FAKE_ECOS = "FAKEECOS_INTEG"
 FAKE_DART = "FAKEDART_INTEG"
 FAKE_UA = "FAKEUSERAGENT_INTEG contact@example.com"
-ALL_SECRETS = [FAKE_FRED, FAKE_ECOS, FAKE_DART, FAKE_UA]
+# KIS는 앱키·시크릿을 **헤더로** 보내고 토큰을 디스크에 캐시한다 — 새는 경로가
+# 다른 provider와 달라서 이 그물에 반드시 걸려 있어야 한다.
+FAKE_KIS_KEY = "FAKEKISKEY_INTEG"
+FAKE_KIS_SECRET = "FAKEKISSECRET_INTEG+/="
+ALL_SECRETS = [FAKE_FRED, FAKE_ECOS, FAKE_DART, FAKE_UA, FAKE_KIS_KEY, FAKE_KIS_SECRET]
 
 
 class _BenignStandIn:
@@ -105,6 +111,13 @@ def _mock_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"status": "013", "message": "no data"})
     if "sec.gov" in url:
         return httpx.Response(200, json={})
+    if "/oauth2/tokenP" in url:
+        return httpx.Response(200, json={"access_token": "FAKETOKEN", "expires_in": 86400})
+    if "investor-trade-by-stock-daily" in url:
+        return httpx.Response(200, json={"rt_cd": "0", "msg1": "ok", "output2": [
+            {"stck_bsop_date": "20260731", "stck_clpr": "262500",
+             "frgn_ntby_qty": "1", "prsn_ntby_qty": "-1", "orgn_ntby_qty": "0",
+             "frgn_ntby_tr_pbmn": "1", "prsn_ntby_tr_pbmn": "-1", "orgn_ntby_tr_pbmn": "0"}]})
     return httpx.Response(404)
 
 
@@ -114,6 +127,8 @@ def test_full_workflow_run_never_leaks_fake_secrets(settings, caplog, tmp_path, 
     settings.ecos_api_key = FAKE_ECOS
     settings.dart_api_key = FAKE_DART
     settings.sec_user_agent = FAKE_UA
+    settings.kis_app_key = FAKE_KIS_KEY
+    settings.kis_app_secret = FAKE_KIS_SECRET
     # Mirrors what cli.py's `collect` command does in production: this is
     # what actually attaches SecretRedactingFilter (spec A6). Without it,
     # httpx's own request-URL logging would leak secrets to any OTHER
@@ -135,10 +150,15 @@ def test_full_workflow_run_never_leaks_fake_secrets(settings, caplog, tmp_path, 
         "earnings_calendar": EarningsCalendarProvider(),
         "policy_calendar": PolicyCalendarProvider(),
         "sec_8k_events": Sec8kEventsProvider(),
+        "kis": KisFlowsProvider(),
     }
 
+    # **빈 유니버스를 넘기면 안 된다.** 종목이 필요한 provider(kis)가 실제 코드에
+    # 닿지 못하고 `no_subjects`로 끝나, 이 그물이 초록이면서 아무것도 안 덮는다.
+    # 실측 2026-08-03: 이 자리가 `[]`일 때 KIS의 safe_source_url에 앱키를 일부러
+    # 붙이는 변이를 주입해도 테스트가 통과했다.
     result = run_collect(
-        settings, [], registry, "all", None,
+        settings, UNIVERSE, registry, "all", None,
         transport_factory=lambda _pname: httpx.MockTransport(_mock_handler),
     )
 
