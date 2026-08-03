@@ -195,7 +195,7 @@ def test_kr_flows_appear_when_present(settings):
         event_at="2026-08-01T00:00:00+00:00", market="KR", country="KR",
         value_num=123456.0, unit="KRW", data_status="source_verified",
     )
-    seed_fact(conn, settings.raw_dir, "pykrx", flow_fact, known_at="2026-08-01T07:00:00+00:00")
+    seed_fact(conn, settings.raw_dir, "kis", flow_fact, known_at="2026-08-01T07:00:00+00:00")
 
     report_date = date(2026, 8, 1)
     cutoff = cutoff_mod.cutoff_for("close_delta", report_date)

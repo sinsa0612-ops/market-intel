@@ -149,7 +149,7 @@ CORE16_SYMBOLS: list[str] = [m["symbol"] for m in CORE16]
 SECTOR_BY_SYMBOL: dict[str, str] = {m["symbol"]: m["sector"] for m in CORE16 if m["sector"]}
 SECTOR_INDEX_SYMBOLS: list[str] = [m["symbol"] for m in UNIVERSE if m["asset_type"] == "sector_index"]
 
-# 관측 기업 중 한국 상장분 — pykrx 수급과 DART 공시·재무가 이 목록을 돈다.
+# 관측 기업 중 한국 상장분 — KIS 수급과 DART 공시·재무가 이 목록을 돈다.
 KR_CORE_SYMBOLS: list[str] = [
     "005930.KS", "000660.KS", "105560.KS", "005380.KS", "005490.KS",
 ]

@@ -14,7 +14,7 @@ from pathlib import Path
 from market_intel.universe import CORE16
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-ALL_PROVIDER_NAMES = ("yfinance", "pykrx", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart")
+ALL_PROVIDER_NAMES = ("yfinance", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart")
 
 
 def _run_cli(args: list[str], tmp_path: Path, cwd: Path | None = None) -> subprocess.CompletedProcess:

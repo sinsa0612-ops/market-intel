@@ -1,5 +1,5 @@
 """SafeHttp — the only sanctioned path for direct API calls (spec A6).
-yfinance/pykrx do their own internal HTTP and are exempt.
+yfinance does its own internal HTTP and is exempt.
 
 Guarantees: per-provider host whitelist, HTTPS-only, no auto-redirect
 following (same-host redirect allowed once), token-bucket rate limiting,
@@ -30,7 +30,7 @@ HOST_WHITELIST: dict[str, set[str]] = {
     "sec_8k_events": {"data.sec.gov", "www.sec.gov"},
     # 한국투자증권 KIS — 국내주식 투자자별 매매동향(개인·외국인·기관 순매수).
     # KRX가 그 화면을 회원 전용으로 바꾼 뒤 남은 유일한 키 기반 경로다
-    # (2026-08-03 실측: KRX 오픈API에 수급 엔드포인트 없음, pykrx 익명은 `LOGOUT`).
+    # (2026-08-03 실측: KRX 오픈API에 수급 엔드포인트 없음, KRX 회원 화면은 `LOGOUT`).
     "kis": {"openapi.koreainvestment.com"},
 }
 

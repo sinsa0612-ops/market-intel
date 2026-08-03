@@ -105,7 +105,8 @@ def test_flow_bar_widths_are_proportional_and_labelled():
 
 
 def test_flow_shares_only_source_still_gets_a_table_not_a_bar():
-    """pykrx는 주식 수만 준다. 막대 길이는 서로 더할 수 있는 양이라는 뜻인데
+    """금액 없이 주식 수만 주는 소스가 있다(걷어낸 pykrx가 그랬다). 막대 길이는
+    서로 더할 수 있는 양이라는 뜻인데
     종목이 다른 주식 수는 더할 수 없다 — 그런 행은 쓰던 표로 떨어져야 한다."""
     shares = [flow_row("KOSPI", "코스피", "foreign", 123456.0, shares=True)]
     blocks = fact_blocks(shares)

@@ -48,15 +48,15 @@ class Settings:
     ecos_api_key: str = field(default_factory=lambda: os.environ.get("MI_ECOS_API_KEY", ""))
     dart_api_key: str = field(default_factory=lambda: os.environ.get("MI_DART_API_KEY", ""))
     sec_user_agent: str = field(default_factory=lambda: os.environ.get("MI_SEC_USER_AGENT", ""))
-    # KRX 오픈API (openapi.krx.co.kr) — 한국 투자자별 수급. 익명 접근이 막힌 뒤
-    # 유일하게 살아 있던 공식 경로다(2026-08-01 실측). 비어 있으면 pykrx_flows가
-    # 네트워크를 두드리지도 않고 "키없음"으로 기록한다.
+    # KRX 오픈API (openapi.krx.co.kr) — 유가증권·코스닥 일별매매정보(전종목 시세).
+    # 수급은 여기 없다(2026-08-03 실측: 엔드포인트 자체가 없음) — 수급은 KIS가 준다.
+    # 지금은 읽는 provider가 없고, 전종목 시세 수집기가 붙을 때 쓴다.
     krx_api_key: str = field(default_factory=lambda: os.environ.get("MI_KRX_API_KEY", ""))
-    # KRX 회원 계정 — pykrx가 투자자별 수급(개인·외국인·기관 순매수)을 받으려면
-    # 필요하다. KRX가 그 화면만 회원 전용으로 바꿔서 익명 요청에는 `LOGOUT`이
-    # 온다(2026-08-03 실측). **이름이 `MI_` 접두사가 아닌 이유**: pykrx가
-    # `os.getenv("KRX_ID")`를 자기 함수 기본 인자로 읽으므로 이름을 바꿀 수 없다.
-    # 우리는 그 값을 직접 쓰지 않고, **가려야 할 비밀 목록에 넣기 위해서만** 읽는다.
+    # KRX 회원 계정. **이 값을 읽는 코드는 없다** — 유일한 사용처였던 pykrx를
+    # 2026-08-04에 걷어냈다(7회 실행 전부 NO_DATA, 남긴 fact 0건). 그래도 아래
+    # `secret_values()`에 남겨 두는 이유는 `.env`에 값이 남아 있는 한 로그·오류
+    # 메시지에 섞여 나갈 수 있기 때문이다 — 가리는 데는 비용이 없다.
+    # (`.env`에서 두 줄을 지우면 이 필드도 같이 지워도 된다.)
     krx_id: str = field(default_factory=lambda: os.environ.get("KRX_ID", ""))
     krx_pw: str = field(default_factory=lambda: os.environ.get("KRX_PW", ""))
     # 한국투자증권 KIS — 투자자별 수급을 받는 유일한 키 기반 경로.

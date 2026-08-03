@@ -9,7 +9,6 @@ from .fred import FredProvider
 from .fred_calendar import FredCalendarProvider
 from .kis_flows import KisFlowsProvider
 from .policy_calendar import PolicyCalendarProvider
-from .pykrx_flows import PykrxProvider
 from .sec_8k_events import Sec8kEventsProvider
 from .sec_edgar import SecEdgarProvider
 from .sec_edgar_13f import Sec13fProvider
@@ -17,7 +16,6 @@ from .yfinance_prices import YFinanceProvider
 
 PROVIDERS: dict = {
     "yfinance": YFinanceProvider(),
-    "pykrx": PykrxProvider(),
     "sec_edgar": SecEdgarProvider(),
     "sec_edgar_13f": Sec13fProvider(),
     "fred": FredProvider(),

@@ -10,13 +10,13 @@ WORKFLOWS: dict[str, list[str]] = {
     # 주므로, 전날 실패분이 아침에 자동으로 메워진다. 비용은 호출 5번이다.
     "morning": ["yfinance", "sec_edgar", "sec_edgar_13f", "fred", "kis"],
     # close(15:50)가 당일치를 받는 자리다 — KIS는 15:40 이후에야 당일 수급을 준다.
-    "close": ["yfinance", "pykrx", "ecos", "dart", "kis"],
+    "close": ["yfinance", "ecos", "dart", "kis"],
     # spec B14 (ST1 addition) — morning/close are untouched (1단계 테스트가
     # 내용을 검사한다); calendar/events are new entries, also added to "all".
     "calendar": ["fred_calendar", "earnings_calendar", "policy_calendar"],
     "events": ["sec_8k_events"],
     "all": [
-        "yfinance", "pykrx", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
+        "yfinance", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
         "fred_calendar", "earnings_calendar", "policy_calendar", "sec_8k_events", "kis",
     ],
 }

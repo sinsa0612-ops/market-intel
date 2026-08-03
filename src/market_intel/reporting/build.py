@@ -148,9 +148,10 @@ NO_FACTS_REASON = (
 
 KR_FLOW_GAP_ID = "kr_flows:net_buy"
 KR_FLOW_GAP_REASON = (
-    "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow "
-    "엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 "
-    "도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다."
+    "차단선 이전에 알려진 한국 수급(개인·외국인·기관 순매수) fact가 0건이다. 수급은 "
+    "한국투자증권 KIS가 주는데(KRX는 익명 경로를 막았고 오픈API에 수급 엔드포인트가 없다 — "
+    "2026-08-03 실측), 그 수집이 실패했거나 차단선보다 늦게 돌았을 수 있다. 수급 fact가 "
+    "하나라도 들어오면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다."
 )
 
 TITLES = {
@@ -721,10 +722,10 @@ def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
     # 사고 팔았나"이고 그 답은 금액이다 (CEO 결정 2026-08-03). 버리는 게 아니라
     # DB에 그대로 있고 상세 페이지가 쓴다.
     #
-    # 종목별로 판단하는 이유: pykrx는 **주식 수만** 준다. 무조건 금액만
-    # 남기면 그 소스의 수급이 통째로 사라지고 리포트가 "한국 수급 결측"이라고
-    # 신고한다 — 데이터가 있는데 없다고 말하는 것이다(테스트
-    # `test_kr_flows_appear_when_present`가 이것을 잡는다).
+    # 종목별로 판단하는 이유: 금액을 주지 않는 소스가 있을 수 있다(걷어낸
+    # pykrx가 그랬다). 무조건 금액만 남기면 그런 소스의 수급이 통째로 사라지고
+    # 리포트가 "한국 수급 결측"이라고 신고한다 — 데이터가 있는데 없다고 말하는
+    # 것이다(테스트 `test_kr_flows_appear_when_present`가 이것을 잡는다).
     priced = {r["subject"] for r in rows if (r["metric"] or "").endswith("_value")}
     rows = [r for r in rows
             if (r["metric"] or "").endswith("_value") or r["subject"] not in priced]

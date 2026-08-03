@@ -11,7 +11,7 @@ revision of this file weakened `assert set(result["providers"]) == set(registry)
 to a subset check and left the 4 new providers out, and a mutation that made
 `fred_calendar` store the unmasked URL passed 97 tests unnoticed.
 
-[ASSUMPTION] yfinance/pykrx never touch SafeHttp or any MI_* secret (spec A6
+[ASSUMPTION] yfinance never touches SafeHttp or any MI_* secret (spec A6
 exempts them — they manage their own internal HTTP sessions), so those two
 slots use trivial local stand-ins. `earnings_calendar` is yfinance-based
 too, but it runs its REAL collect() here against a patched `yf.Ticker`, so
@@ -139,7 +139,6 @@ def test_full_workflow_run_never_leaks_fake_secrets(settings, caplog, tmp_path, 
     db_mod.init_db(settings.db_path)
     registry = {
         "yfinance": _BenignStandIn("yfinance"),
-        "pykrx": _BenignStandIn("pykrx"),
         "sec_edgar": SecEdgarProvider(),
         "sec_edgar_13f": Sec13fProvider(),
         "fred": FredProvider(),

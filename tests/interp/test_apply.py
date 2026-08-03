@@ -270,14 +270,14 @@ def test_rerun_does_not_drop_the_report_own_missing_items(monkeypatch, conn):
 
     report = make_report()
     report.missing.append(MissingItem(
-        area="한국 수급", reason="pykrx가 0건을 반환함", since="2026-08-01T00:00:00+00:00",
-        gap_id="flows:pykrx",
+        area="한국 수급", reason="수급 provider가 0건을 반환함", since="2026-08-01T00:00:00+00:00",
+        gap_id="flows:kr_net_buy",
     ))
     _patch_generate(monkeypatch, lambda n: llm_mod.LLMUnavailable("x"))
     for _ in range(2):
         report, _result = apply_mod.fill(report, conn, cutoff=_cutoff(report))
 
-    assert [m.gap_id for m in report.missing] == ["flows:pykrx", "interp:llm_unavailable"]
+    assert [m.gap_id for m in report.missing] == ["flows:kr_net_buy", "interp:llm_unavailable"]
 
 
 def test_rerun_replaces_a_stale_status_gap(monkeypatch, conn):

@@ -16,7 +16,7 @@ from .universe import CORE16, UNIVERSE
 from .workflows import WORKFLOWS
 
 PROVIDER_ORDER = [
-    "yfinance", "pykrx", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
+    "yfinance", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
     # spec B14 (ST1) — without these four, `db stats` reports the calendar
     # facts as if they did not exist.
     "fred_calendar", "earnings_calendar", "policy_calendar", "sec_8k_events",
@@ -73,8 +73,8 @@ def cmd_init(settings) -> int:
 
 
 def cmd_collect(settings, workflow: str, cutoff_str: str | None) -> int:
-    # Imported here, not at module scope: pykrx writes a banner to stdout at
-    # import time, which would pollute the parseable output of `init`/`db stats`.
+    # Imported here, not at module scope: a provider that writes to stdout at
+    # import time would pollute the parseable output of `init`/`db stats`.
     from .providers import PROVIDERS
 
     try:

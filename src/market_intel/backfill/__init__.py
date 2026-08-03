@@ -63,8 +63,8 @@ class BackfillResult:
 def load_source(source: str):
     """-> 소스 모듈, 아직 구현되지 않았으면 None.
 
-    지연 import인 이유: `pykrx`가 import 시 stdout에 배너를 찍어 파싱 가능한
-    CLI 출력을 오염시킨다(`cli.py:72`의 선례)."""
+    지연 import인 이유: import 시 stdout에 배너를 찍는 서드파티가 있으면 파싱
+    가능한 CLI 출력이 오염된다(`cli.py`의 선례)."""
     if source not in SOURCES:
         raise ValueError(f"unknown backfill source: {source!r} (choices: {list(SOURCES)})")
     module_name = SOURCES[source]
