@@ -33,6 +33,7 @@ from .render_md import (
     SECTOR_TITLE,
     arrow,
     direction,
+    PALE_BELOW,
     filing_summary,
     flow_groups,
     fmt_pct,
@@ -225,7 +226,8 @@ def _calendar_table_html(columns: list[str], rows: list[list[str]]) -> str:
     return _scroll(f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>")
 
 
-FLOW_LEGEND = ("막대 길이는 그날 순매수 금액의 비중입니다. 빨강 = 순매수 · 파랑 = 순매도. "
+FLOW_LEGEND = ("막대 길이는 종목 안에서의 비중, 색이 진할수록 금액이 큽니다 "
+               "(빨강 = 순매수 · 파랑 = 순매도, 화면에서 가장 큰 금액이 가장 진합니다). "
                "개인·기관·외국인의 순매수를 더하면 0이므로, 값 하나하나보다 "
                "어느 쪽이 사고 어느 쪽이 파는지가 정보입니다.")
 
@@ -247,9 +249,13 @@ def _flow_html(groups: list[dict]) -> str:
         if g["quiet"]:
             out.append('<div class="bar"><span class="zero">움직임 작음</span></div>')
         else:
+            # `--a`(진하기)는 인라인으로 나갈 수밖에 없지만 **색 자체는 인라인이
+            # 아니다** — 스타일시트가 `--up`/`--down`과 섞으므로 다크모드 팔레트가
+            # 그대로 적용된다(인라인 색은 prefers-color-scheme을 그냥 빠져나간다).
             bars = "".join(
-                f'<span class="{"buy" if a["buy"] else "sell"}" '
-                f'style="flex:{abs(a["value"]) / g["total"]:.4f}">'
+                f'<span class="{"buy" if a["buy"] else "sell"}'
+                f'{" pale" if a["intensity"] < PALE_BELOW else ""}" '
+                f'style="flex:{abs(a["value"]) / g["total"]:.4f};--a:{a["intensity"]}">'
                 f'{_esc(a["label"])} {_esc(a["text"])}</span>'
                 for a in g["actors"] if a["value"]
             )

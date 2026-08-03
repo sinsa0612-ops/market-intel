@@ -168,6 +168,21 @@ FLOW_ACTORS: tuple[tuple[str, str], ...] = (
 FLOW_QUIET_KRW = 1e11  # 1,000억
 
 
+# 색 진하기의 아래·위 끝. 0까지 내려가면 옅은 칸이 배경과 구별되지 않아 "그
+# 주체는 아무것도 안 했다"로 읽히므로 바닥을 둔다. `PALE_BELOW` 아래로는 글자를
+# 흰색이 아니라 본문색으로 쓴다 — 옅은 분홍 위의 흰 글씨는 읽히지 않는다.
+INTENSITY_FLOOR = 0.42
+PALE_BELOW = 0.62
+
+
+def _intensity(value: float, peak: float) -> float:
+    """그 화면에서 가장 큰 금액 대비 이 금액의 진하기(0.42~1.0)."""
+    if not peak:
+        return 1.0
+    share = abs(value) / peak
+    return round(INTENSITY_FLOOR + (1.0 - INTENSITY_FLOOR) * share, 3)
+
+
 def flow_groups(rows: list[FactRow]) -> list[dict]:
     """수급 FactRow들을 **종목 하나에 한 줄**로 묶는다. 큰 종목이 위로.
 
@@ -186,6 +201,15 @@ def flow_groups(rows: list[FactRow]) -> list[dict]:
         # 종목 이름이 남는다. build.py가 만든 그 라벨을 다시 만들지 않는다.
         entry["name"] = re.sub(r"\s*(개인|기관|외국인)\s*순매수.*$", "", row.label).strip()
 
+    # 색의 진하기는 **금액의 절대 크기**다(CEO 요청 2026-08-04): 많이 샀으면
+    # 진한 빨강, 조금 샀으면 옅은 빨강, 많이 팔았으면 진한 파랑, 조금 팔았으면
+    # 옅은 파랑. 기준은 그 화면에서 가장 큰 한 주체의 금액이다 — 막대 **폭**은
+    # 종목 안에서의 비중이라 종목끼리 비교가 안 되는데, 진하기가 그 자리를
+    # 메운다("삼성전자 개인 2.1조"와 "기관 4,560억"이 폭은 비슷해도 진하기가
+    # 다르다). 색만으로 정보를 주지는 않는다 — 금액은 막대 안에 글자로도,
+    # 옆 문장에도 그대로 있다.
+    peak = max((abs(v) for e in by_subject.values() for v in e["values"].values()), default=0.0)
+
     out = []
     for subject, entry in by_subject.items():
         values = entry["values"]
@@ -195,7 +219,8 @@ def flow_groups(rows: list[FactRow]) -> list[dict]:
         # 칸의 글자만 밀어낸다. 부호가 필요한 곳(정렬·문장)은 `value`를 쓴다.
         actors = [
             {"label": label, "value": values.get(key, 0.0),
-             "text": fmt_money(abs(values.get(key, 0.0)), "KRW"), "buy": values.get(key, 0.0) > 0}
+             "text": fmt_money(abs(values.get(key, 0.0)), "KRW"), "buy": values.get(key, 0.0) > 0,
+             "intensity": _intensity(values.get(key, 0.0), peak)}
             for key, label in FLOW_ACTORS if key in values
         ]
         out.append({
@@ -399,12 +424,24 @@ def _market_blocks(report: Report) -> list[dict]:
     ]
 
 
+NO_INTERP = "AI 해석 미생성"
+# 반대 해석만 비어 있는 것과, 반박할 대상 자체가 없는 것은 다른 사정이다.
+# 앞의 것은 그 문단이 검증에 걸렸다는 뜻이고, 뒤의 것은 애초에 실을 수 없다는
+# 뜻이다 — 같은 문구로 쓰면 독자가 구별할 수 없다(CEO 지적 2026-08-04).
+NO_COUNTER_WITHOUT_READING = "당시 해석이 실리지 않아 반대 해석도 싣지 않습니다 (반박할 대상이 없습니다)."
+
+
 def _interp(report: Report, field_name: str) -> dict:
     """spec B5 contract 2, per field: blank -> the literal placeholder,
-    filled -> the AI badge + the text."""
+    filled -> the AI badge + the text.
+
+    반대 해석은 예외다: 당시 해석이 비어 있으면 **왜** 비었는지를 말한다.
+    이 사정은 리포트 자체에서 읽히므로(두 칸이 다 비었다) 새 필드가 필요 없다."""
     text = getattr(report.interpretation, field_name)
     if not text:
-        return {"kind": "interp", "badge": "", "text": "AI 해석 미생성"}
+        if field_name == "counter_reading" and not report.interpretation.reading:
+            return {"kind": "interp", "badge": "", "text": NO_COUNTER_WITHOUT_READING}
+        return {"kind": "interp", "badge": "", "text": NO_INTERP}
     return {"kind": "interp",
             "badge": f"AI 자동판정 · {report.interpretation.generated_by or 'ai:unknown'}",
             "text": text}

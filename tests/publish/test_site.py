@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from market_intel import site as site_mod
+from market_intel.reporting import render_md
 from market_intel.reporting.model import CalendarRow, FactRow
 
 from conftest import make_report, seed_calendar, write_report
@@ -146,10 +147,17 @@ def test_late_generation_badge(reports_root, docs_root, conn):
 
 
 def test_interpretation_placeholder_on_site(reports_root, docs_root, conn):
+    """해석이 하나도 없으면 **네 칸 모두** 비었다고 말해야 한다 — 조용히 빈
+    칸으로 두면 독자는 그날 할 말이 없었던 것으로 읽는다.
+
+    반대 해석만 문구가 다르다: 당시 해석이 없으면 반박할 대상 자체가 없다는
+    뜻이라 사정이 다르고, 같은 문구로 쓰면 "이 문단이 검증에 걸렸다"와
+    구별되지 않는다(CEO 지적 2026-08-04)."""
     write_report(reports_root, make_report("morning", "2026-08-01"))
     site_mod.build_site(conn, reports_root=reports_root, docs_root=docs_root)
     page = (docs_root / "reports" / "morning" / "2026-08-01.html").read_text(encoding="utf-8")
-    assert page.count("AI 해석 미생성") >= 4
+    assert page.count(render_md.NO_INTERP) >= 3
+    assert render_md.NO_COUNTER_WITHOUT_READING in page
 
 
 def test_site_regenerated_in_full(reports_root, docs_root, conn):

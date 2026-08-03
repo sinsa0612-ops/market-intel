@@ -85,6 +85,8 @@ from __future__ import annotations
 
 import re
 
+from .. import universe as _universe
+
 # Rule 0 — CJK ideographs / kana. The interpretation is Korean prose for a
 # Korean reader; `qwen3.5:9b` is a Chinese-trained model and leaks source-
 # language tokens mid-sentence (judge.md §6-2: `持仓`, `背后` in 2 of 8 real
@@ -499,6 +501,34 @@ def _attribution(report: dict, text: str) -> list[tuple[str, str]]:
     return violations
 
 
+# 이름 안에 숫자가 든 지수들 — `S&P 500`의 500은 **양이 아니라 이름의 일부**다.
+# 실측(2026-08-04 morning): `F64에 따라 KOSPI는 하락한 반면 S&P 500은 올랐다`가
+# "F64(KOSPI)에 500을 갖다 붙였다"로 반려됐다. 500은 히어로 카드 라벨
+# `S&P 500`에 있으므로 규칙 9의 조건 (2)까지 만족해 버린다.
+#
+# **목록은 universe에서 뽑는다.** 손으로 적으면 관측군에 지수를 추가할 때마다
+# 조용히 오탐이 하나씩 늘어난다 — 이 저장소가 `_MARKET_REACTION_SYMBOLS`에서
+# 이미 한 번 겪은 실패 방식이다. 긴 이름부터 지워야 `러셀2000`이 `러셀`+`2000`
+# 으로 쪼개지지 않는다.
+_NUMERIC_NAMES = sorted(
+    {n for m in _universe.UNIVERSE for n in (m["name"], m["name_ko"]) if any(c.isdigit() for c in n)},
+    key=len, reverse=True,
+)
+# 붙여 쓴 표기(`S&P500`)는 애초에 숫자로 안 쪼개지지만, 사람이 쓰는 띄어쓰기
+# 변형(`S&P  500`)까지 같이 잡으려면 공백을 유연하게 둔다.
+_NUMERIC_NAME_RE = re.compile(
+    "|".join(re.escape(name).replace(r"\ ", r"\s*") for name in _NUMERIC_NAMES)
+) if _NUMERIC_NAMES else None
+
+
+def _mask_index_names(text: str) -> str:
+    """이름 속 숫자를 같은 길이의 공백으로 지운다. 길이를 유지하는 이유는
+    호출부가 창을 문자 위치로 자르기 때문이다."""
+    if _NUMERIC_NAME_RE is None:
+        return text
+    return _NUMERIC_NAME_RE.sub(lambda m: " " * len(m.group(0)), text)
+
+
 def _citation_numbers(
     window: str, n: int, own: set[float], report_nums: set[float]
 ) -> list[tuple[str, str]]:
@@ -527,6 +557,7 @@ def _citation_numbers(
     지키는 그 구멍)와, 창(40자·절 경계) 밖으로 나간 숫자."""
     if not own:
         return []
+    window = _mask_index_names(window)
     out: list[tuple[str, str]] = []
     for _m, tok, value, decimals, has_unit, _uc, _latin in _numeric_tokens(window):
         if decimals == 0 and abs(value) <= _SMALL_INT_EXEMPT_MAX and not has_unit:

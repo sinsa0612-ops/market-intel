@@ -360,3 +360,55 @@ def test_fill_does_not_import_interp_thesis_or_store():
     assert "interp.store" not in text
     assert "from . import thesis" not in text
     assert "from . import store" not in text
+
+# --- 반대 해석은 당시 해석에 딸린 글이다 (CEO 지적 2026-08-04) ---------------
+
+def _payload(**over):
+    """`_patch_generate`의 fake가 그대로 돌려줄 (parsed, meta) 쌍."""
+    base = dict(_OK_FIELDS)
+    base.update(over)
+    return base, {"model": "claude:haiku"}
+
+
+def test_counter_reading_is_withheld_when_reading_is_not_published(monkeypatch, conn):
+    """당시 해석이 반려됐는데 반대 해석만 나가면, 독자는 화면에 없는 주장을
+    반박하는 문단을 읽는다(실측 2026-08-04 morning). 두 문단은 한 번의 생성에서
+    같은 추론으로 나오므로, 당시 해석이 근거 불충분이면 반대 해석도 같은 전제를
+    물려받았을 뿐 우연히 안 걸린 것일 수 있다."""
+    report = make_report()
+    # 당시 해석에만 리포트에 없는 숫자를 넣어 반려시킨다.
+    _patch_generate(monkeypatch, lambda n: _payload(reading="KOSPI는 9,999.99를 기록했다."))
+    report, result = apply_mod.fill(report, conn, cutoff=_cutoff(report))
+
+    assert result["fields"]["reading"] == "rejected"
+    assert result["fields"]["counter_reading"] == "withheld", "반박할 대상이 없으면 보류한다"
+    assert report.interpretation.reading == ""
+    assert report.interpretation.counter_reading == ""
+
+
+def test_counter_reading_survives_when_reading_is_published(monkeypatch, conn):
+    """딸린 글이라는 이유로 멀쩡한 반대 해석까지 버리면 안 된다."""
+    report = make_report()
+    _patch_generate(monkeypatch, lambda n: _payload())
+    report, result = apply_mod.fill(report, conn, cutoff=_cutoff(report))
+
+    assert result["fields"]["reading"] == "ok"
+    assert result["fields"]["counter_reading"] == "ok"
+    assert report.interpretation.counter_reading
+
+
+def test_empty_counter_reading_says_why_it_is_empty():
+    """'AI 해석 미생성'과 '반박할 대상이 없다'는 다른 사정이다 — 같은 문구로
+    쓰면 독자가 구별할 수 없다."""
+    from market_intel.reporting import render_md as md
+
+    both_empty = make_report()
+    both_empty.interpretation.reading = ""
+    both_empty.interpretation.counter_reading = ""
+    assert md._interp(both_empty, "counter_reading")["text"] == md.NO_COUNTER_WITHOUT_READING
+    assert md._interp(both_empty, "reading")["text"] == md.NO_INTERP
+
+    reading_only = make_report()
+    reading_only.interpretation.reading = "국내 증시는 약세였다."
+    reading_only.interpretation.counter_reading = ""
+    assert md._interp(reading_only, "counter_reading")["text"] == md.NO_INTERP

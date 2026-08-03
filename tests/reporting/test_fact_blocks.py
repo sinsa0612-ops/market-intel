@@ -189,3 +189,56 @@ def test_markdown_keeps_the_same_structure_without_colour():
     md = _block_md({"kind": "flow", "rows": SAMSUNG})
     assert md.count("\n") == 2  # 머리글 + 구분선 + 종목 한 줄
     assert "삼성전자" in md and "2.1조 원" in md and "담고" in md
+
+
+# --- 색 진하기 = 금액의 절대 크기 (CEO 요청 2026-08-04) ---------------------
+
+def test_intensity_tracks_absolute_size_not_share_within_the_bar():
+    """막대 폭은 종목 안에서의 비중이라 종목끼리 비교가 안 된다. 진하기가 그
+    자리를 메우므로 기준은 화면 전체에서 가장 큰 금액이어야 한다."""
+    big = SAMSUNG  # 개인 2.1조 / 기관 1.22조 / 외국인 0.9455조
+    small = [flow_row("000660.KS", "SK하이닉스", "individual", 200_000_000_000.0),
+             flow_row("000660.KS", "SK하이닉스", "foreign", -200_000_000_000.0)]
+    groups = {g["subject"]: g for g in flow_groups(big + small)}
+
+    biggest = groups["005930.KS"]["actors"][0]      # 개인 2.1조 = 화면 최대
+    assert biggest["intensity"] == 1.0
+
+    # 같은 종목 안에서도 금액이 작을수록 옅다.
+    samsung = [a["intensity"] for a in groups["005930.KS"]["actors"]]
+    assert samsung[0] > samsung[1] > samsung[2]
+
+    # 다른 종목의 작은 금액은 폭이 절반이어도 훨씬 옅다(폭만으로는 안 보이던 차이).
+    smaller = groups["000660.KS"]["actors"][0]
+    assert smaller["intensity"] < samsung[-1]
+    assert smaller["intensity"] >= 0.42, "0까지 내려가면 '아무것도 안 했다'로 읽힌다"
+
+
+def test_intensity_is_one_when_a_single_actor_stands_alone():
+    """기준이 될 최댓값이 자기 자신뿐이면 옅게 그릴 이유가 없다."""
+    only = [flow_row("005930.KS", "삼성전자", "individual", 5_000_000_000_000.0)]
+    assert flow_groups(only)[0]["actors"][0]["intensity"] == 1.0
+
+
+def test_bar_carries_intensity_inline_but_never_the_colour():
+    """색을 인라인으로 넣으면 다크모드 미디어쿼리를 그냥 빠져나간다 — 진하기만
+    인라인이고 색은 스타일시트가 --up/--down과 섞는다."""
+    html = _block_html({"kind": "flow", "rows": SAMSUNG})
+    assert "--a:1.0" in html
+    assert "#" not in html.split("<style")[0].split('style="')[1].split('"')[0], "인라인에 색상값이 없어야 한다"
+    assert "rgb" not in html and "color-mix" not in html
+
+
+def test_pale_segments_flip_the_label_colour():
+    """옅은 칸 위의 흰 글씨는 읽히지 않는다."""
+    faint = [flow_row("005930.KS", "삼성전자", "individual", 5_000_000_000_000.0),
+             flow_row("005930.KS", "삼성전자", "foreign", -50_000_000_000.0)]
+    html = _block_html({"kind": "flow", "rows": faint})
+    assert 'class="sell pale"' in html
+    assert 'class="buy"' in html  # 진한 칸은 흰 글씨 그대로
+
+
+def test_legend_explains_that_colour_depth_means_size():
+    """색이 정보를 나르기 시작했으면 범례가 그것을 말해야 한다."""
+    html = _block_html({"kind": "flow", "rows": SAMSUNG})
+    assert "색이 진할수록 금액이 큽니다" in html

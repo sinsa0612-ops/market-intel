@@ -234,6 +234,20 @@ def fill(
         sentence = field_text["next_check"]
         next_check_final = f"{sentence}\n\n확인 일정: {next_check_suffix}" if next_check_suffix else sentence
 
+    # **반대 해석은 당시 해석에 딸린 글이다.** 당시 해석이 실리지 않았는데 반대
+    # 해석만 나가면, 독자는 화면에 없는 주장을 반박하는 문단을 읽게 된다
+    # (CEO 지적 2026-08-04: "당시 해석이 미생성인데 어떻게 반대 해석이 나올 수
+    # 있지?"). 실제로 그날 반대 해석은 "개인투자자의 순매수가 저가 매수 심리일
+    # 수 있지만…"으로 시작했다 — 무엇에 대한 반대인지 알 수 없는 글이다.
+    #
+    # 더 중요한 것은 근거다: 두 문단은 **한 번의 생성에서 같은 추론으로** 나온다.
+    # 당시 해석이 근거 불충분으로 반려됐다면 그 추론 자체가 의심스럽고, 반대
+    # 해석은 같은 전제를 물려받았을 뿐 우연히 걸리지 않은 것일 수 있다.
+    # 그래서 검증을 통과했더라도 싣지 않는다. 버리는 게 아니라 보류이며,
+    # 원장에는 `withheld`로 남아 왜 비었는지 추적된다.
+    if field_status["reading"] != "ok" and field_status["counter_reading"] == "ok":
+        field_status["counter_reading"] = "withheld"
+
     evidence_texts = [field_text[f] for f in ("reading", "counter_reading") if field_status[f] == "ok"]
     if field_status["next_check"] == "ok":
         evidence_texts.append(field_text["next_check"])

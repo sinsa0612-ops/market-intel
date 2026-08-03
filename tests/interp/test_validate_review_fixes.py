@@ -296,6 +296,13 @@ def test_calling_the_fx_row_an_exchange_rate_is_not_an_attribution_error():
 
 def _report_with_flow() -> dict:
     report = _report_obj()
+    # 히어로 카드의 실제 라벨이다 — `S&P 500`의 500이 리포트의 숫자 집합에
+    # 들어가는 바로 그 경로라서, 이 줄이 없으면 규칙 9의 조건 (2)가 성립하지
+    # 않아 오탐 테스트가 아무것도 재지 못한다.
+    report.market_reaction = list(report.market_reaction) + [
+        _row("S&P 500", "7,489.72 point", "전일대비 +0.70%",
+             subject="^GSPC", metric="price_close", raw_value=7489.72),
+    ]
     report.facts = list(report.facts) + [
         _row("삼성전자(005930.KS) 개인 순매수(금액)", "2.1조 원",
              subject="005930.KS", metric="net_buy_individual_value",
@@ -366,3 +373,25 @@ def test_recommending_a_trade_is_still_blocked():
                  "신규 진입에 유리한 구간이다."):
         v = validate_mod.check(_report_with_flow(), text)
         assert any(kind.startswith("banned") for kind, _tok in v), (text, v)
+
+
+# --- 규칙 9: 지수 이름 속 숫자는 양이 아니다 (2026-08-04) --------------------
+
+def test_index_name_digits_are_not_a_cited_quantity():
+    """실측(2026-08-04 morning): `F64에 따라 KOSPI는 하락한 반면 S&P 500은
+    올랐다`가 "F64(KOSPI)에 500을 갖다 붙였다"로 반려됐다. 500은 히어로 카드
+    라벨 `S&P 500`에 있어 조건 (2)까지 만족해 버린다 — 이름의 일부지 양이 아니다.
+    S&P 500은 매일 나오는 말이라 이 오탐은 매일 났다."""
+    report = _report_with_flow()
+    for text in ("F1에 따라 삼성전자는 순매수됐지만 S&P 500은 하락했다.",
+                 "F1과 함께 러셀2000도 움직였다.",
+                 "F1 대비 미 10년물 금리가 올랐다."):
+        v = validate_mod.check(report, text)
+        assert not any(kind == "citation_num" for kind, _tok in v), (text, v)
+
+
+def test_a_number_borrowed_from_another_row_is_still_blocked():
+    """이빨은 그대로다 — 이름 마스킹이 규칙 9 자체를 무디게 만들면 안 된다.
+    F1(삼성전자 개인 순매수 2.1조)에 F2의 숫자를 갖다 붙이면 걸려야 한다."""
+    v = validate_mod.check(_report_with_flow(), "F1에 기록된 4.20% 만큼 움직였다.")
+    assert any(kind == "citation_num" for kind, _tok in v), v

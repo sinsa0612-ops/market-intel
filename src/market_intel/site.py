@@ -152,7 +152,20 @@ td.sp { width:7.5rem; text-align:right; }
        background:var(--th-bg); font-size:.72rem; }
 .bar span { display:flex; align-items:center; justify-content:center; color:#fff;
             white-space:nowrap; overflow:hidden; min-width:0; }
-.bar .buy { background:var(--up); } .bar .sell { background:var(--down); }
+/* 진하기 = 금액의 절대 크기(`--a`, 렌더러가 계산해 인라인으로 넣는다). 색 자체는
+   여기서 --up/--down과 섞으므로 다크모드 팔레트가 그대로 적용된다 — 인라인 색은
+   prefers-color-scheme을 그냥 빠져나간다.
+   `background` 선언이 둘인 것은 폴백이다: color-mix를 모르는 브라우저는 앞줄의
+   진한 색을 그대로 쓴다(정보가 사라지는 게 아니라 농담만 사라진다).
+   섞는 상대가 `transparent`가 아니라 `--bg`인 이유: 투명하게 두면 아래 깔린
+   트랙 색이 비쳐 옅은 칸끼리 서로 다른 색으로 보인다. */
+.bar .buy  { background:var(--up); }
+.bar .sell { background:var(--down); }
+.bar .buy  { background:color-mix(in srgb, var(--up)   calc(var(--a, 1) * 100%), var(--bg)); }
+.bar .sell { background:color-mix(in srgb, var(--down) calc(var(--a, 1) * 100%), var(--bg)); }
+/* 옅은 칸 위의 흰 글씨는 읽히지 않는다. 임계값 아래는 렌더러가 `pale`을 붙이고
+   글자를 본문색으로 돌린다 — 밝은 배경에서도 어두운 배경에서도 대비가 산다. */
+.bar .pale { color:var(--fg); }
 .bar .zero { background:var(--line); color:var(--muted); flex:1; }
 
 /* 거시지표 카드 — 값 하나짜리 관측이라 표의 다섯 칸 중 넷이 빈다. */

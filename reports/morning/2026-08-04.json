@@ -4,7 +4,7 @@
   "report_date": "2026-08-04",
   "cutoff_kst": "2026-08-04T07:15:00+09:00",
   "cutoff_utc": "2026-08-03T22:15:00+00:00",
-  "generated_at": "2026-08-03T22:40:02+00:00",
+  "generated_at": "2026-08-03T23:20:46+00:00",
   "title": "모닝",
   "headline": "KOSPI 6,241.91(-5.4%) · S&P500 7,600.50(+1.5%) · 달러/원 1,428.8원(-0.5%) · 미10Y 4.69%(-1.2%) — 관측기업 18곳 중 ±3% 이상 7종목, 결측 0건",
   "breadth": "관측기업 12/18개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 2/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 1/2 · 헬스케어 0/1 · 소재·철강 0/1 · 부동산·데이터센터 1/1",
@@ -1584,14 +1584,7 @@
       "data_status": ""
     }
   ],
-  "missing": [
-    {
-      "area": "AI 해석",
-      "reason": "AI 해석 일부 또는 전체 필드가 근거 검증에 실패해 비웠다(partial). 위반 상세는 meta.interpretation.violations 참고. 사실 계층은 정상.",
-      "since": "2026-08-03T22:41:17+00:00",
-      "gap_id": "interp:partial"
-    }
-  ],
+  "missing": [],
   "sector_summary": [
     {
       "sector": "플랫폼·AI 수익화",
@@ -1957,12 +1950,12 @@
     }
   ],
   "interpretation": {
-    "reading": "",
-    "counter_reading": "미국의 인플레이션 약화와 금리 역수익률 심화(F12)는 경기 둔화 신호일 수 있으며, 이는 한국 기업들의 수출 전망을 악화시킬 가능성이 있습니다. 개인투자자의 순매수가 저가 매수 심리일 수 있지만, 기관과 외국인의 동시 이탈은 단순한 차익실현이 아닌 펀더멘털 우려의 신호일 수도 있습니다. 미국의 빅테크 강세가 실적 개선에 기반했다 하더라도(F18, F21, F39, F41), 나머지 산업 전반의 경기 신호는 약해 보입니다.",
+    "reading": "미국 시장이 3일 전 대비 부분적으로 회복(S&P500 +1.48%, 나스닥 +2.13%)했고 빅테크 주가도 강세(마이크로소프트 +4.93%, 메타 +6.02% 등, F78-F81)를 보였다. 그러나 한국 시장은 KOSPI -5.36% 급락(F64)을 기록했으며, 반도체주인 삼성전자(-8.95%)와 SK하이닉스(-8.73%, F82-F83)는 더욱 큰 낙폭을 겪었다. 이는 외국인 투자자들이 이 두 종목에서 대규모로 순매도(SK하이닉스 -1.8조원, 삼성전자 -9,455억원, F51, F60)했기 때문이다.",
+    "counter_reading": "미 10년물 금리가 직전 관측 대비 +1.50% 상승했고(F5), 10Y-2Y 금리차도 +0.45%로 양수를 유지하고 있다는 점을 보면 미국의 금리 전망은 여전히 불확실한 상태다(F12). 한국 기준금리가 2.50%로 동결된 가운데(F1) 외국인의 매도는 한국 시장의 절대적 약세라기보다는 미국의 금리 사이클에서 선진국 자산으로의 자금 이동을 반영할 수 있다.",
     "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 1 · 약화 0 · 무효 0 · 판정 불가 0.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 1/1).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.75 (조건 >= 4.5 충족).",
-    "next_check": "2026-08-07 Employment Situation에서 고용 감소가 확인되거나, 2026-08-12 CPI에서 인플레이션 추세가 지속적으로 약화되면 미국의 경기 둔화 우려가 현실화되는지 판단할 수 있습니다. 한국의 경우 외국인 투자자의 이탈이 계속되는지, 아니면 삼성전자와 SK하이닉스의 주가 하락 이후 재진입이 나타나는지가 중요한 확인 포인트가 될 것입니다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
+    "next_check": "2026-08-07의 고용 현황 발표(Employment Situation)와 2026-08-12의 소비자물가지수(Consumer Price Index)가 발표될 때 미국의 금리 경로가 명확해질 것이다. 그 시점에 달러/원 환율(현재 1,428.8원, F73)의 추가 상승 여부와 외국인의 한국 시장 매도 지속 여부를 확인하면, 이날의 한국 시장 낙폭이 구조적 약세인지 일시적 조정인지 판단할 수 있을 것이다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
     "generated_by": "ai:claude:haiku · interpretation_v2",
-    "generated_at": "2026-08-03T22:41:17+00:00"
+    "generated_at": "2026-08-03T23:21:40+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -1978,52 +1971,75 @@
     },
     "interpretation": {
       "engine_version": "2b.2",
-      "status": "partial",
+      "status": "ok",
       "model": "claude:haiku",
       "prompt_version": "interpretation_v2",
       "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
-      "generated_at": "2026-08-03T22:41:17+00:00",
-      "elapsed_ms": 73704,
-      "attempts": 2,
+      "generated_at": "2026-08-03T23:21:40+00:00",
+      "elapsed_ms": 53966,
+      "attempts": 1,
       "fields": {
-        "reading": "rejected",
+        "reading": "ok",
         "counter_reading": "ok",
         "thesis_impact": "rules",
         "next_check": "ok"
       },
-      "violations": {
-        "reading": [
-          [
-            "citation_num",
-            "F64 500"
-          ]
-        ]
-      },
+      "violations": {},
       "evidence": [
+        [
+          "F1",
+          "ecos:722Y001.0101000:value:20260531",
+          1
+        ],
+        [
+          "F5",
+          "fred:DGS10:value:20260731",
+          1
+        ],
         [
           "F12",
           "fred:T10Y2Y:value:20260803",
           1
         ],
         [
-          "F18",
-          "sec_8k_events:MSFT:earnings_release_8k:20260729",
+          "F51",
+          "kis:000660.KS:net_buy_foreign_value:20260803",
+          2
+        ],
+        [
+          "F60",
+          "kis:005930.KS:net_buy_foreign_value:20260803",
           1
         ],
         [
-          "F21",
-          "sec_8k_events:META:earnings_release_8k:20260729",
+          "F64",
+          "yfinance:^KS11:price_close:20260803",
+          4
+        ],
+        [
+          "F73",
+          "yfinance:KRW=X:price_close:20260803",
+          4
+        ],
+        [
+          "F78",
+          "yfinance:MSFT:price_close:20260803",
           1
         ],
         [
-          "F39",
-          "sec_edgar:GOOGL:filing_event:20260723",
+          "F81",
+          "yfinance:META:price_close:20260803",
           1
         ],
         [
-          "F41",
-          "sec_edgar:META:filing_event:20260730",
-          1
+          "F82",
+          "yfinance:005930.KS:price_close:20260803",
+          4
+        ],
+        [
+          "F83",
+          "yfinance:000660.KS:price_close:20260803",
+          4
         ]
       ],
       "evidence_unresolved": [],
@@ -2032,17 +2048,17 @@
         {
           "thesis_id": "ai_semi_1",
           "verdict": "강화",
-          "changed": false
+          "changed": 0
         },
         {
           "thesis_id": "ai_semi_2",
           "verdict": "유지",
-          "changed": false
+          "changed": 0
         },
         {
           "thesis_id": "fin_credit_1",
           "verdict": "강화",
-          "changed": false
+          "changed": 0
         }
       ]
     }
