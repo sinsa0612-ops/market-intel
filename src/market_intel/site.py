@@ -29,13 +29,14 @@ import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from . import detail as detail_mod
 from . import schedule as schedule_mod
 from .config import PROJECT_ROOT
 from .interp import ops as ops_mod
 from .reporting.cutoff import KST
 from .reporting.model import Report
-from .reporting.render_html import render_html
-from .reporting.render_md import status_ko
+from .reporting.render_html import render_html, sparkline_svg
+from .reporting.render_md import safe_href, status_ko
 
 SCHEDULE_WINDOW_DAYS = 60  # spec B8: 향후 60일 일정
 CHANGES_WINDOW_DAYS = 7  # spec B8: 최근 7일 일정 변경
@@ -162,6 +163,7 @@ def _page(title: str, body: str, depth: int) -> str:
         f'<a href="{up}index.html">최신</a>'
         f'<a href="{up}archive.html">전체 보고서</a>'
         f'<a href="{up}schedule.html">일정</a>'
+        f'<a href="{up}detail.html">상세</a>'
         f'<a href="{up}theses.html">가설</a>'
         f'<a href="{up}status.html">상태</a>'
         "</nav></header>"
@@ -521,6 +523,201 @@ def _theses_page(conn, now: datetime) -> str:
     return _page("market-intel — 가설", "".join(parts), depth=0)
 
 
+# --- 상세 (기업 재무 / 거시지표 / 공시 / 13F) --------------------------------
+#
+# 리포트가 "오늘 무엇이 달라졌나"라면 상세는 "그동안 어떻게 움직였나"다. 백필로
+# 재무 8분기·주가 2년·거시 3년이 들어오면서 처음으로 그릴 것이 생긴 층이고,
+# 조회는 전부 `detail.py`가 — 즉 `facts_as_of(cutoff)`가 — 한다. 이 페이지들의
+# 차단선도 리포트와 같은 `schedule_cutoff(entries)`다.
+
+def _source_cell(url: str) -> str:
+    """출처 링크. `html.escape`는 `javascript:`를 그대로 두므로 스킴 허용목록을
+    한 번 더 통과시킨다 — 여기 들어오는 URL은 전부 외부 응답에서 온 것이다
+    (render_html.py 규약과 같음)."""
+    href = safe_href(url)
+    if not href:
+        return _esc(url) if url else "-"
+    return f'<a href="{_esc(href)}" rel="noopener" target="_blank">원자료</a>'
+
+
+def _no_cutoff_page(title: str, heading: str) -> str:
+    """리포트가 하나도 없으면 정보차단선을 정할 수 없다. 벽시계로 물러나면
+    어떤 리포트도 볼 수 없던 사실을 공개하게 되므로, 일정 페이지와 같은 규칙으로
+    비운다."""
+    body = (f"<h1>{_esc(heading)}</h1>"
+            '<p class="meta">기준 시각: 없음 — 생성된 리포트가 없어 표시할 '
+            "정보차단선을 정할 수 없습니다.</p>")
+    return _page(title, body, depth=0)
+
+
+def _cutoff_note(cutoff: datetime) -> str:
+    return (f'<p class="meta">정보차단선: {_esc(cutoff.astimezone(KST).strftime("%Y-%m-%d %H:%M"))} KST '
+            "— 이 시각까지 알려진 사실만 싣습니다.</p>")
+
+
+def _company_page(conn, cutoff: datetime, subject: str) -> str:
+    fin = detail_mod.company_financials(conn, cutoff, subject)
+    rows = detail_mod.filings(conn, cutoff, subject=subject)
+    name = detail_mod.name_ko(subject)
+
+    parts = [f"<h1>{_esc(name)} <span class=\"meta\">({_esc(subject)})</span></h1>",
+             _cutoff_note(cutoff), "<h2>재무 추이</h2>"]
+    if not fin["metrics"]:
+        parts.append('<p class="meta">아직 수집된 재무 항목이 없습니다.</p>')
+    else:
+        # 기간 길이는 항목마다 따로 적는다. 같은 회사 안에서도 매출은 분기,
+        # 현금흐름은 연간만 오는 경우가 있어 표 하나에 "분기"라고 뭉뚱그리면
+        # 그 자체가 거짓말이 된다.
+        summary = "".join(
+            "<tr>"
+            f"<td>{_esc(detail_mod.METRIC_LABELS.get(m, m))}</td>"
+            f"<td>{_esc(detail_mod.BASIS_LABELS.get(fin['bases'][m], fin['bases'][m]))}</td>"
+            f"<td>{_esc(fin['periods'][0][m]['text'] if fin['periods'] else '—')}</td>"
+            f'<td class="sp">{sparkline_svg(fin["series"][m], "")}</td>'
+            "</tr>"
+            for m in fin["metrics"]
+        )
+        parts.append('<div class="scroll"><table><thead><tr><th>항목</th><th>기간 기준</th>'
+                     f"<th>최근값</th><th>추이</th></tr></thead><tbody>{summary}</tbody>"
+                     "</table></div>")
+
+        head = "".join(f"<th>{_esc(detail_mod.METRIC_LABELS.get(m, m))}</th>"
+                       for m in fin["metrics"])
+        body_rows = []
+        for period in fin["periods"]:
+            cells = []
+            for m in fin["metrics"]:
+                cell = period[m]
+                mark = ' <span class="meta">(산출)</span>' if cell["derived"] else ""
+                link = (f' {_source_cell(cell["source_url"])}') if cell["source_url"] else ""
+                cells.append(f"<td>{_esc(cell['text'])}{mark}{link}</td>")
+            body_rows.append(f"<tr><td>{_esc(period['period'])}</td>{''.join(cells)}</tr>")
+        parts.append('<div class="scroll"><table><thead><tr><th>기간 종료일</th>'
+                     f"{head}</tr></thead><tbody>{''.join(body_rows)}</tbody></table></div>")
+        parts.append('<p class="legend">(산출) = 원문에 그 기간 값이 없어 누적치를 '
+                     "차분해 만든 값입니다. 나머지는 공시 원문 그대로입니다.</p>")
+
+    parts.append("<h2>공시 이력</h2>")
+    parts.append(_filing_table(rows, with_subject=False))
+    parts.append('<p class="meta"><a href="../detail.html">← 상세</a></p>')
+    return _page(f"market-intel — {name}", "".join(parts), depth=1)
+
+
+def _macro_page(conn, cutoff: datetime, subject: str) -> str:
+    data = detail_mod.macro_series(conn, cutoff, subject)
+    name = data["label"]
+    unit = data["unit"]
+
+    parts = [f"<h1>{_esc(name)} <span class=\"meta\">({_esc(subject)})</span></h1>",
+             _cutoff_note(cutoff)]
+    if not data["observations"]:
+        parts.append('<p class="meta">아직 수집된 관측이 없습니다.</p>')
+    else:
+        parts.append(f'<p class="breadth">추이 (최근 {len(data["series"])}개 관측) '
+                     f'{sparkline_svg(data["series"], "")}</p>')
+        body_rows = "".join(
+            f"<tr><td>{_esc(o['event_at'])}</td>"
+            f"<td>{_esc(f'{o['value']:,.2f}' if o['value'] is not None else '미확인')}"
+            f"{_esc(' ' + unit if unit else '')}</td>"
+            f"<td>{_source_cell(o['source_url'])}</td></tr>"
+            for o in data["observations"]
+        )
+        parts.append('<div class="scroll"><table><thead><tr><th>기준일</th><th>값</th>'
+                     f"<th>출처</th></tr></thead><tbody>{body_rows}</tbody></table></div>")
+        parts.append(f'<p class="meta">표는 최근 {len(data["observations"])}개, '
+                     f'차단선 이전 전체 관측은 {data["total"]}개입니다.</p>')
+    parts.append('<p class="meta"><a href="../detail.html">← 상세</a></p>')
+    return _page(f"market-intel — {name}", "".join(parts), depth=1)
+
+
+def _filing_table(rows: list[dict], *, with_subject: bool) -> str:
+    if not rows:
+        return '<p class="meta">차단선 이전에 수집된 공시가 없습니다.</p>'
+    subject_head = "<th>대상</th>" if with_subject else ""
+    body = "".join(
+        "<tr>"
+        f"<td>{_esc(r['event_at'])}</td>"
+        + (f"<td>{_esc(r['name'])}</td>" if with_subject else "")
+        + f"<td>{_esc(r['form_label'])}</td>"
+        f"<td>{_esc(r['item'] or '-')}</td>"
+        f"<td class=\"detail\">{_esc(r['accession'] or '-')}</td>"
+        f"<td>{_source_cell(r['source_url'])}</td>"
+        "</tr>"
+        for r in rows
+    )
+    return ('<div class="scroll"><table><thead><tr><th>일자</th>'
+            f"{subject_head}<th>종류</th><th>항목</th><th>접수번호</th><th>출처</th>"
+            f"</tr></thead><tbody>{body}</tbody></table></div>")
+
+
+def _filings_page(conn, cutoff: datetime | None) -> str:
+    if cutoff is None:
+        return _no_cutoff_page("market-intel — 공시 이력", "공시 이력")
+    rows = detail_mod.filings(conn, cutoff)
+    parts = ["<h1>공시 이력</h1>", _cutoff_note(cutoff),
+             '<p class="legend">정기공시(10-K·10-Q)·실적 수시공시(8-K)·기관 13F 제출을 '
+             "한 줄로 모은 것입니다. 항목 칸의 숫자는 8-K의 사유 번호(2.02 = 실적 발표)입니다.</p>",
+             _filing_table(rows, with_subject=True)]
+    return _page("market-intel — 공시 이력", "".join(parts), depth=0)
+
+
+def _holdings_page(conn, cutoff: datetime | None) -> str:
+    if cutoff is None:
+        return _no_cutoff_page("market-intel — 기관 보유", "기관(13F) 보유내역")
+    rows = detail_mod.holdings_13f(conn, cutoff)
+    parts = [
+        "<h1>기관(13F) 보유내역</h1>", _cutoff_note(cutoff),
+        # 빈 표를 "이 기관은 아무것도 안 들고 있다"로 읽히게 두면 안 된다.
+        # 지금 파이프라인이 감지하는 것은 제출 사실뿐이라는 것을 화면이 말한다.
+        '<p class="banner warn">보유 종목 표는 아직 없습니다 — 지금은 13F가 '
+        "<strong>제출됐다는 사실</strong>만 감지하고, 제출서 안의 보유내역은 읽지 않습니다. "
+        "내역을 채우려면 13F 문서 파싱이 따로 필요합니다.</p>",
+        "<h2>제출 이력</h2>",
+        _filing_table(rows, with_subject=True),
+    ]
+    return _page("market-intel — 기관 보유", "".join(parts), depth=0)
+
+
+def _detail_index_page(conn, cutoff: datetime | None, companies: dict[str, str],
+                       macros: dict[str, str], macro_labels: dict[str, str]) -> str:
+    if cutoff is None:
+        return _no_cutoff_page("market-intel — 상세", "상세")
+    parts = ["<h1>상세</h1>", _cutoff_note(cutoff),
+             '<p class="legend">리포트가 "오늘 무엇이 달라졌나"라면 이쪽은 '
+             '"그동안 어떻게 움직였나"입니다.</p>']
+
+    parts.append("<h2>기업별 재무 추이</h2>")
+    if companies:
+        items = "".join(
+            f'<li><a href="company/{_esc(slug)}.html">{_esc(detail_mod.name_ko(subject))}</a> '
+            f'<span class="meta">{_esc(subject)}</span></li>'
+            for subject, slug in sorted(companies.items(),
+                                        key=lambda kv: detail_mod.name_ko(kv[0]))
+        )
+        parts.append(f'<ul class="cards">{items}</ul>')
+    else:
+        parts.append('<p class="meta">아직 재무·공시가 수집된 기업이 없습니다.</p>')
+
+    parts.append("<h2>거시지표별</h2>")
+    if macros:
+        items = "".join(
+            f'<li><a href="macro/{_esc(slug)}.html">{_esc(macro_labels.get(subject, subject))}</a> '
+            f'<span class="meta">{_esc(subject)}</span></li>'
+            for subject, slug in sorted(macros.items(),
+                                        key=lambda kv: macro_labels.get(kv[0], kv[0]))
+        )
+        parts.append(f'<ul class="cards">{items}</ul>')
+    else:
+        parts.append('<p class="meta">아직 수집된 거시지표가 없습니다.</p>')
+
+    parts.append("<h2>그 밖의 상세</h2>"
+                 '<ul class="cards">'
+                 '<li><a href="filings.html">공시 이력 타임라인</a></li>'
+                 '<li><a href="holdings.html">기관(13F) 보유내역</a></li>'
+                 "</ul>")
+    return _page("market-intel — 상세", "".join(parts), depth=0)
+
+
 # --- entry point ----------------------------------------------------------
 
 def build_site(conn, reports_root: Path | None = None, docs_root: Path | None = None,
@@ -564,6 +761,29 @@ def build_site(conn, reports_root: Path | None = None, docs_root: Path | None = 
     (docs_root / "status.html").write_text(_status_page(ops_state), encoding="utf-8")
     (docs_root / "theses.html").write_text(_theses_page(conn, now), encoding="utf-8")
     pages += 3
+
+    # 상세 층. 차단선이 없으면(리포트 0건) 개별 페이지는 만들지 않고 안내만
+    # 남긴다 — 목록만 있고 링크가 전부 깨진 페이지보다 낫다.
+    company_slugs = detail_mod.slug_map(detail_mod.companies(conn, cutoff)) if cutoff else {}
+    macro_labels = detail_mod.macro_subjects(conn, cutoff) if cutoff else {}
+    macro_slugs = detail_mod.slug_map(macro_labels)
+    (docs_root / "detail.html").write_text(
+        _detail_index_page(conn, cutoff, company_slugs, macro_slugs, macro_labels),
+        encoding="utf-8")
+    (docs_root / "filings.html").write_text(_filings_page(conn, cutoff), encoding="utf-8")
+    (docs_root / "holdings.html").write_text(_holdings_page(conn, cutoff), encoding="utf-8")
+    pages += 3
+
+    for subject, name in company_slugs.items():
+        out = docs_root / "company" / f"{name}.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(_company_page(conn, cutoff, subject), encoding="utf-8")
+        pages += 1
+    for subject, name in macro_slugs.items():
+        out = docs_root / "macro" / f"{name}.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(_macro_page(conn, cutoff, subject), encoding="utf-8")
+        pages += 1
 
     latest = f"{entries[0]['report'].report_type}/{entries[0]['stem']}" if entries else ""
     return {
