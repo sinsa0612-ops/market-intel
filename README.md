@@ -43,7 +43,11 @@ uv run market-intel db stats
   미해결 결측. 같은 내용이 사이트 `docs/status.html`에도 발행됩니다.
 - `market-intel thesis load|list|review` — 가설 원장(`theses/theses.json`) 적재/조회/판정.
 - `market-intel interpret --file <report.json>` — 리포트 하나에 AI 해석 4칸을 채웁니다.
-  `--no-llm`이면 모델을 부르지 않고, ollama가 꺼져 있으면 해석만 비운 채 종료코드 0입니다.
+  기본은 **Claude Code CLI(haiku)**, 실패하면 로컬 ollama로 자동 폴백합니다
+  (`--model claude:sonnet` / `--model qwen3.5:9b`로 직접 고를 수 있고, 모델 이름이 곧
+  백엔드입니다). `--no-llm`이면 모델을 부르지 않고, 둘 다 죽어 있어도 해석만 비운 채
+  종료코드 0입니다. 실제로 무엇이 썼는지는 `ops status`의 `model=`에 남습니다 —
+  `claude:haiku`를 기대했는데 `qwen3.5:9b`가 보이면 폴백이 일어난 것입니다.
 
 리포트·사이트·자동 실행 명령(`report` / `site build` / `obsidian sync` / `job run` /
 `publish`)과 시간표는 `launchd/README.md`에 있습니다.

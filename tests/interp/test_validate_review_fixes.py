@@ -268,3 +268,22 @@ def test_a_citation_list_grounds_against_the_whole_list():
     # 나열이 아니면(사이에 다른 말이 끼면) 그대로 각자 접지한다
     v = validate_mod.check(_report(), "F10은 강세였다 F11 기준 17.91% 급등이다.")
     assert ("citation_num", "F11 17.91") in v, v
+
+
+def test_calling_the_fx_row_an_exchange_rate_is_not_an_attribution_error():
+    """규칙 8 오탐(2026-08-03 실측): `F54의 달러/원 환율이 전일대비 +0.00%`는
+    맞는 문장인데 거절됐다. 환율을 yfinance로 받아 metric이 `price_close`라
+    종류가 `price`뿐이었기 때문이다 — metric은 **어떻게 받아왔는지**를 말할 뿐
+    그 값이 무엇인지는 말하지 않는다."""
+    report = _report_obj()
+    report.market_reaction.append(
+        _row("달러/원", "1,436.6원", "전일대비 +0.00%", subject="KRW=X",
+             metric="price_close", raw_value=1436.6)
+    )
+    d = dataclasses.asdict(report)
+    assert validate_mod.check(d, "F12의 달러/원 환율이 전일대비 0.00%로 움직이지 않았다.") == []
+    # 주가 행을 환율이라 부르는 진짜 오류는 그대로 막힌다
+    assert any(
+        kind == "attribution"
+        for kind, _t in validate_mod.check(d, "F10 KOSPI 환율이 올랐다.")
+    )

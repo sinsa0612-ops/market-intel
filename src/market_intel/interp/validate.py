@@ -297,6 +297,14 @@ _METRIC_KINDS = {
     "earnings_release_8k": frozenset({"earnings", "filing"}),
 }
 
+# 환율은 yfinance로 받으므로 metric이 `price_close`다 — 즉 위 표대로면 종류가
+# `price`뿐이라, **맞는 문장**인 `F54의 달러/원 환율이 전일대비 +0.00%`가
+# `환율`(fx) ∩ `price` = ∅ 으로 거절됐다(2026-08-03 실측, 규칙 8 오탐).
+# metric은 어떻게 받아왔는지를 말할 뿐 그 값이 무엇인지는 말하지 않는다.
+# `universe.py`의 fx 카테고리 심볼을 여기 이름으로 못박는다(import하지 않는
+# 것은 이 모듈이 리포트 dict 하나만 보고 판정한다는 계약 때문).
+_FX_SUBJECTS = frozenset({"KRW=X", "DX-Y.NYB"})
+
 _TICKER_RE = re.compile(r"^[A-Z0-9][A-Z0-9.\-]{0,9}$")
 _NAME_LATIN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 &._\-]*$")
 _NAME_HANGUL_RE = re.compile(r"^[가-힣A-Za-z0-9]{2,}$")
@@ -322,6 +330,8 @@ def _row_kinds(row: dict) -> frozenset:
     for term, classes in _KIND_TERMS:
         if term in label:
             kinds |= classes
+    if str(row.get("subject") or "") in _FX_SUBJECTS:
+        kinds.add("fx")
     return frozenset(kinds)
 
 
