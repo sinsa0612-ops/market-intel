@@ -1533,12 +1533,12 @@
     }
   ],
   "interpretation": {
-    "reading": "F45와 F47의 주가 급등은 F13과 같은 고용 지표나 F3 및 F10에 따른 인플레이션 우려보다 기업 실적 발표 (F14~F24) 와 기술주 중심의 자금 유입이 주도한 것으로 읽힌다. 특히 F63 과 F64 의 반도체 관련 주가 상승폭은 F51 이 평온했던 가운데 발생한 섹터별 편차를 보여준다.",
-    "counter_reading": "F13 의 낮은 실업률과 F9 의 고용 증가가 경제를 과열시켰고 금리가 내려가지 않아 결국 KOSPI 의 급등은 일시적이며 조만간 미국 시장과의 수렴 압력을 받을 가능성이 높다.",
+    "reading": "한국 시장의 급등(F45 +17.91%, F46 +11.63%)과 반도체주의 강세(F63 +26.81%, F64 +29.95%)는 글로벌 기술주 강세와 반도체 수요 회복에 투자자들이 응응하는 신호로 읽힙니다. 미국에서는 S&P500 상승이 F47 +0.70%에 그친 가운데 나스닥(F48 +1.00%)과 Amazon(F61 +15.32%), Alphabet(F60 +6.73%) 등 기업들의 강세가 기술주 주도 장세를 보여줍니다. 미 10년물 금리가 F53 +1.76%로 급등했음에도 VIX(F52 -6.44%)가 하락한 것은 시장이 높은 금리 수준을 받아들이면서 경제 악화는 크게 우려하지 않는다는 신호입니다.",
+    "counter_reading": "KOSPI의 +17.91% 상승폭은 단일 거래일 기준으로 극도로 큰 수치로, 데이터 오류나 시장 구조적 이상을 시사할 수 있다. F54의 달러/원 환율이 정확히 +0.00%로 움직이지 않은 것도 의심스럽다 — 일반적으로 한국 시장이 이 정도로 움직이면 환율도 함께 변한다. 미국 금리 급등(F53)은 인플레이션 우려나 경기 약세 신호일 수 있는데, S&P500의 완만한 상승(F47 +0.70%)으로만 봐서는 시장의 진정한 불안감이 표현되지 않았을 가능성이 있다. 한국의 기초 공시는 F25-F28이 모두 80일 이상 전이므로 최근 정보가 부족해 한국 시장의 급등을 설명할 만한 객관적 근거가 제한적이다.",
     "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 0 · 약화 0 · 무효 0 · 판정 불가 1.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 판정 불가 — 관측 부족(MSFT free_cash_flow 관측 부족(1개, 필요 3개)).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.68 (조건 >= 4.5 충족).",
-    "next_check": "2026-08-07 에 발표될 Employment Situation(F13 관련) 에서 실업률이 예상치보다 크게 오르면 reading 이 틀리고, 반대로 고용이 견조하게 유지되면 counter_reading 의 과열 우려가 현실화될지 확인해야 한다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
-    "generated_by": "ai:qwen3.5:9b · interpretation_v2",
-    "generated_at": "2026-08-02T23:24:39+00:00"
+    "next_check": "2026-08-07의 Employment Situation과 2026-08-12의 Consumer Price Index 발표에서 미국 고용과 인플레이션 추이가 확인되면, F53의 금리 상승이 기술적 조정인지 구조적 우려인지 판단할 수 있다. 2026-08-04의 CAT 실적과 2026-08-05의 LLY 실적 발표 이후 S&P500의 움직임을 보면, 미국 기업 실적에 대한 시장 평가가 일관적으로 유지되는지 확인 가능하다. 한국 수급 데이터가 복구되어 외국인과 기관의 거래 흐름이 공개되면, KOSPI의 급등이 특정 투자자층의 집중적 매수에서 비롯된 것인지 확인할 수 있다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
+    "generated_by": "ai:claude:haiku · interpretation_v2",
+    "generated_at": "2026-08-03T00:02:56+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -1553,13 +1553,13 @@
       "sector_index": 16
     },
     "interpretation": {
-      "engine_version": "2b.1",
+      "engine_version": "2b.2",
       "status": "ok",
-      "model": "qwen3.5:9b",
+      "model": "claude:haiku",
       "prompt_version": "interpretation_v2",
       "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
-      "generated_at": "2026-08-02T23:24:39+00:00",
-      "elapsed_ms": 36418,
+      "generated_at": "2026-08-03T00:02:56+00:00",
+      "elapsed_ms": 118801,
       "attempts": 2,
       "fields": {
         "reading": "ok",
@@ -1570,33 +1570,13 @@
       "violations": {},
       "evidence": [
         [
-          "F3",
-          "fred:CPIAUCSL:value:20260601",
-          2
-        ],
-        [
-          "F9",
-          "fred:PAYEMS:value:20260601",
-          2
-        ],
-        [
-          "F10",
-          "fred:PCEPI:value:20260601",
-          2
-        ],
-        [
-          "F13",
-          "fred:UNRATE:value:20260601",
-          2
-        ],
-        [
-          "F14",
-          "sec_8k_events:MSFT:earnings_release_8k:20260729",
+          "F25",
+          "dart:005930.KS:filing_event:20260515",
           1
         ],
         [
-          "F24",
-          "sec_8k_events:LLY:earnings_release_8k:20260430",
+          "F28",
+          "dart:005380.KS:filing_event:20260515",
           1
         ],
         [
@@ -1625,6 +1605,31 @@
           2
         ],
         [
+          "F46",
+          "yfinance:^KQ11:price_close:20260727",
+          2
+        ],
+        [
+          "F46",
+          "yfinance:^KQ11:price_close:20260728",
+          2
+        ],
+        [
+          "F46",
+          "yfinance:^KQ11:price_close:20260729",
+          2
+        ],
+        [
+          "F46",
+          "yfinance:^KQ11:price_close:20260730",
+          2
+        ],
+        [
+          "F46",
+          "yfinance:^KQ11:price_close:20260731",
+          2
+        ],
+        [
           "F47",
           "yfinance:^GSPC:price_close:20260727",
           2
@@ -1650,29 +1655,134 @@
           2
         ],
         [
-          "F51",
-          "yfinance:^SOX:price_close:20260727",
+          "F48",
+          "yfinance:^IXIC:price_close:20260727",
           2
         ],
         [
-          "F51",
-          "yfinance:^SOX:price_close:20260728",
+          "F48",
+          "yfinance:^IXIC:price_close:20260728",
           2
         ],
         [
-          "F51",
-          "yfinance:^SOX:price_close:20260729",
+          "F48",
+          "yfinance:^IXIC:price_close:20260729",
           2
         ],
         [
-          "F51",
-          "yfinance:^SOX:price_close:20260730",
+          "F48",
+          "yfinance:^IXIC:price_close:20260730",
           2
         ],
         [
-          "F51",
-          "yfinance:^SOX:price_close:20260731",
+          "F48",
+          "yfinance:^IXIC:price_close:20260731",
           2
+        ],
+        [
+          "F52",
+          "yfinance:^VIX:price_close:20260727",
+          2
+        ],
+        [
+          "F52",
+          "yfinance:^VIX:price_close:20260728",
+          2
+        ],
+        [
+          "F52",
+          "yfinance:^VIX:price_close:20260729",
+          2
+        ],
+        [
+          "F52",
+          "yfinance:^VIX:price_close:20260730",
+          2
+        ],
+        [
+          "F52",
+          "yfinance:^VIX:price_close:20260731",
+          2
+        ],
+        [
+          "F53",
+          "yfinance:^TNX:price_close:20260727",
+          2
+        ],
+        [
+          "F53",
+          "yfinance:^TNX:price_close:20260728",
+          2
+        ],
+        [
+          "F53",
+          "yfinance:^TNX:price_close:20260729",
+          2
+        ],
+        [
+          "F53",
+          "yfinance:^TNX:price_close:20260730",
+          2
+        ],
+        [
+          "F53",
+          "yfinance:^TNX:price_close:20260731",
+          2
+        ],
+        [
+          "F54",
+          "yfinance:KRW=X:price_close:20260802",
+          1
+        ],
+        [
+          "F60",
+          "yfinance:GOOGL:price_close:20260727",
+          1
+        ],
+        [
+          "F60",
+          "yfinance:GOOGL:price_close:20260728",
+          1
+        ],
+        [
+          "F60",
+          "yfinance:GOOGL:price_close:20260729",
+          1
+        ],
+        [
+          "F60",
+          "yfinance:GOOGL:price_close:20260730",
+          1
+        ],
+        [
+          "F60",
+          "yfinance:GOOGL:price_close:20260731",
+          1
+        ],
+        [
+          "F61",
+          "yfinance:AMZN:price_close:20260727",
+          1
+        ],
+        [
+          "F61",
+          "yfinance:AMZN:price_close:20260728",
+          1
+        ],
+        [
+          "F61",
+          "yfinance:AMZN:price_close:20260729",
+          1
+        ],
+        [
+          "F61",
+          "yfinance:AMZN:price_close:20260730",
+          1
+        ],
+        [
+          "F61",
+          "yfinance:AMZN:price_close:20260731",
+          1
         ],
         [
           "F63",
