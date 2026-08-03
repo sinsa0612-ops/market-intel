@@ -30,26 +30,23 @@ def test_backfill_is_a_registered_subcommand():
     assert args.command == "backfill" and args.dry_run is True
 
 
-# ST1이 뼈대만 놓았을 때는 네 소스가 전부 "미구현"이었다. ST2가 셋을 채웠으므로
-# 남은 것은 financials 하나다 — 그 사실 자체를 고정한다. 전부 미구현이라고
-# 계속 주장하면 ST3가 붙는 순간 또 빨개지고, 그때 무엇이 바뀐 건지 알 수 없다.
-IMPLEMENTED = ("prices", "macro_us", "macro_kr")
-NOT_YET = ("financials",)
+# ST1이 뼈대만 놓았을 때는 네 소스가 전부 "미구현"이었다. ST2가 셋, ST3가 나머지를
+# 채웠다. 그 사실을 고정하되 **네트워크를 타지 않는 방법으로** 한다 — 네 소스가
+# 다 구현된 뒤로는 `--source all`이 `--dry-run`이어도 실제 야후/SEC를 때린다
+# (`--dry-run`은 DB 쓰기만 막지 fetch를 막지 않는다). 구현 여부는 레지스트리에
+# 물으면 되고, 그건 아래 `test_registry_declares_all_four_sources_up_front`가 한다.
+IMPLEMENTED = SOURCE_ORDER
+NOT_YET = ()
 
 
-def test_only_financials_is_still_unimplemented(settings, capsys):
-    code, out = _run(["backfill", "--source", "all", "--dry-run"], settings, capsys)
-    lines = {ln.split()[0].removeprefix("source="): ln
-             for ln in out.splitlines() if ln.startswith("source=")}
-    assert code == 0
-    assert set(lines) == set(SOURCE_ORDER)
-    for source in NOT_YET:
-        assert "status=NO_DATA reason=미구현" in lines[source], lines[source]
-    for source in IMPLEMENTED:
-        assert "reason=미구현" not in lines[source], lines[source]
-    # --dry-run이므로 무엇을 하든 append는 0이어야 한다.
-    for line in lines.values():
-        assert "appended=0" in line, line
+def test_unkeyed_source_reports_no_data_without_touching_the_network(settings, capsys):
+    """키가 없는 소스는 네트워크를 두드리지도 않고 `키없음`으로 끝난다 —
+    무인 실행에서 종료코드 0이어야 한다(spec S8)."""
+    settings.ecos_api_key = ""
+    code, out = _run(["backfill", "--source", "macro_kr", "--dry-run"], settings, capsys)
+    assert code == 0, out
+    assert "status=NO_DATA reason=키없음" in out, out
+    assert "appended=0" in out, out
 
 
 def test_dry_run_writes_no_facts(settings, capsys):
@@ -64,11 +61,14 @@ def test_dry_run_writes_no_facts(settings, capsys):
 
 
 def test_json_output_is_parseable(settings, capsys):
-    code, out = _run(["backfill", "--source", "financials", "--json"], settings, capsys)
+    """`--dry-run`으로 돌린다 — 네 소스가 전부 구현된 뒤로는 dry-run 없이 부르면
+    실제 SEC/야후를 때린다(테스트가 네트워크를 타면 안 된다)."""
+    code, out = _run(["backfill", "--source", "financials", "--json", "--dry-run"],
+                     settings, capsys)
     payload = json.loads(out)
-    assert code == 0
     assert [p["source"] for p in payload] == ["financials"]
-    assert payload[0]["status"] == "NO_DATA" and payload[0]["reason_code"] == "미구현"
+    assert "status" in payload[0] and "appended" in payload[0]
+    assert payload[0]["appended"] == 0, "--dry-run인데 append가 생겼다"
 
 
 def test_bad_date_argument_exits_two(settings, capsys):

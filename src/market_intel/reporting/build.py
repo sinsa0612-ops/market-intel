@@ -507,13 +507,26 @@ def _subject_name(subject: str) -> str:
 
 def _financials_facts(conn, cutoff, subjects: list[str] | None = None) -> list[FactRow]:
     rows = db_mod.facts_as_of(conn, cutoff, category="financials")
-    out = []
+    by_key: dict[tuple[str, str], list] = {}
     for row in rows:
         if subjects is not None and row["subject"] not in subjects:
             continue
-        label = f"{_subject_name(row['subject'])} {_FINANCIALS_LABELS.get(row['metric'], row['metric'])}"
-        basis = _COMPARISON_BASIS_KO.get(row["comparison_basis"], row["comparison_basis"] or "")
-        out.append(_row_from_fact(row, label, basis))
+        by_key.setdefault((row["subject"], row["metric"]), []).append(row)
+
+    out = []
+    for (subject, metric), group in by_key.items():
+        # 백필 표시 가드(spec 백필 §5 ST3 항목 5): (subject,metric)당 최근
+        # period_end 2개만 표에 올린다. 백필 후 재무 fact가 수백 개가 되어
+        # 분기 리포트를 읽을 수 없게 되기 때문이다(기준선 quarterly
+        # facts_rows=95). §7.3 질문이 전부 전분기 대비라 2개면 답이 된다.
+        # 8분기 추이를 버리는 게 아니다 — DB에 그대로 있고 가설 판정과 상세
+        # 페이지가 쓴다. 표는 읽히는 것이 목적이다.
+        # (수급 표에 적용한 것과 같은 규약 — `_kr_flows` 참조.)
+        group.sort(key=lambda r: r["event_at"] or "", reverse=True)
+        for row in group[:2]:
+            label = f"{_subject_name(subject)} {_FINANCIALS_LABELS.get(metric, metric)}"
+            basis = _COMPARISON_BASIS_KO.get(row["comparison_basis"], row["comparison_basis"] or "")
+            out.append(_row_from_fact(row, label, basis))
     out.sort(key=lambda r: (r.subject, r.metric))
     return out
 
