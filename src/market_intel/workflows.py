@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 WORKFLOWS: dict[str, list[str]] = {
-    "morning": ["yfinance", "sec_edgar", "sec_edgar_13f", "fred"],
-    # `kis`(한국 투자자별 수급)가 close에만 있는 이유: KIS는 당일 수급을
-    # 15:40 KST 전에 주지 않는다. collect-pm은 16:15라 당일치가 나오고, 다음 날
-    # 아침 리포트(차단선 07:15)는 그 값을 known_at 기준으로 정상적으로 본다 —
-    # morning에 또 넣으면 같은 값을 하루 두 번 받을 뿐이다.
+    # `kis`가 morning에도 있는 이유는 **재시도**다. 수급은 하루 한 번(15:50)
+    # 받는데 그 한 번이 실패하면 그날치가 리포트에서 통째로 빈다 — 다음 기회가
+    # 다음 날 15:50이기 때문이다. 실패는 실제로 일어난다(2026-08-03 실측: 토큰
+    # 403, 조회 500, 그리고 KIS의 15:40 공개 경계까지 여유가 10분뿐이다).
+    # 06:50에는 `_base_date()`가 전날로 물러서고 KIS가 그 날짜 기준 30거래일을
+    # 주므로, 전날 실패분이 아침에 자동으로 메워진다. 비용은 호출 5번이다.
+    "morning": ["yfinance", "sec_edgar", "sec_edgar_13f", "fred", "kis"],
+    # close(15:50)가 당일치를 받는 자리다 — KIS는 15:40 이후에야 당일 수급을 준다.
     "close": ["yfinance", "pykrx", "ecos", "dart", "kis"],
     # spec B14 (ST1 addition) — morning/close are untouched (1단계 테스트가
     # 내용을 검사한다); calendar/events are new entries, also added to "all".

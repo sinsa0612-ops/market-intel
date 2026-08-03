@@ -4,9 +4,9 @@ from market_intel.workflows import WORKFLOWS
 def test_workflow_composition_is_fixed():
     # sec_edgar_13f added alongside sec_edgar (repair.md finding #4: 13F-HR
     # detection for the tracked managers was in scope but unimplemented).
-    assert WORKFLOWS["morning"] == ["yfinance", "sec_edgar", "sec_edgar_13f", "fred"]
-    # `kis`(한국 투자자별 수급)는 close에만 있다 — KIS가 당일 수급을 15:40 KST
-    # 전에 주지 않으므로 morning(06:50)에 넣으면 매일 0건이다(2026-08-03 실측).
+    # `kis`가 morning에도 있는 것은 재시도 목적이다(중복이 아니라 복구) —
+    # 수급을 하루 한 번만 받으면 그 한 번이 실패한 날은 리포트에서 통째로 빈다.
+    assert WORKFLOWS["morning"] == ["yfinance", "sec_edgar", "sec_edgar_13f", "fred", "kis"]
     assert WORKFLOWS["close"] == ["yfinance", "pykrx", "ecos", "dart", "kis"]
     # spec B14 (2A/ST1) — calendar/events are new workflow entries; "all"
     # gains their 4 providers but morning/close stay byte-for-byte the same.
