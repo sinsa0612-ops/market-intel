@@ -4,7 +4,7 @@
   "report_date": "2026-08-03",
   "cutoff_kst": "2026-08-03T07:15:00+09:00",
   "cutoff_utc": "2026-08-02T22:15:00+00:00",
-  "generated_at": "2026-08-03T03:16:52+00:00",
+  "generated_at": "2026-08-03T06:52:09+00:00",
   "title": "주간 시작 브리핑",
   "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · 달러/원 1,436.6원(+0.0%) · 미10Y 4.74%(+1.8%) — 관측기업 18곳 중 ±3% 이상 8종목, 결측 0건",
   "breadth": "관측기업 15/18개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 4/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 2/2 · 헬스케어 0/1 · 소재·철강 1/1 · 부동산·데이터센터 0/1",
@@ -1239,7 +1239,7 @@
     {
       "area": "한국 수급(외국인/기관/개인)",
       "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
-      "since": "2026-08-03T03:16:52+00:00",
+      "since": "2026-08-03T06:52:09+00:00",
       "gap_id": "kr_flows:net_buy"
     }
   ],
@@ -1608,12 +1608,12 @@
     }
   ],
   "interpretation": {
-    "reading": "최근 미국 대형 기술주들(F59~F62)의 강한 실적이 글로벌 투자 심리를 긍정적으로 만들고 있으며, 한국 기술주(F63 삼성전자 +26.81%, F64 SK하이닉스 +29.95%)의 폭등으로 전파되어 KOSPI F45가 +17.91%를 기록했다. 미국 증시도 나스닥 F48 +1.00%, S&P500 F47 +0.70%로 동반 상승하는 가운데, 미국 실업률 F13의 -2.33% 변화와 VIX F52의 -6.44% 하락이 투자자 공포감 완화를 반영하고 있다.",
-    "counter_reading": "한국 시장의 상승이 실적 개선보다는 기술적 반발일 가능성이 있으며, 원화 강세(F2 -0.62%)는 수출 기업의 해외 수익성을 제약한다. 미국의 금리 상승(F5, F6)과 금리차 확대(F12 +4.44%)는 고금리 기조의 심화를 의미하는데, 이는 리스크 자산 평가에 장기적 부담이 될 수 있다. 한국 기업의 정기공시(F25 등)가 80일 이상 전의 자료이므로 현재의 상승을 뒷받침할 최신 실적 개선이 확인되지 않는다.",
-    "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 0 · 약화 0 · 무효 0 · 판정 불가 1.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 판정 불가 — 관측 부족(MSFT free_cash_flow 관측 부족(1개, 필요 3개)).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.68 (조건 >= 4.5 충족).",
-    "next_check": "2026-08-04의 CAT 실적, 2026-08-05의 LLY 실적, 2026-08-07의 Employment Situation 발표가 미국 기업의 실적 모멘텀 지속을 판단하는 핵심이 될 것. 2026-08-12의 Consumer Price Index와 2026-08-14의 13F 공시로 금리 추세와 기관투자자의 기술주 포지셔닝 변화를 확인하면, 현 강세가 구조적 개선인지 일시적 반발인지 가늠할 수 있을 것.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
+    "reading": "한국 증시가 미국보다 강한 상승률을 기록했는데, KOSPI는 F45에서 +17.91% 상승한 반면 S&P500은 F47에서 +0.70%만 상승했습니다. 특히 반도체 종목이 강세를 보였는데, F63의 삼성전자는 +26.81%, F64의 SK하이닉스는 +29.95% 올랐습니다. 미국 고용 시장은 개선되고 있으며(F13의 실업률 4.20%), 인플레이션 압력도 완화 중입니다(F3의 CPI -0.42%, F10의 PCE -0.11%). 미국 금리는 오르는 추세이지만(F5의 10Y +0.21%, F6의 2Y +0.24%), VIX는 내려가 시장 심리는 안정적입니다(F52의 VIX 15.99).",
+    "counter_reading": "한국 시장의 큰 상승률은 선행 낙폭이 컸거나 한국 고유 요인에 기인했을 수 있으며, 미국 시장 강세와는 무관할 수 있습니다. F13의 실업률 개선이나 F3과 F10의 인플레이션 낙폭은 통계 수정이나 일시적 현상일 수 있으며, 지속성이 불확실합니다. 금리가 상승하는 환경에서(F5, F6) 기술주 주가가 오른 것은 실적이 호재였다는 의미이지만, 금리 부담이 누적되면 향후 조정을 받을 수 있습니다. F12의 10Y-2Y 금리차가 직전 대비 +4.44% 벌어진 것은 역수율 해소 신호일 수 있지만, 경기 신호로의 해석은 신중해야 합니다.",
+    "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 1 · 약화 0 · 무효 0 · 판정 불가 0.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 1/1).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.68 (조건 >= 4.5 충족).",
+    "next_check": "8월 7일 Employment Situation 발표에서 실업률이 F13의 수준을 지속하는지 확인하면 고용 시장의 강도를 판단할 수 있습니다. 8월 12일 Consumer Price Index가 F3의 추세를 이어가는지 확인하면 인플레이션 경로를 파악할 수 있습니다. 8월 4일의 CAT 실적과 8월 5일의 LLY 실적이 발표되는 과정에서 기업 실적이 시장 기대를 충족하는지 확인해야 합니다. 한국 증시의 상승이 지속되는지, 아니면 일시적 반등에 그치는지는 향후 외국인 투자 동향으로 판단할 수 있습니다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
     "generated_by": "ai:claude:haiku · interpretation_v2",
-    "generated_at": "2026-08-03T03:18:35+00:00"
+    "generated_at": "2026-08-03T06:52:59+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -1633,8 +1633,8 @@
       "model": "claude:haiku",
       "prompt_version": "interpretation_v2",
       "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
-      "generated_at": "2026-08-03T03:18:35+00:00",
-      "elapsed_ms": 75828,
+      "generated_at": "2026-08-03T06:52:59+00:00",
+      "elapsed_ms": 45877,
       "attempts": 1,
       "fields": {
         "reading": "ok",
@@ -1645,9 +1645,9 @@
       "violations": {},
       "evidence": [
         [
-          "F2",
-          "ecos:731Y001.0000001:value:20260730",
-          1
+          "F3",
+          "fred:CPIAUCSL:value:20260601",
+          2
         ],
         [
           "F5",
@@ -1660,6 +1660,11 @@
           2
         ],
         [
+          "F10",
+          "fred:PCEPI:value:20260601",
+          2
+        ],
+        [
           "F12",
           "fred:T10Y2Y:value:20260731",
           2
@@ -1668,11 +1673,6 @@
           "F13",
           "fred:UNRATE:value:20260601",
           2
-        ],
-        [
-          "F25",
-          "dart:005930.KS:filing_event:20260515",
-          1
         ],
         [
           "F45",
@@ -1725,31 +1725,6 @@
           2
         ],
         [
-          "F48",
-          "yfinance:^IXIC:price_close:20260727",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260728",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260729",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260730",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260731",
-          2
-        ],
-        [
           "F52",
           "yfinance:^VIX:price_close:20260727",
           2
@@ -1773,56 +1748,6 @@
           "F52",
           "yfinance:^VIX:price_close:20260731",
           2
-        ],
-        [
-          "F59",
-          "yfinance:MSFT:price_close:20260727",
-          1
-        ],
-        [
-          "F59",
-          "yfinance:MSFT:price_close:20260728",
-          1
-        ],
-        [
-          "F59",
-          "yfinance:MSFT:price_close:20260729",
-          1
-        ],
-        [
-          "F59",
-          "yfinance:MSFT:price_close:20260730",
-          1
-        ],
-        [
-          "F59",
-          "yfinance:MSFT:price_close:20260731",
-          1
-        ],
-        [
-          "F62",
-          "yfinance:META:price_close:20260727",
-          1
-        ],
-        [
-          "F62",
-          "yfinance:META:price_close:20260728",
-          1
-        ],
-        [
-          "F62",
-          "yfinance:META:price_close:20260729",
-          1
-        ],
-        [
-          "F62",
-          "yfinance:META:price_close:20260730",
-          1
-        ],
-        [
-          "F62",
-          "yfinance:META:price_close:20260731",
-          1
         ],
         [
           "F63",
@@ -1885,8 +1810,8 @@
         },
         {
           "thesis_id": "ai_semi_2",
-          "verdict": "판정 불가",
-          "changed": 0
+          "verdict": "유지",
+          "changed": 1
         },
         {
           "thesis_id": "fin_credit_1",
