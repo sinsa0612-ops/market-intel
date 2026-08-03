@@ -1,0 +1,698 @@
+{
+  "schema_version": "2a.4",
+  "report_type": "close_delta",
+  "report_date": "2026-07-28",
+  "cutoff_kst": "2026-07-28T16:15:00+09:00",
+  "cutoff_utc": "2026-07-28T07:15:00+00:00",
+  "generated_at": "2026-08-03T07:15:05+00:00",
+  "title": "장마감 델타",
+  "headline": "KOSPI 6,023.66(-10.8%) · S&P500 7,413.18(+0.0%) · 달러/원 1,458.0원(-1.1%) · 미10Y 4.64%(-0.8%) — 관측기업 18곳 중 ±3% 이상 7종목, 결측 0건",
+  "breadth": "관측기업 5/18개 상승 · 플랫폼·AI 수익화 2/4 · 반도체·공급망 0/4 · 금융·신용 1/2 · 전력·산업 0/3 · 소비·수출 1/2 · 헬스케어 1/1 · 소재·철강 0/1 · 부동산·데이터센터 0/1",
+  "data_status": "partial",
+  "facts": [
+    {
+      "label": "한국 기준금리",
+      "value": "2.50 연% (기준일 2026-05-31)",
+      "comparison": "직전 관측 대비 +0.00%",
+      "source_url": "https://ecos.bok.or.kr/api/StatisticSearch/***/json/kr/1/10000/722Y001/M/202308/202608/0101000",
+      "data_status": "partial",
+      "known_at": "2026-06-30T14:59:59+00:00",
+      "subject": "722Y001.0101000",
+      "metric": "value",
+      "raw_value": 2.5,
+      "delta_pct": 0.0,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "원/달러 환율(ECOS)",
+      "value": "1,465 원 (기준일 2026-07-27)",
+      "comparison": "직전 관측 대비 -0.06%",
+      "source_url": "https://ecos.bok.or.kr/api/StatisticSearch/***/json/kr/1/10000/731Y001/D/20230803/20260803/0000001",
+      "data_status": "partial",
+      "known_at": "2026-07-28T06:30:00+00:00",
+      "subject": "731Y001.0000001",
+      "metric": "value",
+      "raw_value": 1465.4,
+      "delta_pct": -0.061378981108904294,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미국 CPI",
+      "value": "332.57 Index 1982-1984=100",
+      "comparison": "직전 관측 대비 -0.42%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-14T00:00:00+00:00",
+      "subject": "CPIAUCSL",
+      "metric": "value",
+      "raw_value": 332.568,
+      "delta_pct": -0.42248165303806573,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "연방기금금리 상단(목표)",
+      "value": "3.75 %",
+      "comparison": "직전 관측 대비 +0.00%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DFEDTARU&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-28T00:00:00+00:00",
+      "subject": "DFEDTARU",
+      "metric": "value",
+      "raw_value": 3.75,
+      "delta_pct": 0.0,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미국채 10년물 금리",
+      "value": "4.65 %",
+      "comparison": "직전 관측 대비 -0.85%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-28T00:00:00+00:00",
+      "subject": "DGS10",
+      "metric": "value",
+      "raw_value": 4.65,
+      "delta_pct": -0.852878464818764,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미국채 2년물 금리",
+      "value": "4.31 %",
+      "comparison": "직전 관측 대비 -0.46%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DGS2&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-28T00:00:00+00:00",
+      "subject": "DGS2",
+      "metric": "value",
+      "raw_value": 4.31,
+      "delta_pct": -0.4618937644341908,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "연방기금금리(실효)",
+      "value": "3.63 %",
+      "comparison": "직전 관측 대비 +0.00%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=FEDFUNDS&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-01T00:00:00+00:00",
+      "subject": "FEDFUNDS",
+      "metric": "value",
+      "raw_value": 3.63,
+      "delta_pct": 0.0,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미국 산업생산지수",
+      "value": "102.64 Index 2017=100",
+      "comparison": "직전 관측 대비 +0.08%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=INDPRO&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-17T00:00:00+00:00",
+      "subject": "INDPRO",
+      "metric": "value",
+      "raw_value": 102.6395,
+      "delta_pct": 0.07693012716384695,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미국 비농업고용",
+      "value": "158,984 Thous. of Persons",
+      "comparison": "직전 관측 대비 +0.04%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=PAYEMS&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-02T00:00:00+00:00",
+      "subject": "PAYEMS",
+      "metric": "value",
+      "raw_value": 158984.0,
+      "delta_pct": 0.035865523164723426,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미국 PCE",
+      "value": "131.53 Index 2017=100",
+      "comparison": "직전 관측 대비 +0.45%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=PCEPI&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-06-25T00:00:00+00:00",
+      "subject": "PCEPI",
+      "metric": "value",
+      "raw_value": 131.527,
+      "delta_pct": 0.44983121782828417,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미국 소매판매",
+      "value": "768,553 Mil. of $",
+      "comparison": "직전 관측 대비 +0.22%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=RSAFS&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-16T00:00:00+00:00",
+      "subject": "RSAFS",
+      "metric": "value",
+      "raw_value": 768553.0,
+      "delta_pct": 0.21867942144492722,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미 10Y-2Y 금리차",
+      "value": "0.35 %",
+      "comparison": "직전 관측 대비 +2.94%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=T10Y2Y&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-28T00:00:00+00:00",
+      "subject": "T10Y2Y",
+      "metric": "value",
+      "raw_value": 0.35,
+      "delta_pct": 2.9411764705882213,
+      "series": [],
+      "doc_url": ""
+    },
+    {
+      "label": "미국 실업률",
+      "value": "4.20 %",
+      "comparison": "직전 관측 대비 -2.33%",
+      "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=UNRATE&api_key=***&file_type=json&observation_start=2023-08-03&realtime_start=2023-08-03&realtime_end=9999-12-31&sort_order=asc",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-02T00:00:00+00:00",
+      "subject": "UNRATE",
+      "metric": "value",
+      "raw_value": 4.2,
+      "delta_pct": -2.3255813953488293,
+      "series": [],
+      "doc_url": ""
+    }
+  ],
+  "market_reaction": [
+    {
+      "label": "KOSPI",
+      "value": "6,023.66",
+      "comparison": "전일대비 -10.84%",
+      "source_url": "",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-28T06:30:00+00:00",
+      "subject": "^KS11",
+      "metric": "price_close",
+      "raw_value": 6023.66015625,
+      "delta_pct": -10.836544332605557,
+      "series": [
+        6747.9501953125,
+        6797.7001953125,
+        7096.89013671875,
+        6690.6201171875,
+        6755.75,
+        6023.66015625
+      ],
+      "doc_url": ""
+    },
+    {
+      "label": "달러/원",
+      "value": "1,458.0원",
+      "comparison": "3일 전 종가 대비 -1.09%",
+      "source_url": "",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-27T20:00:00+00:00",
+      "subject": "KRW=X",
+      "metric": "price_close",
+      "raw_value": 1458.010009765625,
+      "delta_pct": -1.0874894081622242,
+      "series": [
+        1487.3900146484375,
+        1475.010009765625,
+        1479.719970703125,
+        1475.6300048828125,
+        1474.0400390625,
+        1458.010009765625
+      ],
+      "doc_url": ""
+    },
+    {
+      "label": "SK하이닉스",
+      "value": "1,550,000.0원",
+      "comparison": "전일대비 -14.65%",
+      "source_url": "",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-28T06:30:00+00:00",
+      "subject": "000660.KS",
+      "metric": "price_close",
+      "raw_value": 1550000.0,
+      "delta_pct": -14.647577092511014,
+      "series": [
+        1836000.0,
+        1830000.0,
+        1919000.0,
+        1759000.0,
+        1816000.0,
+        1550000.0
+      ],
+      "doc_url": ""
+    },
+    {
+      "label": "삼성전자",
+      "value": "220,000.0원",
+      "comparison": "전일대비 -13.39%",
+      "source_url": "",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-28T06:30:00+00:00",
+      "subject": "005930.KS",
+      "metric": "price_close",
+      "raw_value": 220000.0,
+      "delta_pct": -13.385826771653544,
+      "series": [
+        259000.0,
+        260500.0,
+        270000.0,
+        249500.0,
+        254000.0,
+        220000.0
+      ],
+      "doc_url": ""
+    },
+    {
+      "label": "현대차",
+      "value": "364,000.0원",
+      "comparison": "전일대비 -9.68%",
+      "source_url": "",
+      "data_status": "reconstructed",
+      "known_at": "2026-07-28T06:30:00+00:00",
+      "subject": "005380.KS",
+      "metric": "price_close",
+      "raw_value": 364000.0,
+      "delta_pct": -9.67741935483871,
+      "series": [
+        399000.0,
+        418000.0,
+        432000.0,
+        401000.0,
+        403000.0,
+        364000.0
+      ],
+      "doc_url": ""
+    }
+  ],
+  "events": [],
+  "schedule_changes": [],
+  "missing": [
+    {
+      "area": "한국 수급(외국인/기관/개인)",
+      "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
+      "since": "2026-08-03T07:15:04+00:00",
+      "gap_id": "kr_flows:net_buy"
+    }
+  ],
+  "sector_summary": [
+    {
+      "sector": "플랫폼·AI 수익화",
+      "up": 2,
+      "down": 2,
+      "flat": 0,
+      "total": 4,
+      "median_pct": 0.8584572500516731,
+      "small_sample": false
+    },
+    {
+      "sector": "반도체·공급망",
+      "up": 0,
+      "down": 4,
+      "flat": 0,
+      "total": 4,
+      "median_pct": -9.190013079780488,
+      "small_sample": false
+    },
+    {
+      "sector": "금융·신용",
+      "up": 1,
+      "down": 1,
+      "flat": 0,
+      "total": 2,
+      "median_pct": -1.7204209229550198,
+      "small_sample": true
+    },
+    {
+      "sector": "전력·산업",
+      "up": 0,
+      "down": 3,
+      "flat": 0,
+      "total": 3,
+      "median_pct": -1.4386875054107688,
+      "small_sample": false
+    },
+    {
+      "sector": "소비·수출",
+      "up": 1,
+      "down": 1,
+      "flat": 0,
+      "total": 2,
+      "median_pct": -3.8018974833234345,
+      "small_sample": true
+    },
+    {
+      "sector": "헬스케어",
+      "up": 1,
+      "down": 0,
+      "flat": 0,
+      "total": 1,
+      "median_pct": 0.12541491126956264,
+      "small_sample": true
+    },
+    {
+      "sector": "소재·철강",
+      "up": 0,
+      "down": 1,
+      "flat": 0,
+      "total": 1,
+      "median_pct": -5.379746835443038,
+      "small_sample": true
+    },
+    {
+      "sector": "부동산·데이터센터",
+      "up": 0,
+      "down": 1,
+      "flat": 0,
+      "total": 1,
+      "median_pct": -3.4540278452355944,
+      "small_sample": true
+    }
+  ],
+  "sector_index": [
+    {
+      "subject": "XLP",
+      "label": "필수소비재",
+      "market": "US",
+      "value": "85.36 USD",
+      "comparison": "3일 전 종가 대비 +1.46%",
+      "delta_pct": 1.4620270974555656,
+      "series": [
+        84.86000061035156,
+        84.05999755859375,
+        84.37999725341797,
+        83.20999908447266,
+        84.12999725341797,
+        85.36000061035156
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLY",
+      "label": "경기소비재",
+      "market": "US",
+      "value": "110.84 USD",
+      "comparison": "3일 전 종가 대비 +1.31%",
+      "delta_pct": 1.3070035900898902,
+      "series": [
+        114.61000061035156,
+        114.87000274658203,
+        114.0199966430664,
+        108.76000213623047,
+        109.41000366210938,
+        110.83999633789062
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLC",
+      "label": "커뮤니케이션",
+      "market": "US",
+      "value": "107.66 USD",
+      "comparison": "3일 전 종가 대비 +1.28%",
+      "delta_pct": 1.279398467833885,
+      "series": [
+        110.80000305175781,
+        110.02999877929688,
+        109.19999694824219,
+        105.37999725341797,
+        106.30000305175781,
+        107.66000366210938
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLF",
+      "label": "금융",
+      "market": "US",
+      "value": "56.88 USD",
+      "comparison": "3일 전 종가 대비 +1.01%",
+      "delta_pct": 1.0122530295205803,
+      "series": [
+        56.040000915527344,
+        56.11000061035156,
+        56.04999923706055,
+        55.83000183105469,
+        56.310001373291016,
+        56.880001068115234
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLV",
+      "label": "헬스케어",
+      "market": "US",
+      "value": "163.40 USD",
+      "comparison": "3일 전 종가 대비 +0.51%",
+      "delta_pct": 0.5105410191748071,
+      "series": [
+        159.25,
+        160.25,
+        159.42999267578125,
+        161.44000244140625,
+        162.57000732421875,
+        163.39999389648438
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLI",
+      "label": "산업재",
+      "market": "US",
+      "value": "183.20 USD",
+      "comparison": "3일 전 종가 대비 +0.30%",
+      "delta_pct": 0.29562754588120466,
+      "series": [
+        178.1199951171875,
+        178.66000366210938,
+        178.85000610351562,
+        181.94000244140625,
+        182.66000366210938,
+        183.1999969482422
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLB",
+      "label": "소재",
+      "market": "US",
+      "value": "51.39 USD",
+      "comparison": "3일 전 종가 대비 +0.25%",
+      "delta_pct": 0.2536111439173102,
+      "series": [
+        50.029998779296875,
+        50.099998474121094,
+        50.81999969482422,
+        50.290000915527344,
+        51.2599983215332,
+        51.38999938964844
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLRE",
+      "label": "부동산",
+      "market": "US",
+      "value": "45.76 USD",
+      "comparison": "3일 전 종가 대비 -0.41%",
+      "delta_pct": -0.4134982334091596,
+      "series": [
+        45.22999954223633,
+        45.20000076293945,
+        45.0099983215332,
+        44.95000076293945,
+        45.95000076293945,
+        45.7599983215332
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLK",
+      "label": "정보기술",
+      "market": "US",
+      "value": "174.30 USD",
+      "comparison": "3일 전 종가 대비 -0.90%",
+      "delta_pct": -0.898340793262674,
+      "series": [
+        175.7100067138672,
+        180.77999877929688,
+        180.27000427246094,
+        178.4499969482422,
+        175.8800048828125,
+        174.3000030517578
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLU",
+      "label": "유틸리티",
+      "market": "US",
+      "value": "45.68 USD",
+      "comparison": "3일 전 종가 대비 -1.32%",
+      "delta_pct": -1.3177805104491718,
+      "series": [
+        44.939998626708984,
+        44.91999816894531,
+        45.93000030517578,
+        46.189998626708984,
+        46.290000915527344,
+        45.68000030517578
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "XLE",
+      "label": "에너지",
+      "market": "US",
+      "value": "58.36 USD",
+      "comparison": "3일 전 종가 대비 -2.11%",
+      "delta_pct": -2.1133819927986552,
+      "series": [
+        57.939998626708984,
+        58.5,
+        59.20000076293945,
+        59.380001068115234,
+        59.619998931884766,
+        58.36000061035156
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "227540.KS",
+      "label": "TIGER 헬스케어",
+      "market": "KR",
+      "value": "18,000.0원",
+      "comparison": "전일대비 -2.25%",
+      "delta_pct": -2.253597610643497,
+      "series": [
+        17410.0,
+        17315.0,
+        17680.0,
+        18335.0,
+        18415.0,
+        18000.0
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "117680.KS",
+      "label": "KODEX 철강",
+      "market": "KR",
+      "value": "10,255.0원",
+      "comparison": "전일대비 -6.86%",
+      "delta_pct": -6.857402361489555,
+      "series": [
+        10225.0,
+        10485.0,
+        11130.0,
+        11055.0,
+        11010.0,
+        10255.0
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "117460.KS",
+      "label": "KODEX 에너지화학",
+      "market": "KR",
+      "value": "11,910.0원",
+      "comparison": "전일대비 -7.82%",
+      "delta_pct": -7.817337461300309,
+      "series": [
+        12540.0,
+        12820.0,
+        13890.0,
+        13595.0,
+        12920.0,
+        11910.0
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "102970.KS",
+      "label": "KODEX 증권",
+      "market": "KR",
+      "value": "18,265.0원",
+      "comparison": "전일대비 -8.70%",
+      "delta_pct": -8.697825543614096,
+      "series": [
+        20340.0,
+        20150.0,
+        20835.0,
+        19900.0,
+        20005.0,
+        18265.0
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    },
+    {
+      "subject": "091160.KS",
+      "label": "KODEX 반도체",
+      "market": "KR",
+      "value": "107,230.0원",
+      "comparison": "전일대비 -13.85%",
+      "delta_pct": -13.850727082831204,
+      "series": [
+        128025.0,
+        126930.0,
+        132000.0,
+        120755.0,
+        124470.0,
+        107230.0
+      ],
+      "source_url": "",
+      "data_status": "reconstructed"
+    }
+  ],
+  "interpretation": {
+    "reading": "",
+    "counter_reading": "",
+    "thesis_impact": "",
+    "next_check": "",
+    "generated_by": "",
+    "generated_at": ""
+  },
+  "meta": {
+    "generated_by": "reporting/build.py (2A)",
+    "late_generation": true,
+    "no_facts_before_cutoff": false,
+    "counts": {
+      "facts": 13,
+      "market_reaction": 5,
+      "events": 0,
+      "schedule_changes": 0,
+      "missing": 1,
+      "sector_index": 16
+    }
+  }
+}
