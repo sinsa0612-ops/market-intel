@@ -189,11 +189,37 @@ def load_file(path: str) -> list[dict]:
 # Atom evaluation (spec SA-7's evaluation table)
 # ---------------------------------------------------------------------------
 
+def _dominant_basis(rows) -> str | None:
+    """재무 관측을 **하나의 기간 길이**로 통일한다 — 가장 많은 기간을 덮는 쪽,
+    같으면 짧은 쪽(분기).
+
+    재무 atom은 전부 구간을 이어서 읽는다("최근 2구간 연속 down"). 기간 길이가
+    섞이면 그 비교는 성립하지 않는다: 1년치 누적 하나가 분기 자리에 들어오면
+    직전 분기 대비 3~4배로 뛰어 **없던 방향이 생긴다**. 실측(2026-08-03)으로
+    MSFT free_cash_flow의 최신 관측이 66,987,000,000(연간)이었고 그 앞은
+    15,803,000,000(분기)였다 — 같은 fact_id를 공유하는 탓이다(`db._IDENTITY_FILTERS`).
+
+    quarterly로 못박지 않는 이유: DART가 주는 한국 기업 재무와 TSM(20-F)은
+    **연간밖에 없다**. 못박았다면 그 기업들의 가설이 영구히 판정 불가가 된다
+    (실측: 005930.KS·000660.KS·005380.KS·005490.KS·105560.KS·TSM·JPM revenue).
+    `None`은 관측이 없다는 뜻이고, 그때는 다시 읽지 않는다."""
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r["comparison_basis"] or ""] = counts.get(r["comparison_basis"] or "", 0) + 1
+    if not counts:
+        return None
+    return max(counts, key=lambda b: (counts[b], b == "quarterly"))
+
+
 def _observations(conn, atom: dict, cutoff) -> list[tuple[str, float | None]]:
     filters = {"subject": atom["subject"], "metric": atom["metric"]}
     if atom.get("category"):
         filters["category"] = atom["category"]
     rows = db_mod.facts_as_of(conn, cutoff, **filters)
+    if filters.get("category") == "financials":
+        basis = _dominant_basis(rows)
+        if basis is not None:
+            rows = db_mod.facts_as_of(conn, cutoff, **filters, comparison_basis=basis)
     obs = sorted(rows, key=lambda r: r["event_at"] or "", reverse=True)  # newest first
     return [(r["event_at"], r["value_num"]) for r in obs]
 

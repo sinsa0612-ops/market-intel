@@ -194,9 +194,23 @@ _FILTERABLE_COLUMNS = {
     "market",
     "country",
     "category",
+    "comparison_basis",
     "data_status",
     "session_label",
 }
+
+# `comparison_basis` names a *different fact*, not a later vintage of the same
+# one. `engine._fact_id` is 제공자:종목:항목:날짜 — it has no period length — so
+# "MSFT FY2026 FCF" and "MSFT FY26 4분기 FCF" both land on
+# `sec_edgar:MSFT:free_cash_flow:20260630` and become revisions of each other.
+# When that happens the later `known_at` wins, and a cumulative number takes the
+# quarter's place (실측 2026-08-03: 라이브가 8/1에 넣은 1년치 66,987,000,000이
+# 백필이 계산한 분기값 19,639,000,000을 가렸다 — 11건, MSFT·GOOGL·EQIX).
+# So when a caller pins the basis, "latest revision" must mean latest *within
+# that basis*. Only this column is propagated into the barrier's subquery:
+# the others are either already encoded in the fact_id (subject/metric) or are
+# genuinely per-revision attributes (data_status) where masking is correct.
+_IDENTITY_FILTERS = ("comparison_basis",)
 
 
 def iso_utc(dt: datetime | str | None = None) -> str:
@@ -343,7 +357,13 @@ def facts_as_of(conn: sqlite3.Connection, cutoff: datetime | str, **filters) -> 
     value — selecting it would let a backfilled past value mask today's
     value (backfill spec 반증 2). The known_at <= cutoff filter stays on
     both sides of the comparison: the barrier must never see a revision
-    that was not knowable at the cutoff."""
+    that was not knowable at the cutoff.
+
+    Pinning `comparison_basis` also narrows what counts as "latest" — see
+    `_IDENTITY_FILTERS`. `facts_as_of(cutoff, subject="MSFT",
+    metric="free_cash_flow", comparison_basis="quarterly")` returns the newest
+    *quarterly* revision per period, instead of dropping periods whose newest
+    revision happens to be an annual cumulative."""
     cutoff_str = iso_utc(cutoff)
     clauses = ["known_at <= ?"]
     params: list = [cutoff_str]
@@ -352,15 +372,21 @@ def facts_as_of(conn: sqlite3.Connection, cutoff: datetime | str, **filters) -> 
             raise ValueError(f"facts_as_of: unfilterable column {k!r}")
         clauses.append(f"{k} = ?")
         params.append(v)
+    inner = ["o.fact_id = fr.fact_id", "o.known_at <= ?"]
+    inner_params: list = [cutoff_str]
+    for k in _IDENTITY_FILTERS:
+        if k in filters:
+            inner.append(f"o.{k} = ?")
+            inner_params.append(filters[k])
     where = " AND ".join(clauses)
     query = f"""
         SELECT fr.* FROM fact_revisions fr
         WHERE {where}
           AND NOT EXISTS (
             SELECT 1 FROM fact_revisions o
-            WHERE o.fact_id = fr.fact_id AND o.known_at <= ?
+            WHERE {" AND ".join(inner)}
               AND (o.known_at > fr.known_at
                    OR (o.known_at = fr.known_at AND o.revision_no > fr.revision_no))
           )
     """
-    return conn.execute(query, [*params, cutoff_str]).fetchall()
+    return conn.execute(query, [*params, *inner_params]).fetchall()
