@@ -224,3 +224,62 @@ def test_annual_period_is_labeled_in_comparison_basis(settings):
         "an FY figure must be labeled 'annual' so it is never silently "
         "compared against another company's quarterly figure"
     )
+
+
+# --- capex 태그: EQIX·LLY가 쓰는 현행 태그 (2026-08-03) ----------------------
+
+def test_other_ppe_tag_is_a_capex_candidate():
+    """`PaymentsToAcquireOtherPropertyPlantAndEquipment`가 후보에 있어야 한다.
+
+    2026-08-01에는 이름의 "Other" 때문에 "자본지출 전체가 아닐 수 있다"며 뺐고,
+    그 결과 LLY capex가 2022-09-30에 멈춰 있었다. EQIX가 관측군에 들어오며 같은
+    이유로 FCF가 0건이 되자 추측 대신 SEC 원자료를 전수 비교했다 — 두 태그를 함께
+    보고한 기간에서 EQIX는 2015-12-31 이후 42기간 전부 동일, LLY는 3기간 전부
+    동일, 나머지 10개사는 태그 자체가 없다. 근거는 sec_edgar.py의 주석.
+
+    수리 결과(실측): EQIX capex 2026-03-31 -> 2026-06-30 · FCF 0건 -> 생성,
+    LLY capex 2022-09-30 -> 2026-03-31 · FCF 0건 -> 생성. 나머지는 불변.
+    """
+    from market_intel.providers.sec_edgar import CONCEPT_CANDIDATES
+
+    tags = [tag for _ns, tag in CONCEPT_CANDIDATES["capex"]]
+    assert "PaymentsToAcquireOtherPropertyPlantAndEquipment" in tags, tags
+    # 미지급 발생액은 현금흐름이 아니다 — FCF에 섞이면 조용히 오염된다.
+    assert "CapitalExpendituresIncurredButNotYetPaid" not in tags
+
+
+def test_capex_picks_the_newest_period_across_candidate_tags(settings):
+    """회사가 태그를 갈아탄 경우 **최신 기간**이 이긴다 — 후보 순서가 아니라.
+
+    EQIX가 정확히 이 모양이다: 옛 태그는 2026-03-31에서 멈추고 현행 태그가
+    2026-06-30을 낸다. 순서로 골랐다면 3월 값이 최신인 척 실렸을 것이다."""
+    facts = _companyfacts()
+    facts["facts"]["us-gaap"]["PaymentsToAcquireProductiveAssets"] = {
+        "units": {"USD": [_unit("2026-03-31", 11_000.0)]}
+    }
+    facts["facts"]["us-gaap"]["PaymentsToAcquireOtherPropertyPlantAndEquipment"] = {
+        "units": {"USD": [_unit("2026-06-30", 22_000.0)]}
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if url.endswith("company_tickers.json"):
+            return httpx.Response(200, json=TICKERS)
+        if "/submissions/" in url:
+            return httpx.Response(200, json=SUBMISSIONS)
+        if "/companyfacts/" in url:
+            return httpx.Response(200, json=facts)
+        return httpx.Response(404, json={"error": "not found"})
+
+    now = datetime.now(timezone.utc)
+    ctx = CollectContext(
+        cutoff=now, now=now, settings=settings,
+        http=lambda name: SafeHttp(name, settings, transport=httpx.MockTransport(handler), rate=0),
+        universe=[], logger=logging.getLogger("test"),
+    )
+    result = SecEdgarProvider().collect(ctx)
+
+    capex = [f for f in result.facts if f.metric == "capex"]
+    assert capex, "capex fact가 없다"
+    assert capex[0].event_at.startswith("2026-06-30"), capex[0].event_at
+    assert capex[0].value_num == 22_000.0

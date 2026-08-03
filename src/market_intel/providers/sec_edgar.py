@@ -53,9 +53,23 @@ CONCEPT_CANDIDATES: dict[str, list[tuple[str, str]]] = {
     # `CapitalExpendituresIncurredButNotYetPaid` is accrued-but-unpaid capex,
     # not cash out the door — feeding it into FCF = operating cash flow -
     # capex would silently corrupt the cash-flow axis.
+    #
+    # `PaymentsToAcquireOtherPropertyPlantAndEquipment` (2026-08-03 추가):
+    # 이름의 "Other" 때문에 2026-08-01에는 "자본지출 전체가 아닐 수 있다"며
+    # 일부러 뺐고, 그 결과 LLY의 capex가 2022-09-30에 멈춰 있었다. EQIX가
+    # 관측군에 들어오면서 같은 문제로 FCF가 0건이 되자 **추측 대신 측정**했다:
+    # 두 태그를 함께 보고한 기간을 전수 비교하면
+    #   EQIX  공통 52기간 중 값이 다른 것 10개 — 전부 2010~2015년.
+    #         2015-12-31 이후 42기간은 **전부 동일** (같은 항목의 이중 태깅).
+    #   LLY   공통 3기간 전부 동일.
+    #   나머지 10개사  이 태그 자체가 없음 → 영향 없음.
+    # 즉 지금 관측군에서는 같은 현금 자본지출 라인이고, EQIX·LLY가 최근 분기에
+    # **이 태그로만** 내고 있다. 관측군이 늘면 같은 비교를 다시 해야 한다 —
+    # 이름만 보고 "기타니까 부분"이라고 단정하지도, 안전하다고 넘기지도 말 것.
     "capex": [
         ("us-gaap", "PaymentsToAcquireProductiveAssets"),
         ("us-gaap", "PaymentsToAcquirePropertyPlantAndEquipment"),
+        ("us-gaap", "PaymentsToAcquireOtherPropertyPlantAndEquipment"),
         ("ifrs-full", "PurchaseOfPropertyPlantAndEquipment"),
     ],
 }
