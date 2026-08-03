@@ -52,6 +52,19 @@ class Settings:
     # 유일하게 살아 있던 공식 경로다(2026-08-01 실측). 비어 있으면 pykrx_flows가
     # 네트워크를 두드리지도 않고 "키없음"으로 기록한다.
     krx_api_key: str = field(default_factory=lambda: os.environ.get("MI_KRX_API_KEY", ""))
+    # KRX 회원 계정 — pykrx가 투자자별 수급(개인·외국인·기관 순매수)을 받으려면
+    # 필요하다. KRX가 그 화면만 회원 전용으로 바꿔서 익명 요청에는 `LOGOUT`이
+    # 온다(2026-08-03 실측). **이름이 `MI_` 접두사가 아닌 이유**: pykrx가
+    # `os.getenv("KRX_ID")`를 자기 함수 기본 인자로 읽으므로 이름을 바꿀 수 없다.
+    # 우리는 그 값을 직접 쓰지 않고, **가려야 할 비밀 목록에 넣기 위해서만** 읽는다.
+    krx_id: str = field(default_factory=lambda: os.environ.get("KRX_ID", ""))
+    krx_pw: str = field(default_factory=lambda: os.environ.get("KRX_PW", ""))
+    # 한국투자증권 KIS — 투자자별 수급을 받는 유일한 키 기반 경로.
+    # **주의: 같은 자격증명에 주문 API가 붙어 있다.** 이 프로젝트는 매매를 하지
+    # 않으므로 `providers/kis_flows.py`가 조회(quotations) 경로만 부르도록 막고
+    # 테스트로 고정한다(`test_kis_flows.py`).
+    kis_app_key: str = field(default_factory=lambda: os.environ.get("MI_KIS_APP_KEY", ""))
+    kis_app_secret: str = field(default_factory=lambda: os.environ.get("MI_KIS_APP_SECRET", ""))
 
     def __repr__(self) -> str:  # never leak secret values via repr/logging
         return (
@@ -59,7 +72,9 @@ class Settings:
             f"log_dir={self.log_dir!r}, fred_api_key={_mask(self.fred_api_key)!r}, "
             f"ecos_api_key={_mask(self.ecos_api_key)!r}, dart_api_key={_mask(self.dart_api_key)!r}, "
             f"sec_user_agent={_mask(self.sec_user_agent)!r}, "
-            f"krx_api_key={_mask(self.krx_api_key)!r})"
+            f"krx_api_key={_mask(self.krx_api_key)!r}, krx_id={_mask(self.krx_id)!r}, "
+            f"krx_pw={_mask(self.krx_pw)!r}, kis_app_key={_mask(self.kis_app_key)!r}, "
+            f"kis_app_secret={_mask(self.kis_app_secret)!r})"
         )
 
     def secret_values(self) -> list[str]:
@@ -67,7 +82,8 @@ class Settings:
         return [
             v
             for v in (self.fred_api_key, self.ecos_api_key, self.dart_api_key,
-                      self.sec_user_agent, self.krx_api_key)
+                      self.sec_user_agent, self.krx_api_key, self.krx_id, self.krx_pw,
+                      self.kis_app_key, self.kis_app_secret)
             if v
         ]
 

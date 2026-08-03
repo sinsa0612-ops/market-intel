@@ -28,6 +28,10 @@ HOST_WHITELIST: dict[str, set[str]] = {
     "fred_calendar": {"api.stlouisfed.org"},
     "policy_calendar": {"www.federalreserve.gov", "www.bok.or.kr"},
     "sec_8k_events": {"data.sec.gov", "www.sec.gov"},
+    # 한국투자증권 KIS — 국내주식 투자자별 매매동향(개인·외국인·기관 순매수).
+    # KRX가 그 화면을 회원 전용으로 바꾼 뒤 남은 유일한 키 기반 경로다
+    # (2026-08-03 실측: KRX 오픈API에 수급 엔드포인트 없음, pykrx 익명은 `LOGOUT`).
+    "kis": {"openapi.koreainvestment.com"},
 }
 
 SECRET_PARAM_NAMES = {"api_key", "apikey", "key", "authkey", "servicekey", "crtfc_key"}
@@ -159,10 +163,22 @@ class SafeHttp:
             time.sleep(wait)
         self._last_call = time.monotonic()
 
-    def get(self, url: str, params: dict | None = None) -> httpx.Response:
+    def post(self, url: str, json: dict | None = None,
+             headers: dict | None = None) -> httpx.Response:
+        """호스트 화이트리스트·HTTPS·레이트리밋을 GET과 똑같이 거친다.
+
+        KIS 토큰 발급이 POST라서 추가했다(2026-08-03). 리다이렉트는 따라가지
+        않는다 — POST를 다른 곳으로 다시 보내는 것은 자격증명이 실린 본문을
+        의도치 않은 호스트로 흘리는 길이다."""
         self._check_host(url)
         self._throttle()
-        resp = self._client.get(url, params=params)
+        return self._client.post(url, json=json, headers=headers)
+
+    def get(self, url: str, params: dict | None = None,
+            headers: dict | None = None) -> httpx.Response:
+        self._check_host(url)
+        self._throttle()
+        resp = self._client.get(url, params=params, headers=headers)
         if resp.status_code in (301, 302, 303, 307, 308):
             location = resp.headers.get("location", "")
             if location:
