@@ -26,6 +26,7 @@ from .interp.thesis import _dominant_basis
 # 여기서 표를 다시 만들면 두 화면이 같은 것을 다른 이름으로 부르게 되므로
 # 리포트의 표와 함수를 그대로 쓴다.
 from .reporting.build import _FORM_LABELS, _ITEM_8K_LABELS, _macro_label
+from .reporting.render_md import fmt_money
 from .universe import UNIVERSE
 
 # CEO 확정 4개 섹션 중 "기업별 재무 추이(매출·영업이익·FCF)"가 지목한 세 항목.
@@ -93,28 +94,6 @@ def _extra(row) -> dict:
         return json.loads(row["extra_json"] or "{}") or {}
     except (json.JSONDecodeError, TypeError):
         return {}
-
-
-def fmt_money(value: float | None, unit: str) -> str:
-    """재무 숫자는 자릿수가 12~15개라 원본 그대로는 읽히지 않는다(삼성전자 매출
-    333,605,938,000,000). 통화 단위에 맞춰 조/억으로 줄인다."""
-    if value is None:
-        return "미확인"
-    sign = "-" if value < 0 else ""
-    v = abs(value)
-    if unit == "KRW":
-        if v >= 1e12:
-            return f"{sign}{v / 1e12:,.1f}조 원"
-        if v >= 1e8:
-            return f"{sign}{v / 1e8:,.0f}억 원"
-        return f"{sign}{v:,.0f}원"
-    if unit == "USD":
-        if v >= 1e8:
-            return f"{sign}{v / 1e8:,.1f}억 달러"
-        if v >= 1e6:
-            return f"{sign}{v / 1e6:,.1f}백만 달러"
-        return f"{sign}{v:,.0f} USD"
-    return f"{sign}{v:,.0f} {unit}".rstrip()
 
 
 # --- 1) 기업별 재무 추이 ----------------------------------------------------

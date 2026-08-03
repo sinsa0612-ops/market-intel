@@ -132,6 +132,103 @@ def fmt_pct(value: float | None) -> str:
     return "-" if value is None else f"{value:+.2f}%"
 
 
+def fmt_money(value: float | None, unit: str) -> str:
+    """자릿수가 12~15개인 금액은 원본 그대로면 읽히지 않는다 — 삼성전자 매출
+    333,605,938,000,000, 수급 2,174,506,000,000 KRW. 통화에 맞춰 조/억으로
+    줄인다. (상세 페이지도 같은 함수를 쓴다 — 두 화면이 같은 금액을 다른
+    자릿수로 쓰면 대조가 안 된다.)"""
+    if value is None:
+        return "미확인"
+    sign = "-" if value < 0 else ""
+    v = abs(value)
+    if unit == "KRW":
+        if v >= 1e12:
+            return f"{sign}{v / 1e12:,.1f}조 원"
+        if v >= 1e8:
+            return f"{sign}{v / 1e8:,.0f}억 원"
+        return f"{sign}{v:,.0f}원"
+    if unit == "USD":
+        if v >= 1e8:
+            return f"{sign}{v / 1e8:,.1f}억 달러"
+        if v >= 1e6:
+            return f"{sign}{v / 1e6:,.1f}백만 달러"
+        return f"{sign}{v:,.0f} USD"
+    return f"{sign}{v:,.0f} {unit}".rstrip()
+
+
+# --- 수급 묶기 (두 렌더러 공용) --------------------------------------------
+# 순매수는 개인+기관+외국인의 합이 0이다. 그래서 값 하나하나가 아니라
+# **어느 쪽이 사고 어느 쪽이 파는가**가 정보다. 종목당 세 행을 따로 싣던
+# 표는 그 구조를 보여줄 수 없었다.
+FLOW_ACTORS: tuple[tuple[str, str], ...] = (
+    ("individual", "개인"), ("institution", "기관"), ("foreign", "외국인"),
+)
+# 이 금액 아래는 "움직임 작음"으로 접는다. 막대를 그려도 픽셀이 안 나오고,
+# 매일 5종목 중 3종목이 이 구간이라 그리면 오히려 큰 것이 안 보인다.
+FLOW_QUIET_KRW = 1e11  # 1,000억
+
+
+def flow_groups(rows: list[FactRow]) -> list[dict]:
+    """수급 FactRow들을 **종목 하나에 한 줄**로 묶는다. 큰 종목이 위로.
+
+    반환: `{name, actors: [{label, value, text, buy}], total, quiet, story}`.
+    `story`는 그 줄을 한 문장으로 읽은 것이다 — 막대만 있으면 흑백 출력과
+    화면 낭독기에서 아무 말도 하지 않는다.
+    """
+    by_subject: dict[str, dict] = {}
+    for row in rows:
+        actor = next((key for key, _ in FLOW_ACTORS if f"net_buy_{key}" in row.metric), None)
+        if actor is None or not isinstance(row.raw_value, (int, float)):
+            continue
+        entry = by_subject.setdefault(row.subject, {"name": "", "values": {}})
+        entry["values"][actor] = float(row.raw_value)
+        # 라벨은 "삼성전자(005930.KS) 개인 순매수(금액)" — 주체 부분을 떼면
+        # 종목 이름이 남는다. build.py가 만든 그 라벨을 다시 만들지 않는다.
+        entry["name"] = re.sub(r"\s*(개인|기관|외국인)\s*순매수.*$", "", row.label).strip()
+
+    out = []
+    for subject, entry in by_subject.items():
+        values = entry["values"]
+        total = sum(abs(v) for v in values.values())
+        # 표시 금액은 **절댓값**이다. 방향은 색과 문장이 이미 말하므로 막대
+        # 안의 빼기 기호는 "파랑 막대인데 마이너스"라고 두 번 말하면서 좁은
+        # 칸의 글자만 밀어낸다. 부호가 필요한 곳(정렬·문장)은 `value`를 쓴다.
+        actors = [
+            {"label": label, "value": values.get(key, 0.0),
+             "text": fmt_money(abs(values.get(key, 0.0)), "KRW"), "buy": values.get(key, 0.0) > 0}
+            for key, label in FLOW_ACTORS if key in values
+        ]
+        out.append({
+            "subject": subject, "name": entry["name"] or subject, "actors": actors,
+            "total": total, "quiet": total < FLOW_QUIET_KRW,
+            "story": _flow_story(actors, total),
+        })
+    out.sort(key=lambda g: g["total"], reverse=True)
+    return out
+
+
+def _flow_story(actors: list[dict], total: float) -> str:
+    """"개인이 2.2조 담고, 외국인이 1.8조 던졌다" — 막대가 말하는 것을 문장으로."""
+    if total < FLOW_QUIET_KRW:
+        return f"특이사항 없음 ({fmt_money(total, 'KRW')} 규모)"
+    buyers = sorted([a for a in actors if a["buy"]], key=lambda a: -a["value"])
+    sellers = sorted([a for a in actors if not a["buy"]], key=lambda a: a["value"])
+    # 양쪽 다 **이름을 다 부르고 합계를 쓴다**. 이 한 줄이 막대를 대신해야
+    # 하므로(흑백 출력·화면 낭독기) 규모가 빠지면 안 되고, "외 1" 같은 축약은
+    # 한국어로 읽히지 않는다. 큰 쪽이 앞에 온다.
+    # 세 주체 이름이 모두 받침으로 끝나므로(개인·기관·외국인) 조사는 늘 '이'다.
+    def side(group: list[dict], verb: str) -> str:
+        who = "·".join(a["label"] for a in group)
+        return f"{who}이 {fmt_money(sum(abs(a['value']) for a in group), 'KRW')} {verb}"
+
+    parts = []
+    if buyers:
+        parts.append(side(buyers, "담고"))
+    if sellers:
+        parts.append(side(sellers, "던졌다"))
+    return ", ".join(parts) if parts else "-"
+
+
 # --- layout (shared with render_html.py) ---------------------------------
 
 def heading(report: Report) -> dict:
@@ -150,6 +247,82 @@ def heading(report: Report) -> dict:
 
 def _facts(rows: list[FactRow]) -> dict:
     return {"kind": "facts", "rows": rows}
+
+
+# 한 화면에 몇 줄까지 펼쳐 둘 것인가. 거시지표는 금리·환율이 앞에 오도록
+# 정렬한 뒤 이 개수까지만 카드로 내고 나머지는 접는다.
+MACRO_CARDS = 8
+# 이 순서대로 앞에 세운다. CEO가 매일 먼저 보는 것은 금리와 환율이고, 물가·
+# 고용은 월 1회 갱신이라 매일 화면 앞자리를 차지할 이유가 없다.
+MACRO_PRIORITY = (
+    "DGS10", "DGS2", "T10Y2Y", "usd_krw_fx", "731Y001.0000001",
+    "base_rate", "722Y001.0101000", "DFEDTARU", "FEDFUNDS",
+    "UNRATE", "CPIAUCSL", "PCEPI", "PAYEMS", "RSAFS", "INDPRO",
+)
+
+
+EARNINGS_METRIC = "earnings_release_8k"
+
+
+def filing_summary(rows: list[FactRow]) -> dict:
+    """공시 34건을 매일 다 읽지는 않는다. 한 줄로 답하고 전체는 접는다.
+
+    한 줄이 답하는 것은 **실적을 발표한 곳이 어디인가**다 — 정기공시 제출은
+    일정대로 일어나는 일이라 셀 값이지 읽을 값이 아니다."""
+    earnings = [r for r in rows if r.metric == EARNINGS_METRIC]
+    others = [r for r in rows if r.metric != EARNINGS_METRIC]
+    return {
+        "total": len(rows),
+        "earnings_count": len(earnings),
+        "other_count": len(others),
+        # 종목 코드로 적는다 — 라벨에서 회사명을 떼어내려면 공시 종류 문자열을
+        # 되파싱해야 하고, 그 규칙이 바뀌면 요약이 조용히 깨진다. 전체 이름은
+        # 바로 아래 펼침 표에 그대로 있다.
+        "earnings_subjects": [r.subject for r in earnings],
+    }
+
+
+def _macro_sort_key(row: FactRow) -> tuple:
+    try:
+        return (MACRO_PRIORITY.index(row.subject), "")
+    except ValueError:
+        return (len(MACRO_PRIORITY), row.label)
+
+
+def fact_blocks(rows: list[FactRow]) -> list[dict]:
+    """`핵심 사실`의 본문 — 갈래마다 **다른 모양**으로 낸다.
+
+    한 표에 다 넣으면 실측 77행이 되고(수급 30 · 공시 34 · 거시 13) 아무것도
+    한눈에 안 들어온다는 CEO 지적(2026-08-03). 세 갈래는 묻는 질문이 다르므로
+    답하는 모양도 다르다:
+
+    - **수급**은 "누가 사고 누가 팔았나" — 순매수 합은 0이라 방향이 전부다.
+      종목 하나에 한 줄, 주체 셋을 한 막대에 나란히 놓으면 읽을 것이 없다.
+    - **거시**는 "지금 몇인가" — 값 하나짜리 관측이라 표의 5개 칸 중 4개가
+      낭비다. 카드가 맞다.
+    - **공시**는 "무슨 일이 있었나" — 34건을 매일 다 읽지 않는다. 요약 한 줄에
+      답하고 전체는 접는다.
+
+    갈래가 없는 사실(옛 리포트 JSON, 재무·컨센서스)은 지금까지 쓰던 표로
+    떨어진다 — 새 모양이 없다고 사실이 사라지면 안 된다.
+    """
+    by_group: dict[str, list[FactRow]] = {}
+    for row in rows:
+        by_group.setdefault(row.group or "", []).append(row)
+
+    out: list[dict] = []
+    if by_group.get("flow"):
+        out.append({"kind": "flow", "rows": by_group.pop("flow")})
+    if by_group.get("macro"):
+        macro = sorted(by_group.pop("macro"), key=_macro_sort_key)
+        out.append({"kind": "macro_cards", "rows": macro[:MACRO_CARDS],
+                    "rest": macro[MACRO_CARDS:]})
+    if by_group.get("filing"):
+        out.append({"kind": "filing_summary", "rows": by_group.pop("filing")})
+    rest = [r for group in by_group.values() for r in group]
+    if rest:
+        out.append(_facts(rest))
+    return out or [_facts([])]
 
 
 def _text(text: str) -> dict:
@@ -250,7 +423,7 @@ def _lead_sections(report: Report) -> list[tuple[str, list[dict]]]:
     rt = report.report_type
     if rt == "weekly_review":  # §6.2, 5 headers in order
         return [
-            ("이번 주 시장의 지배 변수", [_text(report.headline), _facts(report.facts), _missing(report)]),
+            ("이번 주 시장의 지배 변수", [_text(report.headline), *fact_blocks(report.facts), _missing(report)]),
             ("자산·섹터 성과", _market_blocks(report)),
             ("다음 주에 뒤집힐 수 있는 변수", [_interp(report, "counter_reading")]),
             ("내가 놓친 변수", [_missing(report)]),
@@ -259,7 +432,7 @@ def _lead_sections(report: Report) -> list[tuple[str, list[dict]]]:
     if rt == "event":  # §7.2, 4 headers in order
         cashflow_rows = [r for r in report.facts if r.metric in _CASHFLOW_METRICS]
         return [
-            ("실제치·예상치·가이던스", [_facts(report.facts), _missing(report)]),
+            ("실제치·예상치·가이던스", [*fact_blocks(report.facts), _missing(report)]),
             ("현금흐름과 투자", [_facts(cashflow_rows)]),
             ("시장 반응과 반대 해석",
              _market_blocks(report) + [_interp(report, "counter_reading")]),
@@ -268,18 +441,18 @@ def _lead_sections(report: Report) -> list[tuple[str, list[dict]]]:
     if rt == "monthly":
         return [
             (f"월간 거시 체제: {report.meta.get('regime_label', '')}", [_text(report.headline)]),
-            ("핵심 지표", [_facts(report.facts), _missing(report)]),
+            ("핵심 지표", [*fact_blocks(report.facts), _missing(report)]),
             ("자산 성과", _market_blocks(report)),
         ]
     if rt in ("quarterly", "annual"):
         return [
-            ("핵심 사실", [_facts(report.facts), _missing(report)]),
+            ("핵심 사실", [*fact_blocks(report.facts), _missing(report)]),
             ("시장 반응", _market_blocks(report)),
         ]
     # morning / week_start / close_delta — §4.2's first 3 headers.
     return [
         ("시장 한 줄", [_text(report.headline)]),
-        ("핵심 사실", [_facts(report.facts), _missing(report)]),
+        ("핵심 사실", [*fact_blocks(report.facts), _missing(report)]),
         ("시장 반응", _market_blocks(report)),
     ]
 
@@ -370,10 +543,53 @@ def _calendar_table_md(columns: list[str], rows: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
+def _flow_md(groups: list[dict]) -> str:
+    """마크다운에는 막대도 색도 없다. 대신 **종목당 한 줄**이라는 요점은
+    그대로 살린다 — 표를 종목 하나에 한 행으로 접고, 그 옆에 문장을 둔다."""
+    if not groups:
+        return "(해당 없음)"
+    lines = ["| 종목 | 개인 | 기관 | 외국인 | 한 줄 |", "|---|---:|---:|---:|---|"]
+    for g in groups:
+        cells = {a["label"]: a["text"] for a in g["actors"]}
+        lines.append(
+            f"| {g['name']} | {cells.get('개인', '-')} | {cells.get('기관', '-')} "
+            f"| {cells.get('외국인', '-')} | {g['story']} |"
+        )
+    return "\n".join(lines)
+
+
+def _macro_cards_md(rows: list[FactRow], rest: list[FactRow]) -> str:
+    """카드는 HTML만의 모양이라 마크다운은 표로 낸다. 다만 **접는 규칙은
+    같다** — 앞자리 지표만 싣고 나머지는 아래에 이어 붙인다."""
+    if not rows:
+        return "(해당 없음)"
+    out = _facts_table_md(rows)
+    if rest:
+        out += f"\n\n_그 밖의 거시지표 {len(rest)}개_\n\n" + _facts_table_md(rest)
+    return out
+
+
+def _filing_summary_md(rows: list[FactRow]) -> str:
+    s = filing_summary(rows)
+    if not s["total"]:
+        return "(해당 없음)"
+    line = (f"**공시 {s['total']}건** — 실적 발표 {s['earnings_count']} · "
+            f"그 밖의 정기공시·13F {s['other_count']}.")
+    if s["earnings_subjects"]:
+        line += f" 실적을 낸 곳: {' · '.join(s['earnings_subjects'])}."
+    return f"{line}\n\n{_facts_table_md(rows)}"
+
+
 def _block_md(block: dict) -> str:
     kind = block["kind"]
     if kind == "facts":
         return _facts_table_md(block["rows"])
+    if kind == "flow":
+        return _flow_md(flow_groups(block["rows"]))
+    if kind == "macro_cards":
+        return _macro_cards_md(block["rows"], block["rest"])
+    if kind == "filing_summary":
+        return _filing_summary_md(block["rows"])
     if kind == "hero":
         # 카드 배치는 화면(HTML)만의 것이다. 마크다운에는 바로 아래에
         # `headline`이 같은 4개 숫자를 이미 한 줄로 싣고 있으므로, 여기서

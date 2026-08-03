@@ -33,6 +33,8 @@ from .render_md import (
     SECTOR_TITLE,
     arrow,
     direction,
+    filing_summary,
+    flow_groups,
     fmt_pct,
     heading,
     safe_href,
@@ -223,10 +225,83 @@ def _calendar_table_html(columns: list[str], rows: list[list[str]]) -> str:
     return _scroll(f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>")
 
 
+FLOW_LEGEND = ("막대 길이는 그날 순매수 금액의 비중입니다. 빨강 = 순매수 · 파랑 = 순매도. "
+               "개인·기관·외국인의 순매수를 더하면 0이므로, 값 하나하나보다 "
+               "어느 쪽이 사고 어느 쪽이 파는지가 정보입니다.")
+
+
+def _flow_html(groups: list[dict]) -> str:
+    """수급 — 종목 하나에 막대 하나. 표에서는 안 보이던 "누가 사고 누가
+    팔았나"가 이 모양에서는 첫눈에 읽힌다.
+
+    막대는 장식이 아니라 데이터이므로 **문장이 항상 함께 나간다**: 흑백
+    출력·화면 낭독기·색각이상에서 막대만 남으면 그 줄은 아무 말도 못 한다
+    (색만으로 정보를 주지 않는다는 이 프로젝트의 규약과 같다)."""
+    if not groups:
+        return "<p>(해당 없음)</p>"
+    out = [f'<p class="legend">{_esc(FLOW_LEGEND)}</p>']
+    for g in groups:
+        out.append('<div class="flow">'
+                   f'<div class="name">{_esc(g["name"])}'
+                   f'<span class="story">{_esc(g["story"])}</span></div>')
+        if g["quiet"]:
+            out.append('<div class="bar"><span class="zero">움직임 작음</span></div>')
+        else:
+            bars = "".join(
+                f'<span class="{"buy" if a["buy"] else "sell"}" '
+                f'style="flex:{abs(a["value"]) / g["total"]:.4f}">'
+                f'{_esc(a["label"])} {_esc(a["text"])}</span>'
+                for a in g["actors"] if a["value"]
+            )
+            out.append(f'<div class="bar">{bars}</div>')
+        out.append("</div>")
+    return "".join(out)
+
+
+def _macro_cards_html(rows: list[FactRow], rest: list[FactRow]) -> str:
+    """거시지표 — 값 하나짜리 관측이라 표의 다섯 칸 중 넷이 빈다. 카드가 맞다."""
+    if not rows:
+        return "<p>(해당 없음)</p>"
+    cards = []
+    for r in rows:
+        d = direction(r.delta_pct)
+        # 동결은 "― +0.00%"가 아니라 "― 변화 없음"이다. 기준금리처럼 몇 달째
+        # 그대로인 값이 매일 소수점 둘째 자리까지 0을 찍으면, 읽는 사람은
+        # 그것도 움직인 값으로 훑게 된다.
+        change = {"": "―", "flat": "― 변화 없음"}.get(d) or f"{arrow(r.delta_pct)} {fmt_pct(r.delta_pct)}"
+        cards.append(f'<div class="card"><div class="k">{_esc(r.label)}</div>'
+                     f'<div class="v">{_esc(r.value)}</div>'
+                     f'<div class="c {d}">{_esc(change)}</div></div>')
+    html = f'<div class="mgrid">{"".join(cards)}</div>'
+    if rest:
+        html += (f"<details><summary>나머지 거시지표 {len(rest)}개 펼치기</summary>"
+                 f"{_facts_table_html(rest)}</details>")
+    return html
+
+
+def _filing_summary_html(rows: list[FactRow]) -> str:
+    s = filing_summary(rows)
+    if not s["total"]:
+        return "<p>(해당 없음)</p>"
+    line = (f'<p><strong>공시 {s["total"]}건</strong> — 실적 발표 {s["earnings_count"]} · '
+            f'그 밖의 정기공시·13F {s["other_count"]}.')
+    if s["earnings_subjects"]:
+        line += f' 실적을 낸 곳: {_esc(" · ".join(s["earnings_subjects"]))}.'
+    line += "</p>"
+    return (line + f"<details><summary>공시 {s['total']}건 전체 펼치기</summary>"
+            f"{_facts_table_html(rows)}</details>")
+
+
 def _block_html(block: dict) -> str:
     kind = block["kind"]
     if kind == "facts":
         return _facts_table_html(block["rows"])
+    if kind == "flow":
+        return _flow_html(flow_groups(block["rows"]))
+    if kind == "macro_cards":
+        return _macro_cards_html(block["rows"], block["rest"])
+    if kind == "filing_summary":
+        return _filing_summary_html(block["rows"])
     if kind == "hero":
         return _hero_html(block["rows"])
     if kind == "legend":

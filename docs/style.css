@@ -88,3 +88,28 @@ td.sp { width:7.5rem; text-align:right; }
 .spark .line { fill:none; stroke:currentColor; stroke-width:1.6; stroke-linejoin:round; }
 .spark .area { fill:currentColor; opacity:.10; stroke:none; }
 .spark circle { fill:currentColor; }
+
+/* 수급 막대 — 종목 하나에 한 줄. 개인·기관·외국인의 순매수 합은 0이므로
+   폭의 비율이 곧 "누가 사고 누가 팔았나"다. 색은 위의 등락 팔레트를 그대로
+   쓴다(빨강 = 사는 쪽). 막대 안의 글자는 색 위에 얹히므로 --bg가 아니라
+   고정 흰색이다 — 다크모드에서 배경색을 쓰면 빨강 위에 남색이 온다. */
+.flow { margin:.9rem 0; }
+.flow .name { font-weight:650; font-size:.95rem; }
+.flow .story { color:var(--muted); font-size:.85rem; margin-left:.35rem; font-weight:400; }
+.bar { display:flex; height:1.5rem; border-radius:4px; overflow:hidden; margin-top:.3rem;
+       background:var(--th-bg); font-size:.72rem; }
+.bar span { display:flex; align-items:center; justify-content:center; color:#fff;
+            white-space:nowrap; overflow:hidden; min-width:0; }
+.bar .buy { background:var(--up); } .bar .sell { background:var(--down); }
+.bar .zero { background:var(--line); color:var(--muted); flex:1; }
+
+/* 거시지표 카드 — 값 하나짜리 관측이라 표의 다섯 칸 중 넷이 빈다. */
+.mgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr)); gap:.5rem;
+         margin:.5rem 0 .8rem; }
+.mgrid .card { border:1px solid var(--line); border-radius:8px; padding:.5rem .6rem; }
+.mgrid .k { font-size:.75rem; color:var(--muted); }
+.mgrid .v { font-size:1.05rem; font-weight:700; font-variant-numeric:tabular-nums; }
+.mgrid .c { font-size:.78rem; font-weight:600; color:var(--muted); }
+.mgrid .c.up { color:var(--up); } .mgrid .c.down { color:var(--down); }
+
+details > summary { cursor:pointer; font-weight:600; margin:.6rem 0; color:var(--accent); }

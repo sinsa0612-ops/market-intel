@@ -183,7 +183,7 @@ def _fmt_value_with_asof(row) -> str:
 
 def _row_from_fact(
     row, label: str, comparison: str, delta_pct: float | None = None,
-    value: str | None = None, doc_url: str = "",
+    value: str | None = None, doc_url: str = "", group: str = "",
 ) -> FactRow:
     """`value`는 표시 문자열을 직접 지정할 때만 쓴다(공시 행처럼 `value_text`가
     수치가 아닌 경우). 기본은 값+기준일 조합인 `_fmt_value_with_asof`.
@@ -196,7 +196,7 @@ def _row_from_fact(
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",
         known_at=row["known_at"], subject=row["subject"], metric=row["metric"],
         raw_value=row["value_num"] if row["value_num"] is not None else row["value_text"],
-        delta_pct=delta_pct, doc_url=doc_url,
+        delta_pct=delta_pct, doc_url=doc_url, group=group,
     )
 
 
@@ -485,7 +485,8 @@ def _macro_facts(mmap: dict) -> list[FactRow]:
         comparison = f"직전 관측 대비 {info['delta_pct']:+.2f}%" if info["delta_pct"] is not None else "직전 관측 없음"
         # 거시지표는 관측이 1개씩이라 시계열 그래프는 나오지 않는다(series 없음).
         # 방향(화살표·색)은 직전 관측이 있을 때만 붙는다.
-        out.append(_row_from_fact(info["latest"], label, comparison, delta_pct=info["delta_pct"]))
+        out.append(_row_from_fact(info["latest"], label, comparison,
+                                  delta_pct=info["delta_pct"], group="macro"))
     out.sort(key=lambda r: r.subject)
     return out
 
@@ -526,7 +527,7 @@ def _financials_facts(conn, cutoff, subjects: list[str] | None = None) -> list[F
         for row in group[:2]:
             label = f"{_subject_name(subject)} {_FINANCIALS_LABELS.get(metric, metric)}"
             basis = _COMPARISON_BASIS_KO.get(row["comparison_basis"], row["comparison_basis"] or "")
-            out.append(_row_from_fact(row, label, basis))
+            out.append(_row_from_fact(row, label, basis, group="financials"))
     out.sort(key=lambda r: (r.subject, r.metric))
     return out
 
@@ -649,7 +650,7 @@ def _filing_facts(conn, cutoff, since: str | None = None) -> list[FactRow]:
         label = f"{who} {_filing_kind(row)}"
         out.append(_row_from_fact(
             row, label, row["publisher"] or "",
-            value=_filing_value(row, ref), doc_url=_filing_doc_url(row),
+            value=_filing_value(row, ref), doc_url=_filing_doc_url(row), group="filing",
         ))
     out.sort(key=lambda r: r.known_at, reverse=True)
     return out
@@ -660,9 +661,9 @@ def _consensus_facts(conn, cutoff, subject: str) -> list[FactRow]:
     out = []
     for row in rows:
         if row["metric"] == "consensus_eps":
-            out.append(_row_from_fact(row, "컨센서스 EPS", ""))
+            out.append(_row_from_fact(row, "컨센서스 EPS", "", group="consensus"))
         elif row["metric"] == "consensus_revenue":
-            out.append(_row_from_fact(row, "컨센서스 매출", ""))
+            out.append(_row_from_fact(row, "컨센서스 매출", "", group="consensus"))
     return out
 
 
@@ -675,8 +676,8 @@ def _register_gap(conn, gap_id: str, subject: str, metric: str, reason: str) -> 
     conn.commit()
 
 
-# 투자자별 수급 항목명. 수량과 금액을 둘 다 싣는 이유는 서로 다른 질문에 답하기
-# 때문이다 — 수량은 "몇 주를 담았나", 금액은 "얼마를 넣었나".
+# 투자자별 수급 항목명. 수량 라벨이 남아 있는 것은 DB와 상세 페이지가 여전히
+# 두 단위를 다 쓰기 때문이다 — 리포트 표에는 금액만 실린다(`_kr_flows` 참조).
 _FLOW_LABELS = {
     "net_buy_foreign": "외국인 순매수(주)",
     "net_buy_institution": "기관 순매수(주)",
@@ -695,6 +696,19 @@ def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
     outstanding (test_kr_flows_appear_when_present) — the branch is on
     fact presence, not a feature flag."""
     rows = db_mod.facts_as_of(conn, cutoff, category="flow")
+    # **같은 매매를 두 단위로 쓴 행은 하나만 싣는다.** KIS는 주체별로 금액과
+    # 주식 수를 같이 주는데, 표에서는 행을 두 배로 늘리기만 한다(실측
+    # 2026-08-03: 30행 중 15행이 주식 수). 리포트가 답하는 질문은 "누가 얼마어치
+    # 사고 팔았나"이고 그 답은 금액이다 (CEO 결정 2026-08-03). 버리는 게 아니라
+    # DB에 그대로 있고 상세 페이지가 쓴다.
+    #
+    # 종목별로 판단하는 이유: pykrx는 **주식 수만** 준다. 무조건 금액만
+    # 남기면 그 소스의 수급이 통째로 사라지고 리포트가 "한국 수급 결측"이라고
+    # 신고한다 — 데이터가 있는데 없다고 말하는 것이다(테스트
+    # `test_kr_flows_appear_when_present`가 이것을 잡는다).
+    priced = {r["subject"] for r in rows if (r["metric"] or "").endswith("_value")}
+    rows = [r for r in rows
+            if (r["metric"] or "").endswith("_value") or r["subject"] not in priced]
     if rows:
         # **표시 가드.** KIS는 한 번 호출에 30거래일을 준다. 그대로 실으면 리포트
         # 하나에 900행(5종목 x 30일 x 6지표)이 들어가고 같은 라벨이 30번 반복돼
@@ -715,6 +729,10 @@ def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
             _row_from_fact(
                 r, f"{_subject_name(r['subject'])} {_FLOW_LABELS.get(r['metric'], r['metric'])}",
                 f"{(r['event_at'] or '')[:10]} · {r['publisher'] or ''}".strip(" ·"),
+                # 막대는 **금액 행에만** 붙인다. 막대 길이는 서로 더할 수 있는
+                # 양이라는 뜻인데, 주식 수는 종목이 다르면 더할 수도 비교할
+                # 수도 없다. 갈래가 없는 행은 지금까지 쓰던 표로 떨어진다.
+                group="flow" if (r["metric"] or "").endswith("_value") else "",
             )
             for r in latest.values()
         ]
