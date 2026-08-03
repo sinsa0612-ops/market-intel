@@ -348,7 +348,10 @@ def _headline(price_map: dict) -> str:
         and abs(price_map[s]["delta_pct"]) >= _CORE16_MOVE_THRESHOLD
     )
     n_missing = sum(1 for s in CORE16_SYMBOLS if s not in price_map)
-    return f"{kospi} · {spx} · {krw} · {us10y} — Core16 중 ±3% 이상 {n_movers}종목, 결측 {n_missing}건"
+    # "Core16"이라고 박아 두면 관측군이 늘 때마다 화면이 거짓말을 한다(실제로
+    # 2026-08-03에 18개가 됐다). 개수를 세어 쓴다 — 다음에 또 늘어도 맞는다.
+    return (f"{kospi} · {spx} · {krw} · {us10y} — 관측기업 {len(CORE16_SYMBOLS)}곳 중 "
+            f"±3% 이상 {n_movers}종목, 결측 {n_missing}건")
 
 
 # --- 업종·시장 폭 (spec §12 표 + §6.1 "시장 폭과 순환은 어떤가") -----------
@@ -426,13 +429,13 @@ def _breadth_line(summaries: list[SectorSummary]) -> str:
     이미 "반도체 쏠림"이라고 말한다."""
     observed = sum(s.total for s in summaries)
     if not observed:
-        return "Core 16 등락 관측 없음 — 시장 폭을 계산할 종가가 차단선 이전에 없습니다."
+        return "관측기업 등락 관측 없음 — 시장 폭을 계산할 종가가 차단선 이전에 없습니다."
     up = sum(s.up for s in summaries)
     parts = [
         f"{s.sector} {s.up}/{s.total}" if s.total else f"{s.sector} 관측 없음"
         for s in summaries
     ]
-    return f"Core 16 중 {up}/{observed}개 상승 · " + " · ".join(parts)
+    return f"관측기업 {up}/{observed}개 상승 · " + " · ".join(parts)
 
 
 # --- macro ----------------------------------------------------------------

@@ -138,7 +138,9 @@ def cmd_db_stats(settings) -> int:
             coverage_lines.append(f"{sym['symbol']} latest_close_event_date={row['event_at'][:10].replace('-', '')}")
         else:
             coverage_lines.append(f"{sym['symbol']} latest_close_event_date=NONE")
-    print(f"core16_price_coverage={covered}/{len(CORE16)}")
+    # 라벨에 "core16"을 박아 두면 관측군이 늘 때(2026-08-03에 18개) 화면이
+    # `core16_price_coverage=0/18`이라고 말한다 — 숫자와 이름이 서로 어긋난다.
+    print(f"observed_price_coverage={covered}/{len(CORE16)}")
     for line in coverage_lines:
         print(line)
 

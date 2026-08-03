@@ -1,5 +1,6 @@
 """ST1 acceptance test 6: CLI smoke — init then db stats in the fixed
 output format (spec A8), parseable as evidence."""
+from market_intel.universe import CORE16
 from market_intel import cli
 from market_intel.db import init_db
 
@@ -12,7 +13,7 @@ def test_init_and_db_stats_format(settings, capsys):
     assert "facts_total=0" in out
     assert "facts_by_provider:" in out
     assert "facts_by_status:" in out
-    assert "core16_price_coverage=0/16" in out
+    assert f"observed_price_coverage=0/{len(CORE16)}" in out
     assert "last_run: none" in out
 
 

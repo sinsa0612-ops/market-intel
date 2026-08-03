@@ -19,7 +19,7 @@ from zoneinfo import ZoneInfo
 from pykrx import stock
 
 from ..models import CollectContext, FactCandidate, ProviderResult, RawItem
-from ..universe import KR_CORE4_SYMBOLS
+from ..universe import KR_CORE_SYMBOLS
 
 KR_TZ = ZoneInfo("Asia/Seoul")
 MARKETS = ["KOSPI", "KOSDAQ"]
@@ -85,7 +85,7 @@ class PykrxProvider:
                     )
                 )
 
-        for ticker in KR_CORE4_SYMBOLS:
+        for ticker in KR_CORE_SYMBOLS:
             code = ticker.split(".")[0]
             for investor, metric in INVESTOR_METRIC.items():
                 try:

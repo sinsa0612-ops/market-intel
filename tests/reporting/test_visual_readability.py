@@ -37,6 +37,9 @@ SPEC_SECTORS = {
     "XOM": "전력·산업", "AEP": "전력·산업", "CAT": "전력·산업",
     "WMT": "소비·수출", "005380.KS": "소비·수출",
     "LLY": "헬스케어",
+    # 비어 있던 두 축 (CEO 확정 2026-08-02, 구현 2026-08-03)
+    "005490.KS": "소재·철강",
+    "EQIX": "부동산·데이터센터",
 }
 
 
@@ -74,8 +77,12 @@ def _row_chunk(html_doc: str, label: str) -> str:
 # --- ① 업종 정보 (명세 §12) ------------------------------------------------
 
 def test_universe_sector_matches_spec_table():
-    """Core 16 종목은 명세 §12의 6축에 정확히 배정되고, 지수·환율·원자재는
-    Core 16이 아니므로 sector가 없다(None)."""
+    """관측 기업은 §12의 축에 정확히 하나씩 배정되고, 지수·환율·원자재는
+    기업이 아니므로 sector가 없다(None).
+
+    축이 6개에서 8개가 된 것은 §12 표를 벗어난 CEO 확정 사항이다(2026-08-02):
+    GICS 11업종에 대보면 소재·부동산이 0개 기업이라 그 두 업종에는 깊이 층
+    (분기 재무·가설)이 통째로 없었다. 근거는 universe.py의 SECTORS 주석."""
     by_symbol = {m["symbol"]: m for m in universe_mod.UNIVERSE}
     for symbol, sector in SPEC_SECTORS.items():
         assert by_symbol[symbol]["sector"] == sector, symbol
@@ -84,7 +91,9 @@ def test_universe_sector_matches_spec_table():
             assert m["sector"] is None, f"{m['symbol']}는 Core 16이 아닌데 업종이 붙었다"
     assert list(universe_mod.SECTORS) == [
         "플랫폼·AI 수익화", "반도체·공급망", "금융·신용", "전력·산업", "소비·수출", "헬스케어",
+        "소재·철강", "부동산·데이터센터",
     ]
+    assert all(m["sector"] for m in universe_mod.CORE16), "축 없는 관측 기업이 있다"
     assert universe_mod.SECTOR_BY_SYMBOL == SPEC_SECTORS
 
 
@@ -161,13 +170,13 @@ def test_breadth_line_answers_whole_market_or_narrow(settings):
     report = _report(conn)
     conn.close()
 
-    assert "Core 16 중 4/6개 상승" in report.breadth, report.breadth
+    assert "관측기업 4/6개 상승" in report.breadth, report.breadth
     assert "반도체·공급망 4/4" in report.breadth, report.breadth
     assert "소비·수출 0/2" in report.breadth, report.breadth
     assert "헬스케어 관측 없음" in report.breadth, report.breadth
 
     assert report.breadth in render_md_mod.render_markdown(report)
-    assert "Core 16 중 4/6개 상승" in render_html_mod.render_html(report)
+    assert "관측기업 4/6개 상승" in render_html_mod.render_html(report)
 
 
 def test_breadth_states_absence_when_nothing_observed(settings):

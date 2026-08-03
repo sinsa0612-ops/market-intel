@@ -21,11 +21,15 @@ FINANCIALS_URL = "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json"
 KR_TZ = ZoneInfo("Asia/Seoul")
 
 # stock_code -> (subject symbol used elsewhere in this DB, display name)
-KR_CORE4 = {
+KR_CORE = {
     "005930": ("005930.KS", "삼성전자"),
     "000660": ("000660.KS", "SK하이닉스"),
     "105560": ("105560.KS", "KB금융"),
     "005380": ("005380.KS", "현대차"),
+    # 소재·철강 축 (CEO 확정 2026-08-02). 기업이 늘면 분기 실적 읽기 부담도
+    # 늘지만 명세 §12가 "분기: 전체의 실적·가이던스 갱신"을 요구하므로
+    # 관측군에 넣고 재무를 안 읽을 수는 없다 — 의도된 비용이다.
+    "005490": ("005490.KS", "POSCO홀딩스"),
 }
 
 # DART account_nm labels for the IS lines we try to extract (best-effort;
@@ -57,7 +61,7 @@ class DartProvider:
         if corp_err:
             return ProviderResult(status="ERROR", reason_code="empty_response", raw_items=raw_items, safe_detail=corp_err[:300])
 
-        for stock_code, (subject, name) in KR_CORE4.items():
+        for stock_code, (subject, name) in KR_CORE.items():
             corp_code = corp_codes.get(stock_code)
             if not corp_code:
                 missing.append(f"{stock_code}:corp_code_not_found")
@@ -104,7 +108,7 @@ class DartProvider:
         for item in root.iter("list"):
             stock_code = (item.findtext("stock_code") or "").strip()
             corp_code = (item.findtext("corp_code") or "").strip()
-            if stock_code in KR_CORE4:
+            if stock_code in KR_CORE:
                 mapping[stock_code] = corp_code
 
         raw = RawItem(

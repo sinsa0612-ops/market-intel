@@ -26,7 +26,8 @@ def test_yfinance_gets_core16_close_prices(settings):
     assert result.status in ("OK", "PARTIAL")
     subjects = {f.subject for f in result.facts if f.metric == "price_close"}
     covered = sum(1 for s in CORE16 if s["symbol"] in subjects)
-    assert covered == 16, f"expected all 16 Core symbols to have a close price, got {covered}"
+    assert covered == len(CORE16), (
+        f"관측 기업 {len(CORE16)}곳 전부 종가가 와야 한다, got {covered}")
 
 
 @pytest.mark.network
@@ -80,6 +81,7 @@ def test_calendar_workflow_reaches_earnings_fomc_and_bokmpc(settings):
     conn.close()
 
     earnings_covered = len({r["subject"] for r in rows if r["subject"] in {m["symbol"] for m in CORE16}})
-    assert earnings_covered >= 14, f"expected >=14/16 Core16 earnings dates, got {earnings_covered}"
+    assert earnings_covered >= len(CORE16) - 2, (
+        f"관측 기업 {len(CORE16)}곳 중 >={len(CORE16) - 2}곳의 실적일이 와야 한다, got {earnings_covered}")
     assert any(r["name"] == "FOMC" for r in rows), "expected at least one upcoming FOMC meeting"
     assert any(r["name"] == "한국은행 금융통화위원회" for r in rows), "expected at least one upcoming BOK MPC meeting"

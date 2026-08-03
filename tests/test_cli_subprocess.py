@@ -11,6 +11,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from market_intel.universe import CORE16
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ALL_PROVIDER_NAMES = ("yfinance", "pykrx", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart")
 
@@ -41,7 +43,7 @@ def test_init_then_db_stats_exit_zero_with_no_stdin(tmp_path):
     assert "facts_total=0" in out
     assert "facts_by_provider:" in out
     assert "facts_by_status:" in out
-    assert "core16_price_coverage=0/16" in out
+    assert f"observed_price_coverage=0/{len(CORE16)}" in out
     assert "last_run: none" in out
 
 

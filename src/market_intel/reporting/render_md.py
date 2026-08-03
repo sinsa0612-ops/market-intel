@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import re
 
+from ..universe import CORE16_SYMBOLS
 from .model import DATA_STATUS_KO, FactRow, Report
 
 # judge.md 「양쪽 다 틀린 것」 4 + [운영 이슈]: an empty report must say so on
@@ -99,11 +100,14 @@ SECTOR_NOTE = ("업종 대표값은 평균이 아니라 중앙값입니다 — �
 # 업종 표가 두 개인 이유를 CEO가 한 줄로 알 수 있어야 한다. 위 표는 시장을
 # 재는 자(업종 ETF), 아래 표는 내가 들여다보는 기업들이다.
 SECTOR_INDEX_TITLE = "업종 지수 — 시장 전체가 업종별로 어떻게 움직였나"
-SECTOR_TITLE = "업종 묶음 — 내가 관측하는 Core 16 기업은 어땠나"
+SECTOR_TITLE = "업종 묶음 — 내가 관측하는 기업들은 어땠나"
 # 따옴표는 쓰지 않는다: HTML 렌더러가 `_esc(quote=True)`로 &#x27;로 바꿔버려
 # 같은 문장이 두 형식에서 다른 글자가 된다(테스트가 잡았다).
+# 기업 수는 세어서 쓴다 — "16곳"이라고 박아 두면 관측군이 늘 때마다(2026-08-03에
+# 18곳이 됐다) 화면이 조용히 거짓말을 한다.
 SECTOR_INDEX_NOTE = ("이 표는 업종별 대표 ETF 한 종목으로 시장 전체가 업종별로 어떻게 움직였는지 봅니다. "
-                     "아래 업종 묶음 표는 그와 별개로, 제가 매일 들여다보는 기업 16곳만 묶은 것입니다.")
+                     f"아래 업종 묶음 표는 그와 별개로, 제가 매일 들여다보는 기업 {len(CORE16_SYMBOLS)}곳만 "
+                     "묶은 것입니다.")
 # 업종 지수 표의 시장 구분 표기. 값은 `SectorIndexRow.market`.
 MARKET_LABELS = {"US": "미국", "KR": "한국"}
 

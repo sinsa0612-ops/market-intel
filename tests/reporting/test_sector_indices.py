@@ -116,8 +116,12 @@ def test_all_16_sector_indices_are_registered():
 
 
 def test_sector_indices_never_join_core16():
-    """Core 16은 명세 §14가 못박은 경계다. 지수를 늘려도 그 16개는 그대로다."""
-    assert len(universe_mod.CORE16_SYMBOLS) == 16
+    """관측 기업군과 업종 지수는 서로의 집계에 절대 섞이지 않는다.
+
+    기업 수는 여기서 못박지 않는다 — 2026-08-03에 EQIX·POSCO홀딩스가 들어와
+    18개가 됐고(비어 있던 소재·부동산 축), 이 파일이 지키려는 계약은 "몇 개냐"가
+    아니라 "두 집계가 서로에게 닿지 않는다"이다."""
+    assert len(universe_mod.CORE16_SYMBOLS) == len(universe_mod.CORE16)
     assert set(universe_mod.CORE16_SYMBOLS).isdisjoint(
         set(SPEC_US_SECTOR_INDICES) | set(SPEC_KR_SECTOR_INDICES))
     assert set(universe_mod.SECTOR_BY_SYMBOL).isdisjoint(
@@ -141,33 +145,35 @@ def test_collect_universe_carries_the_sector_indices():
 
 def test_core16_breadth_is_untouched_by_sector_indices(settings):
     """이 파일의 존재 이유. 업종 지수 16개가 전부 +10%로 뜨는 날에도
-    "Core 16 중 4/6개 상승"은 그대로여야 한다."""
+    "관측기업 4/6개 상승"은 그대로여야 한다."""
     conn = _open(settings)
     _seed_core16_four_of_six_up(conn, settings.raw_dir)
     _seed_all_sector_indices(conn, settings.raw_dir, us_up=True)
     report = _report(conn)
     conn.close()
 
-    assert "Core 16 중 4/6개 상승" in report.breadth, report.breadth
+    assert "관측기업 4/6개 상승" in report.breadth, report.breadth
     assert "반도체·공급망 4/4" in report.breadth, report.breadth
     assert "소비·수출 0/2" in report.breadth, report.breadth
     assert "헬스케어 관측 없음" in report.breadth, report.breadth
 
     totals = {s.sector: s.total for s in report.sector_summary}
     assert totals == {"플랫폼·AI 수익화": 0, "반도체·공급망": 4, "금융·신용": 0,
-                      "전력·산업": 0, "소비·수출": 2, "헬스케어": 0}
+                      "전력·산업": 0, "소비·수출": 2, "헬스케어": 0,
+                      "소재·철강": 0, "부동산·데이터센터": 0}
     assert sum(totals.values()) == 6, "업종 지수가 업종 표에 섞였다"
 
 
 def test_core16_headline_counts_are_untouched_by_sector_indices(settings):
-    """헤드라인의 "±3% 이상 N종목 / 결측 M건"도 Core 16만 센다."""
+    """헤드라인의 "±3% 이상 N종목 / 결측 M건"도 관측 기업만 센다."""
     conn = _open(settings)
     _seed_core16_four_of_six_up(conn, settings.raw_dir)
     _seed_all_sector_indices(conn, settings.raw_dir, us_up=True)
     report = _report(conn)
     conn.close()
 
-    assert "Core16 중 ±3% 이상 1종목, 결측 10건" in report.headline, report.headline
+    expected = f"관측기업 {len(universe_mod.CORE16_SYMBOLS)}곳 중 ±3% 이상 1종목, 결측 12건"
+    assert expected in report.headline, report.headline
 
 
 def test_sector_indices_do_not_enter_the_main_market_reaction_table(settings):
@@ -252,7 +258,7 @@ def test_sector_index_table_renders_in_both_formats(settings):
 def test_sector_index_note_is_readable_by_a_non_expert():
     """비전공자가 읽을 수 있어야 한다 — 두 표가 각각 무엇인지 말한다."""
     note = render_md_mod.SECTOR_INDEX_NOTE
-    assert "시장 전체" in note and "16" in note
+    assert "시장 전체" in note and str(len(universe_mod.CORE16_SYMBOLS)) in note
     assert len(note) <= 200, "한 줄 설명이어야 한다"
 
 

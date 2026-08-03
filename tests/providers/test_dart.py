@@ -8,7 +8,8 @@ from datetime import datetime, timezone
 import httpx
 
 from market_intel.models import CollectContext
-from market_intel.providers.dart import KR_CORE4, DartProvider
+from market_intel.providers.dart import KR_CORE, DartProvider
+from market_intel.universe import KR_CORE_SYMBOLS
 
 FAKE_KEY = "FAKEDARTKEY789"
 
@@ -123,11 +124,14 @@ def test_fake_key_never_appears_in_stored_safe_url(settings, caplog):
     assert FAKE_KEY not in caplog.text
 
 
-def test_corp_code_never_hardcoded_only_kr_core4_constant():
-    # KR_CORE4 lists the 4 target companies; corp_code values themselves
+def test_corp_code_never_hardcoded_only_kr_core_constant():
+    # KR_CORE lists the Korean target companies; corp_code values themselves
     # must come only from the runtime XML resolution (never literals here).
-    assert set(KR_CORE4.keys()) == {"005930", "000660", "105560", "005380"}
-    for stock_code, (subject, _name) in KR_CORE4.items():
+    # 005490(POSCO홀딩스)은 2026-08-03에 소재·철강 축을 채우며 들어왔다.
+    assert set(KR_CORE.keys()) == {"005930", "000660", "105560", "005380", "005490"}
+    assert set(KR_CORE.keys()) == {s.removesuffix(".KS") for s in KR_CORE_SYMBOLS}, (
+        "universe의 한국 관측 기업 목록과 DART 대상이 어긋났다")
+    for stock_code, (subject, _name) in KR_CORE.items():
         assert subject == f"{stock_code}.KS"
 
 

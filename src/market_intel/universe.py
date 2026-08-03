@@ -7,10 +7,21 @@ from __future__ import annotations
 # spec §12 "Core 16: 시장 관측 기업군" — the six axes of the table, in the
 # order the document lists them. These are the spec's own words: nothing is
 # invented here and nothing is merged. §6.1 asks 업종 to answer "시장 폭과
-# 순환은 어떤가", which is only answerable if every Core 16 company sits on
+# 순환은 어떤가", which is only answerable if every observed company sits on
 # exactly one of these axes.
+#
+# 마지막 두 축은 §12 표 밖이다 (CEO 확정 2026-08-02, 구현 2026-08-03). 근거:
+# 세계 표준 분류(GICS 11업종)에 §12의 16개 기업을 대보면 **소재와 부동산이
+# 통째로 0개**였다. 업종 지수 16개를 따로 붙여 "폭"은 덮었지만, 그 두 업종에는
+# 분기 재무·가설 검증이 걸리는 **기업이 하나도 없어** 깊이 층이 비어 있었다.
+# §12 운영규칙("연간: 대표성을 잃은 기업·지표 교체 검토")과 §14("3개월 후 조정")가
+# 관측군을 고정이 아니라 갱신 대상으로 두고 있으므로 표를 늘리는 것 자체는
+# 명세 안이다. 축 이름이 GICS의 `소재`/`부동산`이 아니라 복합어인 것은 나머지
+# 여섯 축과 같은 규칙을 따랐기 때문이다 — §12 표의 셋째 칸("관측할 시장 신호")을
+# 이름에 담는다.
 SECTORS: tuple[str, ...] = (
     "플랫폼·AI 수익화", "반도체·공급망", "금융·신용", "전력·산업", "소비·수출", "헬스케어",
+    "소재·철강", "부동산·데이터센터",
 )
 
 
@@ -67,6 +78,16 @@ UNIVERSE: list[dict] = [
     _sym("WMT", "US", "US", "equity", "Walmart", True, sector="소비·수출"),
     _sym("005380.KS", "KR", "KR", "equity", "Hyundai Motor", True, sector="소비·수출", name_ko="현대차"),
     _sym("LLY", "US", "US", "equity", "Eli Lilly", True, sector="헬스케어"),
+    # --- 비어 있던 두 업종 (CEO 확정 2026-08-02, 구현 2026-08-03) -----------
+    # 고른 기준은 시가총액이 아니라 §12 표의 셋째 칸("관측할 시장 신호")이다.
+    # EQIX: §12가 AEP를 넣은 이유가 "데이터센터 전력수요"인데 EQIX는 그
+    #   데이터센터 자체다. NVDA·MSFT의 AI CAPEX가 실제 건물·전력으로 가는지
+    #   교차 확인이 된다 — 리츠 한 종목이 아니라 AI 서사의 실물 끝단이다.
+    # 005490.KS: §12가 중시하는 "한국 수출·중국 경기"를 철강 수요로 직접 읽고,
+    #   이미 추적 중인 CAT(건설·광산)·구리 가격과 짝이 맞는다. 한국 기업이
+    #   반도체·금융·자동차에 몰려 있던 공백도 함께 메운다.
+    _sym("EQIX", "US", "US", "equity", "Equinix", True, sector="부동산·데이터센터"),
+    _sym("005490.KS", "KR", "KR", "equity", "POSCO Holdings", True, sector="소재·철강", name_ko="POSCO홀딩스"),
     _sym("^KS11", "KR", "KR", "index", "KOSPI", unit="point", name_ko="KOSPI"),
     _sym("^KQ11", "KR", "KR", "index", "KOSDAQ", unit="point", name_ko="KOSDAQ"),
     _sym("^GSPC", "US", "US", "index", "S&P 500", unit="point", name_ko="S&P 500"),
@@ -118,10 +139,17 @@ UNIVERSE: list[dict] = [
     _sym("117680.KS", "KR", "KR", "sector_index", "KODEX Steel", name_ko="KODEX 철강"),
 ]
 
+# 이름의 "16"은 역사다 — 2026-08-03에 EQIX·POSCO홀딩스가 들어와 **18개**다.
+# 상수 이름을 바꾸지 않은 것은 src/tests 33곳에 걸쳐 있어 기능 변경과 섞으면
+# 리뷰가 불가능해지기 때문이고, 대신 **사람에게 보이는 문구는 전부 개수를
+# 계산해서 쓴다**(`_breadth_line`/`_headline`) — 다음에 종목이 늘어도 화면의
+# 숫자가 다시 거짓말을 하지 않는다.
 CORE16: list[dict] = [m for m in UNIVERSE if m["core16"]]
 CORE16_SYMBOLS: list[str] = [m["symbol"] for m in CORE16]
 SECTOR_BY_SYMBOL: dict[str, str] = {m["symbol"]: m["sector"] for m in CORE16 if m["sector"]}
 SECTOR_INDEX_SYMBOLS: list[str] = [m["symbol"] for m in UNIVERSE if m["asset_type"] == "sector_index"]
 
-# Korean Core 4 (subset of Core16) — used by pykrx investor-flow and DART filings.
-KR_CORE4_SYMBOLS: list[str] = ["005930.KS", "000660.KS", "105560.KS", "005380.KS"]
+# 관측 기업 중 한국 상장분 — pykrx 수급과 DART 공시·재무가 이 목록을 돈다.
+KR_CORE_SYMBOLS: list[str] = [
+    "005930.KS", "000660.KS", "105560.KS", "005380.KS", "005490.KS",
+]
