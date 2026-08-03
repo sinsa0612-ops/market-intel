@@ -4,10 +4,10 @@
   "report_date": "2026-08-03",
   "cutoff_kst": "2026-08-03T07:15:00+09:00",
   "cutoff_utc": "2026-08-02T22:15:00+00:00",
-  "generated_at": "2026-08-02T23:08:28+00:00",
+  "generated_at": "2026-08-03T01:05:38+00:00",
   "title": "주간 시작 브리핑",
-  "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · 달러/원 1,436.6원(+0.0%) · 미10Y 4.74%(+1.8%) — Core16 중 ±3% 이상 7종목, 결측 0건",
-  "breadth": "Core 16 중 14/16개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 4/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 2/2 · 헬스케어 0/1",
+  "headline": "KOSPI 6,595.45(+17.9%) · S&P500 7,489.72(+0.7%) · 달러/원 1,436.6원(+0.0%) · 미10Y 4.74%(+1.8%) — 관측기업 18곳 중 ±3% 이상 7종목, 결측 2건",
+  "breadth": "관측기업 14/16개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 4/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 2/2 · 헬스케어 0/1 · 소재·철강 관측 없음 · 부동산·데이터센터 관측 없음",
   "data_status": "source_verified",
   "facts": [
     {
@@ -1198,7 +1198,7 @@
     {
       "area": "한국 수급(외국인/기관/개인)",
       "reason": "pykrx 수급 provider가 0건을 반환함(NO_DATA/empty_response, KRX 인증벽으로 investor-flow 엔드포인트가 전 시장/전 종목에 대해 빈 응답 — 2026-08-01 실측, 1단계 spec 참조). KRX 키가 도입되어 provider가 fact를 내면 이 리포트 빌더는 코드 수정 없이 수급 섹션을 채운다.",
-      "since": "2026-08-02T23:08:28+00:00",
+      "since": "2026-08-03T01:05:38+00:00",
       "gap_id": "kr_flows:net_buy"
     }
   ],
@@ -1256,6 +1256,24 @@
       "total": 1,
       "median_pct": -0.5307501526711265,
       "small_sample": true
+    },
+    {
+      "sector": "소재·철강",
+      "up": 0,
+      "down": 0,
+      "flat": 0,
+      "total": 0,
+      "median_pct": null,
+      "small_sample": false
+    },
+    {
+      "sector": "부동산·데이터센터",
+      "up": 0,
+      "down": 0,
+      "flat": 0,
+      "total": 0,
+      "median_pct": null,
+      "small_sample": false
     }
   ],
   "sector_index": [
@@ -1533,12 +1551,12 @@
     }
   ],
   "interpretation": {
-    "reading": "한국 시장의 급등(F45 +17.91%, F46 +11.63%)과 반도체주의 강세(F63 +26.81%, F64 +29.95%)는 글로벌 기술주 강세와 반도체 수요 회복에 투자자들이 응응하는 신호로 읽힙니다. 미국에서는 S&P500 상승이 F47 +0.70%에 그친 가운데 나스닥(F48 +1.00%)과 Amazon(F61 +15.32%), Alphabet(F60 +6.73%) 등 기업들의 강세가 기술주 주도 장세를 보여줍니다. 미 10년물 금리가 F53 +1.76%로 급등했음에도 VIX(F52 -6.44%)가 하락한 것은 시장이 높은 금리 수준을 받아들이면서 경제 악화는 크게 우려하지 않는다는 신호입니다.",
-    "counter_reading": "KOSPI의 +17.91% 상승폭은 단일 거래일 기준으로 극도로 큰 수치로, 데이터 오류나 시장 구조적 이상을 시사할 수 있다. F54의 달러/원 환율이 정확히 +0.00%로 움직이지 않은 것도 의심스럽다 — 일반적으로 한국 시장이 이 정도로 움직이면 환율도 함께 변한다. 미국 금리 급등(F53)은 인플레이션 우려나 경기 약세 신호일 수 있는데, S&P500의 완만한 상승(F47 +0.70%)으로만 봐서는 시장의 진정한 불안감이 표현되지 않았을 가능성이 있다. 한국의 기초 공시는 F25-F28이 모두 80일 이상 전이므로 최근 정보가 부족해 한국 시장의 급등을 설명할 만한 객관적 근거가 제한적이다.",
+    "reading": "한국 시장이 전일대비 17.91% 대폭 상승했고, 특히 반도체 종목인 삼성전자와 SK하이닉스가 각각 26.81%, 29.95%를 기록했다(F45, F63, F64). 미국의 기술기업들도 최근 실적 발표 직후 긍정적 반응을 보였으며, Amazon은 15.32%, Alphabet은 6.73% 상승했다(F60, F61). 변동성지수 VIX가 6.44% 하락하면서 시장 심리가 위험회피에서 벗어났고, 실적 강세가 글로벌 투자심리를 개선한 것으로 읽힌다(F52).",
+    "counter_reading": "미국채 10년물 금리가 1.76% 상승했고 연방기금금리 상단은 3.75%로 높은 수준을 유지하는데(F4, F53), 일반적으로 금리 인상 환경은 높은 성장성을 요구하는 기술주에 불리하다. 필라델피아 반도체지수 SOX는 0.07%만 올라 반도체 섹터 전체의 상승 폭이 제한적이며, 러셀2000이 0.50% 하락한 점은 소형주 약세로 상승이 대형주에 집중된 것을 의미한다(F50, F51). 달러/원 환율이 0.00%로 거의 변하지 않은 점은 외국인 자금의 규모 있는 순유입이 아직 본격화되지 않았을 가능성을 시사한다(F54).",
     "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 0 · 약화 0 · 무효 0 · 판정 불가 1.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 판정 불가 — 관측 부족(MSFT free_cash_flow 관측 부족(1개, 필요 3개)).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.68 (조건 >= 4.5 충족).",
-    "next_check": "2026-08-07의 Employment Situation과 2026-08-12의 Consumer Price Index 발표에서 미국 고용과 인플레이션 추이가 확인되면, F53의 금리 상승이 기술적 조정인지 구조적 우려인지 판단할 수 있다. 2026-08-04의 CAT 실적과 2026-08-05의 LLY 실적 발표 이후 S&P500의 움직임을 보면, 미국 기업 실적에 대한 시장 평가가 일관적으로 유지되는지 확인 가능하다. 한국 수급 데이터가 복구되어 외국인과 기관의 거래 흐름이 공개되면, KOSPI의 급등이 특정 투자자층의 집중적 매수에서 비롯된 것인지 확인할 수 있다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
+    "next_check": "F53 미10년물 금리가 2026-08-12 소비자물가지수 발표 이후 추가로 오르거나 내려가면, 금융 조건 추이의 방향이 명확해진다. 2026-08-07 고용통계에서 F9 비농업고용 추이와 F13 실업률이 전월 대비 개선되는지 악화되는지 확인하면 경기 회복의 실질 여부를 판단할 수 있다. 또한 2026-08-14 소매판매 발표 때 F11 소매판매 규모와 증감률 추이가 미국 소비 안정성과 한국 수출 전망을 판명하는 주요 기준이 될 것이다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
     "generated_by": "ai:claude:haiku · interpretation_v2",
-    "generated_at": "2026-08-03T00:02:56+00:00"
+    "generated_at": "2026-08-03T01:17:31+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -1558,8 +1576,8 @@
       "model": "claude:haiku",
       "prompt_version": "interpretation_v2",
       "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
-      "generated_at": "2026-08-03T00:02:56+00:00",
-      "elapsed_ms": 118801,
+      "generated_at": "2026-08-03T01:17:31+00:00",
+      "elapsed_ms": 130340,
       "attempts": 2,
       "fields": {
         "reading": "ok",
@@ -1570,14 +1588,24 @@
       "violations": {},
       "evidence": [
         [
-          "F25",
-          "dart:005930.KS:filing_event:20260515",
+          "F4",
+          "fred:DFEDTARU:value:20260802",
           1
         ],
         [
-          "F28",
-          "dart:005380.KS:filing_event:20260515",
-          1
+          "F9",
+          "fred:PAYEMS:value:20260601",
+          2
+        ],
+        [
+          "F11",
+          "fred:RSAFS:value:20260601",
+          2
+        ],
+        [
+          "F13",
+          "fred:UNRATE:value:20260601",
+          2
         ],
         [
           "F45",
@@ -1605,78 +1633,53 @@
           2
         ],
         [
-          "F46",
-          "yfinance:^KQ11:price_close:20260727",
+          "F50",
+          "yfinance:^RUT:price_close:20260727",
+          1
+        ],
+        [
+          "F50",
+          "yfinance:^RUT:price_close:20260728",
+          1
+        ],
+        [
+          "F50",
+          "yfinance:^RUT:price_close:20260729",
+          1
+        ],
+        [
+          "F50",
+          "yfinance:^RUT:price_close:20260730",
+          1
+        ],
+        [
+          "F50",
+          "yfinance:^RUT:price_close:20260731",
+          1
+        ],
+        [
+          "F51",
+          "yfinance:^SOX:price_close:20260727",
           2
         ],
         [
-          "F46",
-          "yfinance:^KQ11:price_close:20260728",
+          "F51",
+          "yfinance:^SOX:price_close:20260728",
           2
         ],
         [
-          "F46",
-          "yfinance:^KQ11:price_close:20260729",
+          "F51",
+          "yfinance:^SOX:price_close:20260729",
           2
         ],
         [
-          "F46",
-          "yfinance:^KQ11:price_close:20260730",
+          "F51",
+          "yfinance:^SOX:price_close:20260730",
           2
         ],
         [
-          "F46",
-          "yfinance:^KQ11:price_close:20260731",
-          2
-        ],
-        [
-          "F47",
-          "yfinance:^GSPC:price_close:20260727",
-          2
-        ],
-        [
-          "F47",
-          "yfinance:^GSPC:price_close:20260728",
-          2
-        ],
-        [
-          "F47",
-          "yfinance:^GSPC:price_close:20260729",
-          2
-        ],
-        [
-          "F47",
-          "yfinance:^GSPC:price_close:20260730",
-          2
-        ],
-        [
-          "F47",
-          "yfinance:^GSPC:price_close:20260731",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260727",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260728",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260729",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260730",
-          2
-        ],
-        [
-          "F48",
-          "yfinance:^IXIC:price_close:20260731",
+          "F51",
+          "yfinance:^SOX:price_close:20260731",
           2
         ],
         [
