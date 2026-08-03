@@ -48,20 +48,26 @@ class Settings:
     ecos_api_key: str = field(default_factory=lambda: os.environ.get("MI_ECOS_API_KEY", ""))
     dart_api_key: str = field(default_factory=lambda: os.environ.get("MI_DART_API_KEY", ""))
     sec_user_agent: str = field(default_factory=lambda: os.environ.get("MI_SEC_USER_AGENT", ""))
+    # KRX 오픈API (openapi.krx.co.kr) — 한국 투자자별 수급. 익명 접근이 막힌 뒤
+    # 유일하게 살아 있던 공식 경로다(2026-08-01 실측). 비어 있으면 pykrx_flows가
+    # 네트워크를 두드리지도 않고 "키없음"으로 기록한다.
+    krx_api_key: str = field(default_factory=lambda: os.environ.get("MI_KRX_API_KEY", ""))
 
     def __repr__(self) -> str:  # never leak secret values via repr/logging
         return (
             f"Settings(db_path={self.db_path!r}, raw_dir={self.raw_dir!r}, "
             f"log_dir={self.log_dir!r}, fred_api_key={_mask(self.fred_api_key)!r}, "
             f"ecos_api_key={_mask(self.ecos_api_key)!r}, dart_api_key={_mask(self.dart_api_key)!r}, "
-            f"sec_user_agent={_mask(self.sec_user_agent)!r})"
+            f"sec_user_agent={_mask(self.sec_user_agent)!r}, "
+            f"krx_api_key={_mask(self.krx_api_key)!r})"
         )
 
     def secret_values(self) -> list[str]:
         """All non-empty secret-bearing values, for masking/redaction."""
         return [
             v
-            for v in (self.fred_api_key, self.ecos_api_key, self.dart_api_key, self.sec_user_agent)
+            for v in (self.fred_api_key, self.ecos_api_key, self.dart_api_key,
+                      self.sec_user_agent, self.krx_api_key)
             if v
         ]
 
