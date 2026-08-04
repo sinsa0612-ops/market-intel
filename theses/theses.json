@@ -7,50 +7,91 @@
         {
           "id": "ai_semi_1",
           "slot": 1,
-          "statement": "AI 반도체 대형주(NVDA)의 최근 가격 흐름은 단기 상승 모멘텀을 보이고 있으며, 이 모멘텀의 지속 여부가 AI 인프라 수요 서사에 대한 시장 반응을 가늠하는 선행 신호다.",
-          "leading_indicators": ["NVDA price_close", "^SOX price_close", "^VIX price_close"],
-          "next_check_date": "2026-08-15",
+          "statement": "AI·반도체가 2030년까지 시장을 주도한다. 근거는 셋이다 — (1) 엔비디아가 가속기 시장을 주도하고 삼성전자·SK하이닉스가 그 물량을 받는 구조가 유지되고 있다, (2) 마이크로소프트의 영업이익이 AI가 실제로 돈을 번다는 것을 분기 실적으로 보여주고 있다, (3) 2026~27년 오픈AI·앤트로픽 상장 기대가 자금 유입을 지지한다. 이 가설이 깨지려면 수요 서사가 아니라 이익이 먼저 꺾여야 한다 — 그래서 반증 조건을 주가가 아니라 마이크로소프트의 영업이익에 건다. (3)은 지금 수집하는 데이터로 채점할 수 없어 조건에 넣지 않았고 서사로만 남긴다.",
+          "leading_indicators": ["MSFT operating_income", "NVDA price_close", "^SOX price_close"],
+          "next_check_date": "2026-11-01",
           "conditions": {
             "falsify": [
-              {"id": "nvda_3d_down", "kind": "consecutive", "category": "price",
-               "subject": "NVDA", "metric": "price_close", "direction": "down", "periods": 3}
+              {"id": "msft_oi_3q_down", "kind": "consecutive", "category": "financials",
+               "subject": "MSFT", "metric": "operating_income", "direction": "down", "periods": 3},
+              {"id": "sox_1y_deep_down", "kind": "change_pct", "category": "price",
+               "subject": "^SOX", "metric": "price_close", "op": "<=", "value": -30.0, "lookback": 250}
             ],
             "weaken": [
-              {"id": "vix_spike", "kind": "threshold", "category": "price",
-               "subject": "^VIX", "metric": "price_close", "op": ">=", "value": 25.0}
+              {"id": "msft_oi_2q_down", "kind": "consecutive", "category": "financials",
+               "subject": "MSFT", "metric": "operating_income", "direction": "down", "periods": 2},
+              {"id": "sox_1y_down", "kind": "change_pct", "category": "price",
+               "subject": "^SOX", "metric": "price_close", "op": "<=", "value": -15.0, "lookback": 250}
             ],
             "strengthen": [
-              {"id": "nvda_2d_up", "kind": "consecutive", "category": "price",
-               "subject": "NVDA", "metric": "price_close", "direction": "up", "periods": 2}
+              {"id": "msft_oi_2q_up", "kind": "consecutive", "category": "financials",
+               "subject": "MSFT", "metric": "operating_income", "direction": "up", "periods": 2}
             ]
           }
         },
         {
           "id": "ai_semi_2",
           "slot": 2,
-          "statement": "AI 인프라 수요는 견조하나, 2027년 이후 추가 증설은 빅테크의 FCF 회복 속도에 달려 있다.",
-          "leading_indicators": ["MSFT free_cash_flow", "GOOGL free_cash_flow"],
-          "next_check_date": "2026-11-01",
+          "statement": "AI 투자 사이클이 살아 있다는 실물 증거는 한국 메모리다. 서사는 미국에서 만들어지지만 물량은 삼성전자·SK하이닉스가 받는다. 그래서 이 둘의 주가와 외국인 수급이 AI 서사의 현금 검증이다 — 서사가 식으면 외국인이 먼저 빠지고 주가가 그 뒤를 따른다.",
+          "leading_indicators": ["005930.KS price_close", "000660.KS price_close", "000660.KS net_buy_foreign_value"],
+          "next_check_date": "2026-10-01",
           "conditions": {
             "falsify": [
-              {"id": "msft_fcf_2q_down", "kind": "consecutive", "category": "financials",
-               "subject": "MSFT", "metric": "free_cash_flow", "direction": "down", "periods": 2}
+              {"id": "samsung_1y_deep_down", "kind": "change_pct", "category": "price",
+               "subject": "005930.KS", "metric": "price_close", "op": "<=", "value": -30.0, "lookback": 250},
+              {"id": "hynix_1y_deep_down", "kind": "change_pct", "category": "price",
+               "subject": "000660.KS", "metric": "price_close", "op": "<=", "value": -30.0, "lookback": 250}
             ],
-            "weaken": [],
-            "strengthen": []
+            "weaken": [
+              {"id": "hynix_foreign_5d_sell", "kind": "consecutive", "category": "flow",
+               "subject": "000660.KS", "metric": "net_buy_foreign_value", "direction": "down", "periods": 5}
+            ],
+            "strengthen": [
+              {"id": "hynix_3m_up", "kind": "change_pct", "category": "price",
+               "subject": "000660.KS", "metric": "price_close", "op": ">=", "value": 15.0, "lookback": 60}
+            ]
           }
         }
       ]
     },
-    "power_energy": {"label": "전력·에너지", "theses": []},
+    "power_energy": {
+      "label": "전력·에너지",
+      "theses": [
+        {
+          "id": "power_energy_1",
+          "slot": 1,
+          "statement": "AI 데이터센터 증설은 결국 전력 문제로 귀결된다. GPU는 살 수 있어도 전기는 하루아침에 못 늘린다. 그래서 전력회사(AEP)의 설비투자와 데이터센터 리츠(EQIX)의 매출이 AI 붐의 뒷단 검증이다 — 앞단인 반도체 주가가 뜨거워도 뒷단이 안 따라오면 그 붐은 설비가 아니라 기대만 산 것이다.",
+          "leading_indicators": ["AEP capex", "EQIX revenue", "EQIX capex"],
+          "next_check_date": "2026-11-15",
+          "conditions": {
+            "falsify": [
+              {"id": "aep_capex_3q_down", "kind": "consecutive", "category": "financials",
+               "subject": "AEP", "metric": "capex", "direction": "down", "periods": 3},
+              {"id": "eqix_rev_2q_down", "kind": "consecutive", "category": "financials",
+               "subject": "EQIX", "metric": "revenue", "direction": "down", "periods": 2}
+            ],
+            "weaken": [
+              {"id": "eqix_capex_2q_down", "kind": "consecutive", "category": "financials",
+               "subject": "EQIX", "metric": "capex", "direction": "down", "periods": 2}
+            ],
+            "strengthen": [
+              {"id": "aep_capex_2q_up", "kind": "consecutive", "category": "financials",
+               "subject": "AEP", "metric": "capex", "direction": "up", "periods": 2},
+              {"id": "eqix_rev_2q_up", "kind": "consecutive", "category": "financials",
+               "subject": "EQIX", "metric": "revenue", "direction": "up", "periods": 2}
+            ]
+          }
+        }
+      ]
+    },
     "fin_credit": {
       "label": "금융·신용",
       "theses": [
         {
           "id": "fin_credit_1",
           "slot": 1,
-          "statement": "미 10년물 국채금리는 4%대 중반 이상의 고금리 국면을 유지하고 있으며, 이는 금융·신용 여건 전반에 긴축 압력으로 작용한다.",
-          "leading_indicators": ["DGS10 value"],
+          "statement": "미 10년물 금리는 4%대 중반 이상의 고금리 국면을 유지한다. 물가가 잡혀도 재정적자와 국채 발행량이 장기금리를 밑에서 받치기 때문이다. 이 국면이 유지되는 한 성장주의 밸류에이션은 이익 성장으로만 정당화되고, 금리 인하 기대만으로 오르는 구간은 짧다.",
+          "leading_indicators": ["DGS10 value", "T10Y2Y value", "DFEDTARU value"],
           "next_check_date": "2026-09-01",
           "conditions": {
             "falsify": [
@@ -66,10 +107,85 @@
                "subject": "DGS10", "metric": "value", "op": ">=", "value": 4.5}
             ]
           }
+        },
+        {
+          "id": "fin_credit_2",
+          "slot": 2,
+          "statement": "장단기 금리차가 정상화되는 동안에는 침체가 아니라 고금리 연착륙으로 읽는다. 다만 역전이 풀리는 국면은 역사적으로 침체의 시작과 겹치므로 금리차 하나만 보면 오독한다 — 그래서 실업률을 같이 건다. 금리차가 다시 역전되고 실업률까지 오르면 그때는 연착륙 서사를 버려야 한다.",
+          "leading_indicators": ["T10Y2Y value", "UNRATE value"],
+          "next_check_date": "2026-10-01",
+          "conditions": {
+            "falsify": [
+              {"id": "curve_inverted_again", "kind": "threshold", "category": "macro",
+               "subject": "T10Y2Y", "metric": "value", "op": "<", "value": 0.0},
+              {"id": "unrate_above_5", "kind": "threshold", "category": "macro",
+               "subject": "UNRATE", "metric": "value", "op": ">=", "value": 5.0}
+            ],
+            "weaken": [
+              {"id": "unrate_up_3m", "kind": "change_pct", "category": "macro",
+               "subject": "UNRATE", "metric": "value", "op": ">=", "value": 10.0, "lookback": 3}
+            ],
+            "strengthen": [
+              {"id": "curve_steepening", "kind": "threshold", "category": "macro",
+               "subject": "T10Y2Y", "metric": "value", "op": ">=", "value": 0.5}
+            ]
+          }
         }
       ]
     },
-    "consumer_cycle": {"label": "소비·경기", "theses": []},
-    "policy_geo": {"label": "정책·지정학", "theses": []}
+    "consumer_cycle": {
+      "label": "소비·경기",
+      "theses": [
+        {
+          "id": "consumer_cycle_1",
+          "slot": 1,
+          "statement": "미국 소비는 고금리에도 꺾이지 않고 버틴다. 고용이 유지되는 한 소비가 먼저 무너지지는 않기 때문이다. 소비가 버티면 AI 설비투자를 감당할 기업 이익의 바닥도 유지된다 — 그래서 이 가설은 AI 가설의 전제 조건 역할을 한다. 소비가 꺾이면 AI·반도체 가설도 같이 재검토해야 한다.",
+          "leading_indicators": ["RSAFS value", "UNRATE value", "WMT revenue"],
+          "next_check_date": "2026-10-15",
+          "conditions": {
+            "falsify": [
+              {"id": "retail_3m_down", "kind": "consecutive", "category": "macro",
+               "subject": "RSAFS", "metric": "value", "direction": "down", "periods": 3},
+              {"id": "unrate_above_5", "kind": "threshold", "category": "macro",
+               "subject": "UNRATE", "metric": "value", "op": ">=", "value": 5.0}
+            ],
+            "weaken": [
+              {"id": "wmt_rev_2q_down", "kind": "consecutive", "category": "financials",
+               "subject": "WMT", "metric": "revenue", "direction": "down", "periods": 2}
+            ],
+            "strengthen": [
+              {"id": "retail_1y_up", "kind": "change_pct", "category": "macro",
+               "subject": "RSAFS", "metric": "value", "op": ">=", "value": 3.0, "lookback": 12}
+            ]
+          }
+        }
+      ]
+    },
+    "policy_geo": {
+      "label": "정책·지정학",
+      "theses": [
+        {
+          "id": "policy_geo_1",
+          "slot": 1,
+          "statement": "원화 약세는 구조적이며 쉽게 되돌려지지 않는다. 한미 금리차가 좁혀지지 않는 한 자금은 달러로 남고, 원/달러 1,400원대는 예외가 아니라 새 기준선이다. 원화가 약하면 한국 수출기업의 원화 환산 실적은 좋아 보이지만 외국인 입장에서는 환차손이 붙는다 — 그래서 이 가설은 AI·반도체 가설의 한국 쪽 수급과 반대로 작동할 수 있다.",
+          "leading_indicators": ["731Y001.0000001 value", "722Y001.0101000 value", "DFEDTARU value"],
+          "next_check_date": "2026-10-01",
+          "conditions": {
+            "falsify": [
+              {"id": "krw_strong", "kind": "threshold", "category": "macro",
+               "subject": "731Y001.0000001", "metric": "value", "op": "<=", "value": 1250.0}
+            ],
+            "weaken": [
+              {"id": "krw_firming", "kind": "threshold", "category": "macro",
+               "subject": "731Y001.0000001", "metric": "value", "op": "<=", "value": 1350.0}
+            ],
+            "strengthen": [
+              {"id": "krw_weak", "kind": "threshold", "category": "macro",
+               "subject": "731Y001.0000001", "metric": "value", "op": ">=", "value": 1400.0}
+            ]
+          }
+        }
+      ]
+    }
   }
 }
