@@ -228,8 +228,53 @@ def filings(conn, cutoff, subject: str | None = None) -> list[dict]:
 # --- 4) 기관(13F) 보유내역 --------------------------------------------------
 
 def holdings_13f(conn, cutoff) -> list[dict]:
-    """지금 파이프라인은 **13F가 제출됐다는 사실만** 감지하고 보유내역 표는
-    읽지 않는다. 그래서 이 함수가 돌려주는 것은 보유내역이 아니라 제출 이력이며,
-    화면도 그렇게 말해야 한다 — 빈 표를 "보유 없음"으로 읽히게 두면 안 된다."""
+    """13F **제출 이력**. 보유내역은 `holdings_by_manager`가 따로 낸다."""
     rows = filings(conn, cutoff)
     return [r for r in rows if r["category"] == "13f_filing"]
+
+
+def holdings_by_manager(conn, cutoff) -> list[dict]:
+    """운용사별 보유 종목 — 큰 운용사가 위로, 각 목록은 금액 내림차순.
+
+    `subject`는 `berkshire_hathaway/037833100`(운용사/CUSIP)이다. 운용사만
+    쓰면 한 분기의 모든 보유가 같은 `_fact_id`를 갖게 되므로 provider가 그렇게
+    만든다 — 여기서는 그 앞부분으로 묶는다.
+
+    금액과 수량은 **따로 조회해 짝짓는다**: 한쪽만 있는 종목(원금액 표기 등)이
+    표에서 통째로 사라지면 안 되므로, 짝이 없으면 없는 칸만 비운다."""
+    amounts: dict[str, object] = {
+        r["subject"]: r
+        for r in db_mod.facts_as_of(conn, cutoff, category="13f_holding",
+                                    metric="holding_amount")
+    }
+    groups: dict[str, dict] = {}
+    for row in db_mod.facts_as_of(conn, cutoff, category="13f_holding",
+                                  metric="holding_value"):
+        extra = _extra(row)
+        manager = extra.get("manager") or row["subject"].split("/")[0]
+        group = groups.setdefault(manager, {
+            "manager": manager, "period": extra.get("period_of_report", ""),
+            "source_url": row["safe_source_url"] or "", "total": 0.0,
+            "rescaled": bool(extra.get("value_scale")), "holdings": [],
+        })
+        amount = amounts.get(row["subject"])
+        group["total"] += row["value_num"] or 0.0
+        group["holdings"].append({
+            "issuer": extra.get("issuer", ""),
+            "cusip": extra.get("cusip", ""),
+            "value": row["value_num"],
+            "value_text": fmt_money(row["value_num"], "USD"),
+            "amount": amount["value_num"] if amount is not None else None,
+            "amount_unit": extra.get("amount_type", ""),
+            "put_call": extra.get("put_call", ""),
+        })
+
+    out = sorted(groups.values(), key=lambda g: g["total"], reverse=True)
+    for group in out:
+        group["holdings"].sort(key=lambda h: h["value"] or 0.0, reverse=True)
+        group["total_text"] = fmt_money(group["total"], "USD")
+        # 비중은 그 운용사 안에서의 몫이다 — 운용사끼리 규모가 100배 넘게
+        # 차이 나므로 전체 대비로 재면 작은 운용사는 전부 0%로 보인다.
+        for h in group["holdings"]:
+            h["weight"] = (h["value"] or 0.0) / group["total"] if group["total"] else 0.0
+    return out

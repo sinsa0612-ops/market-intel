@@ -188,14 +188,6 @@ def test_detail_pages_are_generated_and_linked(built):
     assert '>상세</a>' in (docs_root / "index.html").read_text(encoding="utf-8")
 
 
-def test_holdings_page_says_the_table_is_not_holdings(built):
-    """13F는 '제출했다'만 감지한다. 빈 표를 '보유 없음'으로 읽히게 두면
-    없는 사실을 발행하는 것과 같다."""
-    html = (built[1] / "holdings.html").read_text(encoding="utf-8")
-    assert "보유 종목 표는 아직 없습니다" in html
-    assert "Berkshire Hathaway" in html
-
-
 def test_company_page_marks_derived_values(conn, tmp_path, reports_root, docs_root):
     """누적치를 차분해 만든 값은 공시 원문 그대로가 아니다 — 그 사실이 표에
     보여야 한다."""
@@ -259,3 +251,100 @@ def test_macro_page_resolves_ecos_codes(conn, tmp_path, reports_root, docs_root)
     assert "한국 기준금리" in index
     page = (docs_root / "macro" / "722Y001-0101000.html").read_text(encoding="utf-8")
     assert "한국 기준금리" in page
+
+
+# --- 4) 기관 13F 보유내역 (2026-08-04) ---------------------------------------
+
+def holding(manager, cusip, issuer, value, shares, *, metric="holding_value",
+            period="2026-03-31", scale=None):
+    extra = {"manager": manager, "issuer": issuer, "cusip": cusip,
+             "amount_type": "SH", "period_of_report": period, "merged_rows": 1}
+    if scale:
+        extra["value_scale"] = scale
+    return FactCandidate(
+        raw_ref=f"13f:{manager}:{cusip}", subject=f"{manager}/{cusip}",
+        category="13f_holding", metric=metric,
+        # 보유 시점은 분기 말이다 — 알게 된 시점(known_at)과 다르다.
+        event_at=f"{period}T00:00:00+00:00", market="US", country="US",
+        value_num=value if metric == "holding_value" else shares,
+        unit="USD" if metric == "holding_value" else "SH",
+        data_status="source_verified", safe_source_url="https://example.test/13f",
+        extra=extra,
+    )
+
+
+def _seed_holdings(conn, raw_dir):
+    for metric in ("holding_value", "holding_amount"):
+        seed(conn, raw_dir, "sec_edgar_13f",
+             holding("Berkshire Hathaway", "037833100", "APPLE INC",
+                     57_843_260_493.0, 227_917_808.0, metric=metric),
+             "2026-05-16T00:00:00+00:00")
+        seed(conn, raw_dir, "sec_edgar_13f",
+             holding("Berkshire Hathaway", "025816109", "AMERICAN EXPRESS CO",
+                     45_859_204_536.0, 151_610_700.0, metric=metric),
+             "2026-05-16T00:00:00+00:00")
+        seed(conn, raw_dir, "sec_edgar_13f",
+             holding("Baupost Group", "023135106", "AMAZON COM INC",
+                     649_543_000.0, 3_118_754.0, metric=metric, scale=1000.0),
+             "2026-05-16T00:00:00+00:00")
+
+
+def test_holdings_group_by_manager_biggest_first(conn, tmp_path):
+    _seed_holdings(conn, str(tmp_path / "raw"))
+    groups = detail_mod.holdings_by_manager(conn, CUTOFF)
+
+    assert [g["manager"] for g in groups] == ["Berkshire Hathaway", "Baupost Group"]
+    berk = groups[0]
+    assert berk["period"] == "2026-03-31"
+    assert [h["issuer"] for h in berk["holdings"]] == ["APPLE INC", "AMERICAN EXPRESS CO"]
+    assert berk["holdings"][0]["amount"] == 227_917_808.0
+    # 비중은 그 운용사 안에서의 몫이다 — 규모가 100배 차이 나는 운용사끼리
+    # 전체 대비로 재면 작은 쪽은 전부 0%가 된다.
+    assert 0.55 < berk["holdings"][0]["weight"] < 0.57
+    assert abs(sum(h["weight"] for h in berk["holdings"]) - 1.0) < 1e-9
+
+
+def test_rescaled_filing_is_flagged_so_the_number_is_auditable(conn, tmp_path):
+    """천 달러 단위 신고를 달러로 바꿔 실었다는 사실이 화면에 남아야 한다."""
+    _seed_holdings(conn, str(tmp_path / "raw"))
+    groups = {g["manager"]: g for g in detail_mod.holdings_by_manager(conn, CUTOFF)}
+    assert groups["Baupost Group"]["rescaled"] is True
+    assert groups["Berkshire Hathaway"]["rescaled"] is False
+
+
+def test_holdings_respect_the_information_barrier(conn, tmp_path, reports_root, docs_root):
+    """13F는 분기 말 보유를 45일 뒤에 낸다. 우리가 그것을 **알기 전** 차단선의
+    리포트가 그 보유를 아는 것처럼 보이면 안 된다."""
+    _seed_holdings(conn, str(tmp_path / "raw"))  # known_at = 2026-05-16
+    assert detail_mod.holdings_by_manager(conn, "2026-05-15T00:00:00+00:00") == []
+    assert detail_mod.holdings_by_manager(conn, "2026-05-17T00:00:00+00:00")
+
+
+def test_holdings_page_shows_the_table_and_says_it_is_not_today(conn, tmp_path,
+                                                                reports_root, docs_root):
+    _seed_holdings(conn, str(tmp_path / "raw"))
+    seed(conn, str(tmp_path / "raw"),
+         "sec_edgar_13f",
+         filing("berkshire_hathaway", "2026-05-15", "13f_filing", "13F-HR",
+                extra={"form": "13F-HR", "manager": "Berkshire Hathaway"}),
+         "2026-05-16T00:00:00+00:00")
+    write_report(reports_root, make_report("morning", "2026-08-01"))
+    site_mod.build_site(conn, reports_root=reports_root, docs_root=docs_root)
+
+    html = (docs_root / "holdings.html").read_text(encoding="utf-8")
+    assert "APPLE INC" in html and "2026-03-31" in html
+    # 보유 표가 생겼다고 제출 이력이 사라지면 안 된다 — 서로 다른 질문에 답한다.
+    assert "0001-26-1" in html
+    # 45일 시차를 말하지 않으면 독자는 이것을 지금 보유로 읽는다.
+    assert "45일" in html
+    assert "천 달러 단위 신고" in html, "환산한 사실이 화면에 남아야 한다"
+    # 옛 배너(보유내역 없음)가 표와 함께 남아 있으면 서로 모순된다.
+    assert "보유 종목 표는 아직 없습니다" not in html
+
+
+def test_holdings_page_says_so_when_nothing_was_parsed(conn, reports_root, docs_root):
+    """빈 표를 '이 기관은 아무것도 안 들고 있다'로 읽히게 두면 안 된다."""
+    write_report(reports_root, make_report("morning", "2026-08-01"))
+    site_mod.build_site(conn, reports_root=reports_root, docs_root=docs_root)
+    html = (docs_root / "holdings.html").read_text(encoding="utf-8")
+    assert "아직 읽어들인 보유내역이 없습니다" in html

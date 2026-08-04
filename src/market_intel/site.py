@@ -702,17 +702,43 @@ def _filings_page(conn, cutoff: datetime | None) -> str:
 def _holdings_page(conn, cutoff: datetime | None) -> str:
     if cutoff is None:
         return _no_cutoff_page("market-intel — 기관 보유", "기관(13F) 보유내역")
-    rows = detail_mod.holdings_13f(conn, cutoff)
-    parts = [
-        "<h1>기관(13F) 보유내역</h1>", _cutoff_note(cutoff),
+    groups = detail_mod.holdings_by_manager(conn, cutoff)
+    parts = ["<h1>기관(13F) 보유내역</h1>", _cutoff_note(cutoff)]
+
+    if not groups:
         # 빈 표를 "이 기관은 아무것도 안 들고 있다"로 읽히게 두면 안 된다.
-        # 지금 파이프라인이 감지하는 것은 제출 사실뿐이라는 것을 화면이 말한다.
-        '<p class="banner warn">보유 종목 표는 아직 없습니다 — 지금은 13F가 '
-        "<strong>제출됐다는 사실</strong>만 감지하고, 제출서 안의 보유내역은 읽지 않습니다. "
-        "내역을 채우려면 13F 문서 파싱이 따로 필요합니다.</p>",
-        "<h2>제출 이력</h2>",
-        _filing_table(rows, with_subject=True),
-    ]
+        parts.append('<p class="banner warn">아직 읽어들인 보유내역이 없습니다 — '
+                     "13F 제출은 감지했지만 보유 표를 아직 받지 못했습니다.</p>")
+    else:
+        # 13F는 **분기 말 기준을 45일 뒤에** 내는 서류다. 그 시차를 화면이
+        # 말하지 않으면 독자는 이것을 지금 보유로 읽는다.
+        parts.append('<p class="legend">13F는 분기 말 보유를 최대 45일 뒤에 신고합니다 — '
+                     "각 표의 기준일은 <strong>그 분기 말</strong>이고 지금 보유가 아닙니다. "
+                     "비중은 그 운용사 안에서의 몫입니다.</p>")
+    for g in groups:
+        rescaled = ('<span class="badge-late">천 달러 단위 신고 → 달러 환산</span>'
+                    if g["rescaled"] else "")
+        parts.append(f'<h2>{_esc(g["manager"])}</h2>'
+                     f'<p class="meta">{_esc(g["period"])} 기준 · {len(g["holdings"])}종목 · '
+                     f'합계 {_esc(g["total_text"])} {rescaled}</p>')
+        rows_html = "".join(
+            "<tr>"
+            f'<td>{_esc(h["issuer"])}{" " + _esc(h["put_call"]) if h["put_call"] else ""}</td>'
+            f'<td class="chg">{_esc(h["value_text"])}</td>'
+            f'<td class="chg">{_esc(f"{h["weight"] * 100:.1f}%")}</td>'
+            f'<td class="chg">{_esc(f"{h["amount"]:,.0f}" if h["amount"] is not None else "-")}'
+            f'{" " + _esc(h["amount_unit"]) if h["amount"] is not None else ""}</td>'
+            f'<td class="detail">{_esc(h["cusip"])}</td>'
+            "</tr>"
+            for h in g["holdings"]
+        )
+        parts.append('<div class="scroll"><table><thead><tr><th>종목</th><th>평가금액</th>'
+                     f"<th>비중</th><th>수량</th><th>CUSIP</th></tr></thead>"
+                     f"<tbody>{rows_html}</tbody></table></div>")
+        parts.append(f'<p class="meta">{_source_cell(g["source_url"])}</p>')
+
+    parts.append("<h2>제출 이력</h2>")
+    parts.append(_filing_table(detail_mod.holdings_13f(conn, cutoff), with_subject=True))
     return _page("market-intel — 기관 보유", "".join(parts), depth=0)
 
 
