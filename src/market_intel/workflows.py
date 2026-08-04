@@ -8,15 +8,18 @@ WORKFLOWS: dict[str, list[str]] = {
     # 403, 조회 500, 그리고 KIS의 15:40 공개 경계까지 여유가 10분뿐이다).
     # 06:50에는 `_base_date()`가 전날로 물러서고 KIS가 그 날짜 기준 30거래일을
     # 주므로, 전날 실패분이 아침에 자동으로 메워진다. 비용은 호출 5번이다.
-    "morning": ["yfinance", "sec_edgar", "sec_edgar_13f", "fred", "kis"],
+    # `krx`(전종목 시장 폭)도 같은 이유로 morning/close 둘 다에 있다 — 당일치가
+    # 장중에는 항상 비어 있어(spec §1 실측) 그날의 유일한 기회가 close 한 번뿐일
+    # 수 있는데, 그 한 번이 실패하면 아침 재시도가 lookback으로 메운다.
+    "morning": ["yfinance", "sec_edgar", "sec_edgar_13f", "fred", "kis", "krx"],
     # close(15:50)가 당일치를 받는 자리다 — KIS는 15:40 이후에야 당일 수급을 준다.
-    "close": ["yfinance", "ecos", "dart", "kis"],
+    "close": ["yfinance", "ecos", "dart", "kis", "krx"],
     # spec B14 (ST1 addition) — morning/close are untouched (1단계 테스트가
     # 내용을 검사한다); calendar/events are new entries, also added to "all".
     "calendar": ["fred_calendar", "earnings_calendar", "policy_calendar"],
     "events": ["sec_8k_events"],
     "all": [
         "yfinance", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
-        "fred_calendar", "earnings_calendar", "policy_calendar", "sec_8k_events", "kis",
+        "fred_calendar", "earnings_calendar", "policy_calendar", "sec_8k_events", "kis", "krx",
     ],
 }

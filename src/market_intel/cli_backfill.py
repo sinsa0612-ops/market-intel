@@ -47,8 +47,9 @@ def _minus_years(day: date, years: int) -> date:
 
 
 def _default_since(source: str, today: date) -> date:
-    """spec S8: prices=오늘−2년, macro_*=오늘−3년, financials=오늘−730일."""
-    if source == "prices":
+    """spec S8: prices=오늘−2년, macro_*=오늘−3년, financials=오늘−730일.
+    krx_breadth도 prices와 같은 2년(spec 백필 §4 S8, krx-breadth spec §5)."""
+    if source in ("prices", "krx_breadth"):
         return _minus_years(today, 2)
     if source in ("macro_us", "macro_kr"):
         return _minus_years(today, 3)

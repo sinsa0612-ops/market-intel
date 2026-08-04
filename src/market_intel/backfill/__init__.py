@@ -19,13 +19,14 @@ import time
 from dataclasses import asdict, dataclass
 
 # `--source all`의 실행 순서 그대로 (spec S8).
-SOURCE_ORDER = ("prices", "macro_us", "macro_kr", "financials")
+SOURCE_ORDER = ("prices", "macro_us", "macro_kr", "financials", "krx_breadth")
 
 SOURCES: dict[str, str] = {
     "prices": "market_intel.backfill.prices",
     "macro_us": "market_intel.backfill.macro",
     "macro_kr": "market_intel.backfill.macro",
     "financials": "market_intel.backfill.financials",
+    "krx_breadth": "market_intel.backfill.krx_breadth",
 }
 
 

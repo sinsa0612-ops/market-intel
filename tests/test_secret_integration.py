@@ -34,6 +34,7 @@ from market_intel.providers.ecos import EcosProvider
 from market_intel.providers.fred import FredProvider
 from market_intel.providers.fred_calendar import FredCalendarProvider
 from market_intel.providers.kis_flows import KisFlowsProvider
+from market_intel.providers.krx_breadth import KrxBreadthProvider
 from market_intel.universe import UNIVERSE
 from market_intel.providers.policy_calendar import PolicyCalendarProvider
 from market_intel.providers.sec_8k_events import Sec8kEventsProvider
@@ -48,7 +49,10 @@ FAKE_UA = "FAKEUSERAGENT_INTEG contact@example.com"
 # 다른 provider와 달라서 이 그물에 반드시 걸려 있어야 한다.
 FAKE_KIS_KEY = "FAKEKISKEY_INTEG"
 FAKE_KIS_SECRET = "FAKEKISSECRET_INTEG+/="
-ALL_SECRETS = [FAKE_FRED, FAKE_ECOS, FAKE_DART, FAKE_UA, FAKE_KIS_KEY, FAKE_KIS_SECRET]
+# KRX도 KIS와 같이 키를 **헤더**(`AUTH_KEY`)로 보낸다. 쿼리스트링에 실리지
+# 않는다는 이유로 그물에서 빼면, 로그·raw 스냅샷으로 새는 경로가 안 덮인다.
+FAKE_KRX = "FAKEKRXKEY_INTEG"
+ALL_SECRETS = [FAKE_FRED, FAKE_ECOS, FAKE_DART, FAKE_UA, FAKE_KIS_KEY, FAKE_KIS_SECRET, FAKE_KRX]
 
 
 class _BenignStandIn:
@@ -118,6 +122,18 @@ def _mock_handler(request: httpx.Request) -> httpx.Response:
             {"stck_bsop_date": "20260731", "stck_clpr": "262500",
              "frgn_ntby_qty": "1", "prsn_ntby_qty": "-1", "orgn_ntby_qty": "0",
              "frgn_ntby_tr_pbmn": "1", "prsn_ntby_tr_pbmn": "-1", "orgn_ntby_tr_pbmn": "0"}]})
+    # KRX 전종목: 첫 basDd에서 바로 응답해야 lookback이 멈추고 raw 스냅샷이
+    # 남는다. 빈 응답을 주면 7일을 헛돌다 fact 0건으로 끝나고, 이 그물이
+    # 초록이면서 krx를 하나도 안 덮게 된다(kis/빈 유니버스와 같은 실패 모드).
+    if "bydd_trd" in url:
+        return httpx.Response(200, json={"OutBlock_1": [
+            {"BAS_DD": "20260731", "ISU_CD": "005930", "ISU_NM": "TESTCO", "MKT_NM": "KOSPI",
+             "TDD_CLSPRC": "100", "CMPPREVDD_PRC": "10", "FLUC_RT": "11.11",
+             "ACC_TRDVOL": "1000", "ACC_TRDVAL": "100000", "MKTCAP": "1000000"},
+            {"BAS_DD": "20260731", "ISU_CD": "000660", "ISU_NM": "QUIETCO", "MKT_NM": "KOSPI",
+             "TDD_CLSPRC": "50", "CMPPREVDD_PRC": "0", "FLUC_RT": "0.00",
+             "ACC_TRDVOL": "0", "ACC_TRDVAL": "0", "MKTCAP": "500000"},
+        ]})
     return httpx.Response(404)
 
 
@@ -129,6 +145,7 @@ def test_full_workflow_run_never_leaks_fake_secrets(settings, caplog, tmp_path, 
     settings.sec_user_agent = FAKE_UA
     settings.kis_app_key = FAKE_KIS_KEY
     settings.kis_app_secret = FAKE_KIS_SECRET
+    settings.krx_api_key = FAKE_KRX
     # Mirrors what cli.py's `collect` command does in production: this is
     # what actually attaches SecretRedactingFilter (spec A6). Without it,
     # httpx's own request-URL logging would leak secrets to any OTHER
@@ -150,6 +167,7 @@ def test_full_workflow_run_never_leaks_fake_secrets(settings, caplog, tmp_path, 
         "policy_calendar": PolicyCalendarProvider(),
         "sec_8k_events": Sec8kEventsProvider(),
         "kis": KisFlowsProvider(),
+        "krx": KrxBreadthProvider(),
     }
 
     # **빈 유니버스를 넘기면 안 된다.** 종목이 필요한 provider(kis)가 실제 코드에
@@ -167,6 +185,10 @@ def test_full_workflow_run_never_leaks_fake_secrets(settings, caplog, tmp_path, 
     # ...and the fred_calendar leg must actually have fetched something,
     # otherwise there is no URL to check for leakage.
     assert result["providers"]["fred_calendar"]["facts_seen"] > 0
+    # 같은 이유로 krx도 실제로 뭔가 가져왔어야 한다. 키가 비었거나 mock이
+    # 빈 응답을 주면 provider가 조용히 NO_DATA로 끝나고, 그물은 초록인데
+    # krx의 헤더 인증 경로는 하나도 안 덮인 상태가 된다.
+    assert result["providers"]["krx"]["facts_seen"] > 0
 
     conn = db_mod.connect(settings.db_path)
     urls = [r["safe_source_url"] or "" for r in conn.execute("SELECT safe_source_url FROM raw_snapshots")]

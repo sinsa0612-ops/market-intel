@@ -92,6 +92,7 @@ def test_default_since_per_source():
     assert cli_backfill._default_since("macro_us", today) == date(2023, 8, 2)
     assert cli_backfill._default_since("macro_kr", today) == date(2023, 8, 2)
     assert cli_backfill._default_since("financials", today) == today - timedelta(days=730)
+    assert cli_backfill._default_since("krx_breadth", today) == date(2024, 8, 2)
     # 2월 29일에도 죽지 않는다.
     assert cli_backfill._default_since("prices", date(2028, 2, 29)) == date(2026, 2, 28)
 

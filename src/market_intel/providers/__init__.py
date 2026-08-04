@@ -8,6 +8,7 @@ from .ecos import EcosProvider
 from .fred import FredProvider
 from .fred_calendar import FredCalendarProvider
 from .kis_flows import KisFlowsProvider
+from .krx_breadth import KrxBreadthProvider
 from .policy_calendar import PolicyCalendarProvider
 from .sec_8k_events import Sec8kEventsProvider
 from .sec_edgar import SecEdgarProvider
@@ -26,4 +27,5 @@ PROVIDERS: dict = {
     "policy_calendar": PolicyCalendarProvider(),
     "sec_8k_events": Sec8kEventsProvider(),
     "kis": KisFlowsProvider(),
+    "krx": KrxBreadthProvider(),
 }
