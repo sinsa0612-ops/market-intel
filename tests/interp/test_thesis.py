@@ -646,3 +646,109 @@ def test_comparison_never_printed_without_its_truth_value(conn, raw_dir):
     for msg in messages:
         if "<=" in msg or ">=" in msg:
             assert "충족" in msg or "미충족" in msg, f"참·거짓 표시 없는 비교식: {msg}"
+
+
+# --- 목표치 재설정: 골대가 움직였다는 사실을 남긴다 (CEO 2026-08-04) --------
+#
+# 가설은 살아 있는 문서라 기준이 바뀐다. 그런데 기준을 바꾸면 그 전후 판정은
+# 서로 비교할 수 없는 것이 되고, 기록에 판(版)을 안 남기면 원장이 "강화 → 강화"만
+# 보여준다 — 가설이 맞아서인지 골대를 옮겨서인지 구별할 수 없다.
+
+def _fin_thesis(strengthen_at: float = 4.5) -> dict:
+    conditions = {
+        "falsify": [{"id": "low", "kind": "threshold", "category": "macro",
+                     "subject": "DGS10", "metric": "value", "op": "<=", "value": 3.0}],
+        "weaken": [],
+        "strengthen": [{"id": "high", "kind": "threshold", "category": "macro",
+                        "subject": "DGS10", "metric": "value", "op": ">=", "value": strengthen_at}],
+    }
+    return {
+        "thesis_id": "fin_1", "theme": "fin_credit", "slot": 1,
+        "statement": "고금리 국면이 유지된다.", "conditions": conditions,
+        "leading_indicators": ["DGS10 value"], "next_check_date": "2026-12-01",
+        "rules_sha256": store_mod.rules_fingerprint("고금리 국면이 유지된다.", conditions),
+    }
+
+
+def _seed_dgs10(conn, raw_dir, value: float):
+    seed_fact(conn, raw_dir, "fred", macro_fc("DGS10", "2026-08-01T00:00:00+00:00", value),
+              "2026-08-02T00:00:00+00:00")
+
+
+def test_fingerprint_ignores_key_order_but_not_the_threshold():
+    """파일에서 키 순서만 바뀐 것을 '기준 변경'으로 세면 매번 경고가 뜬다.
+    반대로 숫자가 바뀌면 반드시 달라져야 한다."""
+    a = {"falsify": [{"kind": "threshold", "subject": "DGS10", "op": "<=", "value": 3.0}]}
+    b = {"falsify": [{"value": 3.0, "op": "<=", "subject": "DGS10", "kind": "threshold"}]}
+    c = {"falsify": [{"kind": "threshold", "subject": "DGS10", "op": "<=", "value": 3.5}]}
+    same = store_mod.rules_fingerprint("문장", a)
+    assert same == store_mod.rules_fingerprint("문장", b)
+    assert same != store_mod.rules_fingerprint("문장", c)
+    # 조건이 같아도 주장이 바뀌면 다른 가설이다 — 골대를 옮기는 흔한 방식이다.
+    assert same != store_mod.rules_fingerprint("다른 문장", a)
+
+
+def test_moving_the_goalpost_is_flagged_once_not_forever(settings):
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_dgs10(conn, settings.raw_dir, 4.75)
+
+    def run(thesis, day):
+        rows = thesis_mod.review(conn, [thesis], _cutoff(f"2026-08-{day}T12:00:00+00:00"),
+                                 "morning", f"2026-08-{day}")
+        store_mod.record_reviews(conn, rows)
+        return rows[0]
+
+    first = run(_fin_thesis(4.5), "10")
+    assert first["verdict"] == "강화" and first["rules_changed"] == 0
+
+    moved = run(_fin_thesis(4.0), "11")          # 골대를 옮긴다
+    assert moved["verdict"] == "강화", "판정은 그대로인데"
+    assert moved["changed"] == 0, "판정 변화로는 안 잡힌다 — 그래서 별도 표시가 필요하다"
+    assert moved["rules_changed"] == 1, "기준이 바뀐 사실은 잡혀야 한다"
+
+    again = run(_fin_thesis(4.0), "12")          # 같은 기준으로 하루 더
+    assert again["rules_changed"] == 0, "한 번만 표시된다 — 계속 뜨면 경고가 무뎌진다"
+
+
+def test_the_version_that_produced_each_verdict_is_recorded(settings):
+    """나중에 '이 판정은 어떤 기준으로 나왔나'에 답할 수 있어야 한다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_dgs10(conn, settings.raw_dir, 4.75)
+
+    v1, v2 = _fin_thesis(4.5), _fin_thesis(4.0)
+    for thesis, day in ((v1, "10"), (v2, "11")):
+        store_mod.record_reviews(conn, thesis_mod.review(
+            conn, [thesis], _cutoff(f"2026-08-{day}T12:00:00+00:00"), "morning", f"2026-08-{day}"))
+
+    stamped = [r["rules_sha256"] for r in conn.execute(
+        "SELECT rules_sha256 FROM thesis_reviews WHERE thesis_id='fin_1' ORDER BY rowid")]
+    assert stamped == [v1["rules_sha256"], v2["rules_sha256"]]
+    assert len(set(stamped)) == 2
+
+
+def test_same_second_reviews_do_not_scramble_the_previous_one(settings):
+    """`created_at`은 초 단위다. 한 번에 여러 판정을 기록하면 값이 같아지고,
+    uuid로 동점을 풀면 **입력 순서와 무관한 행**이 직전으로 뽑힌다.
+
+    실측(2026-08-04): v1 -> v2 -> v2 를 같은 초에 넣었더니 세 번째까지
+    '기준이 바뀐 뒤 첫 판정'으로 떴다 — 두 번째 행이 아니라 첫 번째 행이
+    직전으로 뽑혔기 때문이다. 지문이 서로 다른 이력이 있어야 이 뒤섞임이
+    드러나므로, 기준을 한 번 바꾼 뒤 같은 기준으로 여러 번 더 돌린다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_dgs10(conn, settings.raw_dir, 4.75)
+
+    plan = [(_fin_thesis(4.5), "10"), (_fin_thesis(4.0), "11"),
+            (_fin_thesis(4.0), "12"), (_fin_thesis(4.0), "13")]
+    flags = []
+    for thesis, day in plan:
+        rows = thesis_mod.review(conn, [thesis], _cutoff(f"2026-08-{day}T12:00:00+00:00"),
+                                 "morning", f"2026-08-{day}")
+        store_mod.record_reviews(conn, rows)
+        flags.append(rows[0]["rules_changed"])
+
+    assert flags == [0, 1, 0, 0], (
+        "기준을 바꾼 그 한 번만 표시돼야 한다 — 계속 뜨면 경고가 무뎌지고, "
+        f"직전 판정을 잘못 고르고 있다는 뜻이다: {flags}")

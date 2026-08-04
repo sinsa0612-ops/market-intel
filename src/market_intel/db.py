@@ -122,6 +122,11 @@ CREATE TABLE IF NOT EXISTS theses (
     next_check_date TEXT NOT NULL,
     source_sha256 TEXT NOT NULL,
     loaded_at TEXT NOT NULL,
+    -- **그 가설 하나의 지문**(문장 + 조건). `source_sha256`은 파일 전체 해시라
+    -- 다른 가설을 고쳐도 같이 변한다 — "이 가설의 기준이 바뀌었나"에는 답하지
+    -- 못한다. 판정 기록에 이 값을 함께 찍어, 나중에 "가설이 맞아서 강화"와
+    -- "기준을 낮춰서 강화"를 구별한다.
+    rules_sha256 TEXT NOT NULL DEFAULT '',
     UNIQUE(theme, slot)
 );
 
@@ -140,6 +145,14 @@ CREATE TABLE IF NOT EXISTS thesis_reviews (
     error_type TEXT,                     -- 명세 §10.3 오류 분해. 엔진은 항상 NULL로 둔다(사람 판단). 뒤 단계용 예약.
     engine_version TEXT NOT NULL,
     created_at TEXT NOT NULL,
+    -- 이 판정을 만든 **가설 판(版)의 지문**과, 직전 판정 때와 달라졌는지.
+    -- 가설은 살아 있는 문서라 목표치가 바뀐다(CEO 2026-08-04: "다시 재설정할 수
+    -- 있잖아, 목표치 같은걸"). 그런데 기준을 바꾸면 그 전후 판정은 서로 비교할
+    -- 수 없는 것이 된다 — 기록에 판을 안 남기면 원장이 "8/10 강화 · 9/10 강화"만
+    -- 보여주고, 그 사이에 골대가 움직였다는 사실이 사라진다. 그러면 가설 검증이
+    -- 아니라 자기합리화가 된다.
+    rules_sha256 TEXT NOT NULL DEFAULT '',
+    rules_changed INTEGER NOT NULL DEFAULT 0 CHECK(rules_changed IN (0,1)),
     UNIQUE(thesis_id, report_type, report_date, cutoff_utc)
 );
 
@@ -241,10 +254,38 @@ def connect(db_path: str) -> sqlite3.Connection:
     return conn
 
 
+# 이미 만들어진 DB에 뒤늦게 붙는 칼럼들. `CREATE TABLE IF NOT EXISTS`는 기존
+# 테이블을 손대지 않으므로, 스키마에 칼럼을 적어도 **운영 DB에는 안 생긴다** —
+# 새로 만든 DB에서만 통과하는 테스트가 되고 운영에서만 깨진다.
+#
+# `ADD COLUMN`만 쓴다: 값 있는 칼럼을 지우거나 이름을 바꾸는 마이그레이션은
+# 이 원장의 append-only 성격과 맞지 않는다(트리거가 UPDATE/DELETE를 막는다).
+# `NOT NULL`은 기본값과 함께여야 기존 행에 적용된다.
+_ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
+    ("theses", "rules_sha256", "TEXT NOT NULL DEFAULT ''"),
+    ("thesis_reviews", "rules_sha256", "TEXT NOT NULL DEFAULT ''"),
+    ("thesis_reviews", "rules_changed", "INTEGER NOT NULL DEFAULT 0"),
+)
+
+
+def _add_missing_columns(conn: sqlite3.Connection) -> list[str]:
+    """-> 실제로 추가한 `표.칼럼` 목록. 이미 있으면 아무것도 하지 않는다."""
+    added = []
+    for table, column, decl in _ADDED_COLUMNS:
+        existing = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if not existing:
+            continue  # 그 표가 아직 없다 — SCHEMA가 방금 만들었거나 이 DB엔 없다
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+            added.append(f"{table}.{column}")
+    return added
+
+
 def init_db(db_path: str) -> None:
     conn = connect(db_path)
     try:
         conn.executescript(SCHEMA)
+        _add_missing_columns(conn)
         conn.commit()
     finally:
         conn.close()

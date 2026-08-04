@@ -525,14 +525,18 @@ def _theses_page(conn, now: datetime) -> str:
     parts = [
         "<h1>가설</h1>",
         '<p class="meta">가설 문장은 사람이 쓴 것이고, 판정은 코드가 규칙으로 매긴 것입니다. '
-        "판정 불가는 오류가 아니라 아직 판단할 관측이 모이지 않았다는 뜻입니다.</p>",
+        "판정 불가는 오류가 아니라 아직 판단할 관측이 모이지 않았다는 뜻입니다. "
+        "<strong>기준 변경</strong> 표시는 그 시점에 가설의 판정 기준 자체가 바뀌었다는 뜻이며, "
+        "그 앞뒤 판정은 서로 비교할 수 없습니다.</p>",
         f"<h2>가설 변화 (최근 {ops_mod.THESIS_CHANGE_WINDOW_DAYS}일)</h2>",
     ]
     if changes:
         rows = "".join(
             "<tr>"
             f"<td>{_esc(c['report_date'])}</td><td>{_esc(c['thesis_id'])}</td>"
-            f"<td>{_esc(c['prev_verdict'] or '(없음)')} → {_esc(c['verdict'])}</td>"
+            f"<td>{_esc(c['prev_verdict'] or '(없음)')} → {_esc(c['verdict'])}"
+            + ('<span class="badge-late">기준 변경</span>' if c.get("rules_changed") else "")
+            + "</td>"
             f"<td class=\"detail\">{_esc(c['statement'] or '-')}</td>"
             "</tr>"
             for c in changes

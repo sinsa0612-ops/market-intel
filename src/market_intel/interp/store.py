@@ -8,6 +8,7 @@ guarantee auditable: every raw-SQL write in the 2B layer lives in one file.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import uuid
@@ -27,6 +28,21 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
 
 # --- theses -----------------------------------------------------------------
 
+def rules_fingerprint(statement: str, conditions: dict) -> str:
+    """그 가설 하나의 지문 — **문장과 조건만** 넣는다.
+
+    `next_check_date`나 `leading_indicators`는 빼는데, 그것이 바뀌었다고 판정
+    기준이 바뀐 것은 아니기 때문이다. 반대로 문장이 바뀌면 조건이 같아도 다른
+    가설로 본다 — 같은 조건에 다른 주장을 붙이는 것이 골대를 옮기는 가장 흔한
+    방식이다("주가가 오른다" -> "주가가 안 내린다").
+
+    조건은 `sort_keys`로 직렬화한다: 파일에서 키 순서만 바꾼 것을 기준 변경으로
+    잘못 세면 매번 '기준 바뀜'이 뜬다."""
+    payload = json.dumps({"statement": statement, "conditions": conditions},
+                         ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def replace_theses(conn: sqlite3.Connection, theses: list[dict], source_sha256: str) -> int:
     """Whole-file replace in one transaction: DELETE all rows, INSERT the
     loaded set, COMMIT — or ROLLBACK and re-raise on any failure. Never a
@@ -40,15 +56,17 @@ def replace_theses(conn: sqlite3.Connection, theses: list[dict], source_sha256: 
     try:
         conn.execute("DELETE FROM theses")
         for t in theses:
+            conditions_json = json.dumps(t["conditions"], ensure_ascii=False)
             conn.execute(
                 "INSERT INTO theses(thesis_id, theme, slot, statement, conditions_json, "
-                "leading_indicators, next_check_date, source_sha256, loaded_at) "
-                "VALUES (?,?,?,?,?,?,?,?,?)",
+                "leading_indicators, next_check_date, source_sha256, loaded_at, rules_sha256) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
                 (
                     t["thesis_id"], t["theme"], t["slot"], t["statement"],
-                    json.dumps(t["conditions"], ensure_ascii=False),
+                    conditions_json,
                     json.dumps(t["leading_indicators"], ensure_ascii=False),
                     t["next_check_date"], source_sha256, loaded_at,
+                    rules_fingerprint(t["statement"], t["conditions"]),
                 ),
             )
         conn.commit()
@@ -68,7 +86,7 @@ def list_theses(conn: sqlite3.Connection) -> list[dict]:
                 "statement": r["statement"], "conditions": json.loads(r["conditions_json"]),
                 "leading_indicators": json.loads(r["leading_indicators"]),
                 "next_check_date": r["next_check_date"], "source_sha256": r["source_sha256"],
-                "loaded_at": r["loaded_at"],
+                "loaded_at": r["loaded_at"], "rules_sha256": r["rules_sha256"],
             }
         )
     return out
@@ -76,10 +94,26 @@ def list_theses(conn: sqlite3.Connection) -> list[dict]:
 
 def last_verdict(conn: sqlite3.Connection, thesis_id: str) -> str | None:
     row = conn.execute(
-        "SELECT verdict FROM thesis_reviews WHERE thesis_id=? ORDER BY created_at DESC, review_id DESC LIMIT 1",
+        "SELECT verdict FROM thesis_reviews WHERE thesis_id=? ORDER BY created_at DESC, rowid DESC LIMIT 1",
         (thesis_id,),
     ).fetchone()
     return row["verdict"] if row else None
+
+
+def last_rules_sha256(conn: sqlite3.Connection, thesis_id: str) -> str | None:
+    """직전 판정을 만든 가설 판의 지문. 없으면 None(= 첫 판정).
+
+    동점 처리를 `review_id`가 아니라 `rowid`로 하는 이유: `created_at`은 초
+    단위라 한 번에 여러 판정을 기록하면 같은 값이 되고, `review_id`는 uuid라
+    정렬하면 **입력 순서와 무관한 아무 행**이 직전으로 뽑힌다(실측: 같은 초에
+    3건을 넣으니 '기준이 바뀐 뒤 첫 판정'이 두 번 떴다). `rowid`는 삽입 순서
+    그대로다."""
+    row = conn.execute(
+        "SELECT rules_sha256 FROM thesis_reviews WHERE thesis_id=? "
+        "ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (thesis_id,),
+    ).fetchone()
+    return row["rules_sha256"] if row else None
 
 
 # --- thesis_reviews (append-only) -------------------------------------------
@@ -94,12 +128,14 @@ def record_reviews(conn: sqlite3.Connection, rows: list[dict]) -> int:
         review_id = f"revw_{uuid.uuid4().hex[:20]}"
         conn.execute(
             "INSERT INTO thesis_reviews(review_id, thesis_id, report_type, report_date, cutoff_utc, "
-            "verdict, prev_verdict, changed, atoms_json, evidence_json, error_type, engine_version, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "verdict, prev_verdict, changed, atoms_json, evidence_json, error_type, engine_version, created_at, "
+            "rules_sha256, rules_changed) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 review_id, r["thesis_id"], r["report_type"], r["report_date"], r["cutoff_utc"],
                 r["verdict"], r["prev_verdict"], r["changed"], r["atoms_json"], r["evidence_json"],
                 None, ENGINE_VERSION, created_at,
+                r.get("rules_sha256", ""), r.get("rules_changed", 0),
             ),
         )
         n += 1

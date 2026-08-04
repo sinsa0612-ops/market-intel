@@ -4,7 +4,7 @@
   "report_date": "2026-08-04",
   "cutoff_kst": "2026-08-04T07:15:00+09:00",
   "cutoff_utc": "2026-08-03T22:15:00+00:00",
-  "generated_at": "2026-08-03T23:20:46+00:00",
+  "generated_at": "2026-08-04T01:07:10+00:00",
   "title": "모닝",
   "headline": "KOSPI 6,241.91(-5.4%) · S&P500 7,600.50(+1.5%) · 달러/원 1,428.8원(-0.5%) · 미10Y 4.69%(-1.2%) — 관측기업 18곳 중 ±3% 이상 7종목, 결측 0건",
   "breadth": "관측기업 12/18개 상승 · 플랫폼·AI 수익화 4/4 · 반도체·공급망 2/4 · 금융·신용 2/2 · 전력·산업 2/3 · 소비·수출 1/2 · 헬스케어 0/1 · 소재·철강 0/1 · 부동산·데이터센터 1/1",
@@ -1950,12 +1950,12 @@
     }
   ],
   "interpretation": {
-    "reading": "미국 시장이 3일 전 대비 부분적으로 회복(S&P500 +1.48%, 나스닥 +2.13%)했고 빅테크 주가도 강세(마이크로소프트 +4.93%, 메타 +6.02% 등, F78-F81)를 보였다. 그러나 한국 시장은 KOSPI -5.36% 급락(F64)을 기록했으며, 반도체주인 삼성전자(-8.95%)와 SK하이닉스(-8.73%, F82-F83)는 더욱 큰 낙폭을 겪었다. 이는 외국인 투자자들이 이 두 종목에서 대규모로 순매도(SK하이닉스 -1.8조원, 삼성전자 -9,455억원, F51, F60)했기 때문이다.",
-    "counter_reading": "미 10년물 금리가 직전 관측 대비 +1.50% 상승했고(F5), 10Y-2Y 금리차도 +0.45%로 양수를 유지하고 있다는 점을 보면 미국의 금리 전망은 여전히 불확실한 상태다(F12). 한국 기준금리가 2.50%로 동결된 가운데(F1) 외국인의 매도는 한국 시장의 절대적 약세라기보다는 미국의 금리 사이클에서 선진국 자산으로의 자금 이동을 반영할 수 있다.",
-    "thesis_impact": "가설 3건 판정 — 강화 2 · 유지 1 · 약화 0 · 무효 0 · 판정 불가 0.\n[AI·반도체 #1] 강화 — NVDA price_close 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 1/1).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.75 (조건 >= 4.5 충족).",
-    "next_check": "2026-08-07의 고용 현황 발표(Employment Situation)와 2026-08-12의 소비자물가지수(Consumer Price Index)가 발표될 때 미국의 금리 경로가 명확해질 것이다. 그 시점에 달러/원 환율(현재 1,428.8원, F73)의 추가 상승 여부와 외국인의 한국 시장 매도 지속 여부를 확인하면, 이날의 한국 시장 낙폭이 구조적 약세인지 일시적 조정인지 판단할 수 있을 것이다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-08-15",
+    "reading": "한국 증시는 F64에 따라 -5.36% 하락했으나 미국 증시는 F66처럼 +1.48% 상승했습니다. F78부터 F81까지의 미국 기술주들 상승세와 달리, F82와 F83에 따르면 삼성전자와 SK하이닉스가 각각 -8.95%, -8.73% 하락했습니다. F49부터 F60까지의 매매 동향에서 개인은 순매수하나 기관과 외국인은 순매도하는 패턴이 보입니다.",
+    "counter_reading": "미국 10년물 금리의 급락(F72)은 경제 약세나 시장 불안정을 반영할 수 있으며, KOSPI의 큰 낙폭은 한국 시장의 대형주 의존도를 드러냅니다. 개인투자자의 대규모 매수(F49, F58)는 기술적 하단부에서의 매수일 가능성이 있고, 기관과 외국인의 지속적 매도는 현재 가격을 고평가로 판정한 것을 시사합니다. 미국 기술주의 상승은 최근 실적 발표(F18, F19, F20, F21)에 기인한 것이나, 한국 반도체는 1분기 실적(F29, F30: 81일 전)에 머물러 정보 격차가 있습니다.",
+    "thesis_impact": "가설 7건 판정 — 강화 5 · 유지 2 · 약화 0 · 무효 0 · 판정 불가 0.\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인.\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.75 (조건 >= 4.5 충족).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[소비·경기 #1] 강화 — RSAFS value 12구간 전 대비 6.72% (조건 >= 3% 충족).\n[정책·지정학 #1] 강화 — 731Y001.0000001 value 최신값 1433.6 (조건 >= 1400 충족).",
+    "next_check": "8월 7일 Employment Situation과 8월 12일 Consumer Price Index에서 미국 경제 지표가 금리 하락(F72)을 정당화하는 약세 신호를 보이는지, 그리고 CAT(8월 4일)와 LLY(8월 5일) 실적이 미국 시장 강세를 뒷받침하는지 확인됩니다. 삼성전자와 SK하이닉스의 2분기 실적 공시 시 기관 및 외국인의 매매 방향 변화 여부가 현재의 개인 순매수 추세의 정당성을 판단하는 분기점이 됩니다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-09-01",
     "generated_by": "ai:claude:haiku · interpretation_v2",
-    "generated_at": "2026-08-03T23:21:40+00:00"
+    "generated_at": "2026-08-04T01:08:53+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -1975,9 +1975,9 @@
       "model": "claude:haiku",
       "prompt_version": "interpretation_v2",
       "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
-      "generated_at": "2026-08-03T23:21:40+00:00",
-      "elapsed_ms": 53966,
-      "attempts": 1,
+      "generated_at": "2026-08-04T01:08:53+00:00",
+      "elapsed_ms": 102730,
+      "attempts": 2,
       "fields": {
         "reading": "ok",
         "counter_reading": "ok",
@@ -1987,24 +1987,44 @@
       "violations": {},
       "evidence": [
         [
-          "F1",
-          "ecos:722Y001.0101000:value:20260531",
+          "F18",
+          "sec_8k_events:MSFT:earnings_release_8k:20260729",
           1
         ],
         [
-          "F5",
-          "fred:DGS10:value:20260731",
+          "F19",
+          "sec_8k_events:GOOGL:earnings_release_8k:20260722",
           1
         ],
         [
-          "F12",
-          "fred:T10Y2Y:value:20260803",
+          "F20",
+          "sec_8k_events:AMZN:earnings_release_8k:20260730",
           1
         ],
         [
-          "F51",
-          "kis:000660.KS:net_buy_foreign_value:20260803",
-          2
+          "F21",
+          "sec_8k_events:META:earnings_release_8k:20260729",
+          1
+        ],
+        [
+          "F29",
+          "dart:005930.KS:filing_event:20260515",
+          1
+        ],
+        [
+          "F30",
+          "dart:000660.KS:filing_event:20260515",
+          1
+        ],
+        [
+          "F49",
+          "kis:000660.KS:net_buy_individual_value:20260803",
+          1
+        ],
+        [
+          "F58",
+          "kis:005930.KS:net_buy_individual_value:20260803",
+          1
         ],
         [
           "F60",
@@ -2017,9 +2037,14 @@
           4
         ],
         [
-          "F73",
-          "yfinance:KRW=X:price_close:20260803",
-          4
+          "F66",
+          "yfinance:^GSPC:price_close:20260803",
+          1
+        ],
+        [
+          "F72",
+          "yfinance:^TNX:price_close:20260803",
+          1
         ],
         [
           "F78",
@@ -2056,7 +2081,27 @@
           "changed": 0
         },
         {
+          "thesis_id": "power_energy_1",
+          "verdict": "강화",
+          "changed": 0
+        },
+        {
           "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": 0
+        },
+        {
+          "thesis_id": "fin_credit_2",
+          "verdict": "유지",
+          "changed": 0
+        },
+        {
+          "thesis_id": "consumer_cycle_1",
+          "verdict": "강화",
+          "changed": 0
+        },
+        {
+          "thesis_id": "policy_geo_1",
           "verdict": "강화",
           "changed": 0
         }

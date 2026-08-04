@@ -353,6 +353,14 @@ def review(conn, theses: list[dict], cutoff, report_type: str, report_date: str)
         prev_verdict = store_mod.last_verdict(conn, th["thesis_id"])
         changed = 1 if (prev_verdict is not None and prev_verdict != verdict) else 0
 
+        # 이 판정을 만든 가설 판의 지문. 직전 판정과 다르면 **기준이 바뀐 뒤의
+        # 첫 판정**이므로, 그 전후 판정은 서로 비교할 수 없다. 기록해 두지
+        # 않으면 원장이 "강화 → 강화"만 보여주고 골대가 움직인 사실이 사라진다
+        # (CEO 2026-08-04 "목표치 재설정" 논의).
+        rules_sha256 = th.get("rules_sha256") or ""
+        prev_rules = store_mod.last_rules_sha256(conn, th["thesis_id"])
+        rules_changed = 1 if (prev_rules and rules_sha256 and prev_rules != rules_sha256) else 0
+
         evaluable = sum(1 for e in all_ev if e["status"] != "UNKNOWN")
         atoms_payload = {
             "falsify": [{"id": e["atom"].get("id"), "status": e["status"], "detail": e["detail"]} for e in falsify_ev],
@@ -370,6 +378,7 @@ def review(conn, theses: list[dict], cutoff, report_type: str, report_date: str)
                 "statement": th["statement"], "next_check_date": th.get("next_check_date"),
                 "report_type": report_type, "report_date": report_date, "cutoff_utc": cutoff_str,
                 "verdict": verdict, "prev_verdict": prev_verdict, "changed": changed,
+                "rules_sha256": rules_sha256, "rules_changed": rules_changed,
                 "atoms": atoms_payload, "atoms_json": json.dumps(atoms_payload, ensure_ascii=False),
                 "evidence_json": json.dumps(evidence_payload, ensure_ascii=False),
                 "total_atoms": len(all_ev), "evaluable_atoms": evaluable,

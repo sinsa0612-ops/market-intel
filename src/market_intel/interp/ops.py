@@ -352,7 +352,7 @@ def _review_reason(atoms_json: str | None, verdict: str = "") -> str:
 def _last_review(conn, thesis_id: str) -> dict | None:
     row = conn.execute(
         "SELECT verdict, prev_verdict, changed, atoms_json, report_type, report_date, created_at "
-        "FROM thesis_reviews WHERE thesis_id=? ORDER BY created_at DESC, review_id DESC LIMIT 1",
+        "FROM thesis_reviews WHERE thesis_id=? ORDER BY created_at DESC, rowid DESC LIMIT 1",
         (thesis_id,),
     ).fetchone()
     return dict(row) if row else None
@@ -391,12 +391,15 @@ def thesis_changes(conn, *, now: datetime | None = None,
     변화지 오늘의 변화가 아니다."""
     now = (now or datetime.now(KST)).astimezone(KST)
     since = db_mod.iso_utc(now - timedelta(days=days))
+    # `rules_changed=1`도 함께 싣는다: 기준을 바꾼 것은 판정이 뒤집힌 것만큼
+    # 중요한 사건이다. 오히려 조용히 지나가면 안 되는 쪽이다 — 그 이후 판정은
+    # 그 전 판정과 비교할 수 없기 때문이다(CEO 2026-08-04 "목표치 재설정").
     rows = conn.execute(
         "SELECT r.thesis_id, r.verdict, r.prev_verdict, r.report_type, r.report_date, "
-        "r.cutoff_utc, t.statement FROM thesis_reviews r "
+        "r.cutoff_utc, r.rules_changed, t.statement FROM thesis_reviews r "
         "LEFT JOIN theses t ON t.thesis_id = r.thesis_id "
-        "WHERE r.changed=1 AND r.cutoff_utc >= ? "
-        "ORDER BY r.cutoff_utc DESC, r.review_id DESC",
+        "WHERE (r.changed=1 OR r.rules_changed=1) AND r.cutoff_utc >= ? "
+        "ORDER BY r.cutoff_utc DESC, r.rowid DESC",
         (since,),
     ).fetchall()
     return [dict(r) for r in rows]
