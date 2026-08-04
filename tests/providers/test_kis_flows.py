@@ -100,12 +100,17 @@ def test_order_paths_are_refused_even_if_asked(settings):
 
 # --- 수급 사실 ---------------------------------------------------------------
 
-def _facts(settings, rows=None):
+def _facts(settings, rows=None, subject="005930.KS"):
+    """-> (결과, 그 종목의 metric->fact).
+
+    metric으로만 키를 잡으면 안 된다: provider는 관측 기업 외에 수급 표본
+    20종목도 함께 도는데(`universe.KOSPI_FLOW_SAMPLE`), 가짜 응답이 모든
+    종목에 같은 값을 주므로 마지막 종목이 앞의 것을 전부 덮어쓴다."""
     meta = {"symbol": "005930.KS", "market": "KR", "country": "KR",
             "asset_type": "equity", "core16": True, "name": "Samsung", "name_ko": "삼성전자",
             "unit": None, "sector": "반도체·공급망"}
     result = KisFlowsProvider().collect(_ctx(settings, _handler(rows), [meta]))
-    return result, {f.metric: f for f in result.facts}
+    return result, {f.metric: f for f in result.facts if f.subject == subject}
 
 
 def test_net_buy_quantities_become_facts(settings):
@@ -225,3 +230,18 @@ def test_expired_cache_is_not_reused(settings):
     path.write_text(json.dumps({"access_token": "OLD", "expires_at": time.time() - 5}),
                     encoding="utf-8")
     assert kis_flows._read_cached_token(settings) is None
+
+
+def test_flow_sample_symbols_are_collected_too(settings):
+    """시장 전체 수급을 주는 경로가 없어 코스피 상위 20종목 합으로 대신한다
+    (`universe.KOSPI_FLOW_SAMPLE`). 그 종목들이 수집되지 않으면 합계 막대가
+    관측 기업 5개만 더한 것이 되고, 화면은 그것을 '상위 20종목 합계'라고
+    부른다 — 숫자가 조용히 틀린다."""
+    from market_intel.universe import KOSPI_FLOW_SAMPLE_SYMBOLS
+
+    result, _ = _facts(settings)
+    collected = {f.subject for f in result.facts}
+    missing = set(KOSPI_FLOW_SAMPLE_SYMBOLS) - collected
+    assert not missing, f"표본에서 빠진 종목: {sorted(missing)}"
+    # 관측 기업도 그대로 있어야 한다 — 표본이 관측을 대체하는 것이 아니다.
+    assert "005930.KS" in collected

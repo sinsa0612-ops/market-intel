@@ -37,6 +37,9 @@ CLI_EXTENSIONS = [
     # 명령은 `invalid choice: 'backfill'`로 죽는다(2단계-B judge.md 6-1과
     # 같은 실패). CEO 실행 단계(백필 spec §9)가 이 명령을 직접 친다.
     "market_intel.cli_backfill",
+    # 수급 표본 목록 갱신 — `market-intel krx top-kospi`. 등록하지 않으면
+    # 모듈만 있고 명령은 `invalid choice`로 죽는다(이 파일이 이미 두 번 겪은 실패).
+    "market_intel.cli_krx",
 ]
 
 

@@ -66,6 +66,8 @@ from .. import db as db_mod
 from .. import schedule as schedule_mod
 from ..universe import (
     CORE16_SYMBOLS,
+    KOSPI_FLOW_SAMPLE_SYMBOLS,
+    KR_CORE_SYMBOLS,
     SECTOR_BY_SYMBOL,
     SECTOR_INDEX_SYMBOLS,
     SECTORS,
@@ -708,6 +710,63 @@ _FLOW_LABELS = {
 }
 
 
+_KR_CORE_SET = set(KR_CORE_SYMBOLS)
+_FLOW_SAMPLE_SET = set(KOSPI_FLOW_SAMPLE_SYMBOLS)
+_FLOW_SAMPLE_SUBJECT = "KOSPI_TOP20"
+# 화면에 "시장"이라고 쓰지 않는다. 시장 전체 수급을 주는 경로가 없어서 상위
+# 20종목 합으로 대신하는 것이고(`universe.KOSPI_FLOW_SAMPLE`), 시장이라고 쓰는
+# 순간 나중에 "코스피 수급"으로 읽고 판단하게 된다.
+_FLOW_SAMPLE_LABEL = f"코스피 상위 {len(KOSPI_FLOW_SAMPLE_SYMBOLS)}종목 합계(표본)"
+
+
+def _folded_into_sample_total(subject: str) -> bool:
+    """이 종목의 개별 줄을 빼도 되는가 — **합계 막대가 이미 보여주는가**.
+
+    관측 기업(Core 16의 한국 상장분)은 표본에도 들어 있지만 개별로도 본다.
+    표본에만 있는 종목이 접히는 대상이다."""
+    return subject in _FLOW_SAMPLE_SET and subject not in _KR_CORE_SET
+
+
+def _kr_flow_sample_total(latest: dict) -> list[FactRow]:
+    """표본 종목의 순매수를 주체별로 더해 **막대 한 줄**을 만든다.
+
+    개별 종목 20줄 대신 합계 1줄인 이유는 호출부 주석 참조. 같은 날짜의 값만
+    더한다 — 종목마다 마지막 거래일이 다를 수 있는데(거래정지 등) 섞어 더하면
+    "그날 시장"이 아니라 여러 날의 잡탕이 된다.
+    """
+    by_metric: dict[str, list] = {}
+    for (subject, metric), row in latest.items():
+        if subject not in KOSPI_FLOW_SAMPLE_SYMBOLS or not metric.endswith("_value"):
+            continue
+        by_metric.setdefault(metric, []).append(row)
+    if not by_metric:
+        return []
+
+    # 가장 많은 종목이 공유하는 최근 날짜 하나로 못박는다.
+    day = max((r["event_at"] or "")[:10]
+              for rows in by_metric.values() for r in rows)
+
+    out: list[FactRow] = []
+    for metric, rows in by_metric.items():
+        same_day = [r for r in rows if (r["event_at"] or "")[:10] == day]
+        if not same_day:
+            continue
+        total = sum(r["value_num"] or 0.0 for r in same_day)
+        who = _FLOW_LABELS.get(metric, metric).replace("(금액)", "").strip()
+        sample = same_day[0]
+        out.append(FactRow(
+            label=f"{_FLOW_SAMPLE_LABEL} {who}",
+            value=fmt_money(total, "KRW"),
+            comparison=f"{day} · {sample['publisher'] or ''} · {len(same_day)}종목 합"
+                       .strip(" ·"),
+            source_url=sample["safe_source_url"] or "",
+            data_status=sample["data_status"] or "source_verified",
+            known_at=sample["known_at"], subject=_FLOW_SAMPLE_SUBJECT, metric=metric,
+            raw_value=total, group="flow",
+        ))
+    return out
+
+
 def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
     """spec B7/R7: KR investor flows are 0 facts today; the report must
     still build, with the gap named in both `missing` and `data_gaps`
@@ -759,8 +818,20 @@ def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
                 group="flow" if (r["metric"] or "").endswith("_value") else "",
             )
             for r in latest.values()
+            # **표본 전용 종목만** 개별 막대에서 뺀다 — 20개를 다 그리면 어제 겨우
+            # 77행에서 줄인 핵심 사실이 다시 20줄이 된다. 그 종목들은 합계 막대와
+            # 상세 페이지가 대신 보여준다.
+            #
+            # 화이트리스트(`in _KR_CORE_SET`)로 거르지 않는 이유: 그러면 관측
+            # 기업도 표본도 아닌 수급 사실이 **합계에도 안 들어가고 개별 줄에도
+            # 없어 통째로 사라진다**. 새 소스가 다른 subject로 수급을 주기
+            # 시작하면 아무도 모르게 리포트에서 빠지는 것이다
+            # (`test_kr_flows_appear_when_present`가 이것을 잡았다).
+            # 빼는 것은 "합계가 이미 보여주는 것"뿐이다.
+            if not _folded_into_sample_total(r["subject"])
         ]
-        out.sort(key=lambda x: (x.subject, x.label))
+        out = _kr_flow_sample_total(latest) + out
+        out.sort(key=lambda x: (x.subject != _FLOW_SAMPLE_SUBJECT, x.subject, x.label))
         return out, []
     _register_gap(conn, KR_FLOW_GAP_ID, "kr_flows", "net_buy", KR_FLOW_GAP_REASON)
     missing = [MissingItem(area="한국 수급(외국인/기관/개인)", reason=KR_FLOW_GAP_REASON,

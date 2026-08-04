@@ -28,6 +28,7 @@ EXPECTED_EXTENSIONS = (
     "market_intel.cli_interpret",
     "market_intel.cli_ops",
     "market_intel.cli_backfill",
+    "market_intel.cli_krx",
 )
 
 

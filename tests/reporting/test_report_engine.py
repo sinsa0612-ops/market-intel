@@ -262,3 +262,72 @@ def test_json_roundtrip(settings):
     restored = model_mod.Report.from_json(report.to_json())
     assert restored == report
     conn.close()
+
+
+# --- 수급 표본 합계 (2026-08-04) ---------------------------------------------
+#
+# 시장 전체 수급을 주는 경로가 없어(KIS 시장 단위는 투자자 필드가 300거래일 내내
+# 0, KRX 오픈API에는 엔드포인트 자체가 없음) 코스피 시총 상위 20종목의 합으로
+# 대신한다. 여기서 지키는 것은 **합계를 만들면서 아무것도 잃지 않는다**이다.
+
+def _seed_flow(conn, settings, subject, metric, value, *, day="2026-08-01"):
+    fc = FactCandidate(
+        raw_ref=f"{subject}:{metric}", subject=subject, category="flow", metric=metric,
+        event_at=f"{day}T06:30:00+00:00", market="KR", country="KR",
+        value_num=value, unit="KRW", data_status="source_verified", publisher="KIS",
+    )
+    seed_fact(conn, settings.raw_dir, "kis", fc, known_at="2026-08-01T07:00:00+00:00")
+
+
+def _flow_rows(settings):
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    return conn
+
+
+def test_sample_only_symbols_are_folded_into_the_total_not_shown_individually(settings):
+    """20종목을 개별 막대로 그리면 핵심 사실이 다시 20줄이 된다. 표본 전용
+    종목은 합계가 대신 보여준다."""
+    conn = _flow_rows(settings)
+    # 035420.KS(NAVER)는 표본에만 있고 관측 기업이 아니다.
+    _seed_flow(conn, settings, "035420.KS", "net_buy_foreign_value", 5e11)
+    _seed_flow(conn, settings, "005930.KS", "net_buy_foreign_value", 1e12)
+
+    report = build_mod.build_report(conn, "close_delta", date(2026, 8, 1),
+                                    cutoff_mod.cutoff_for("close_delta", date(2026, 8, 1)))
+    subjects = {r.subject for r in report.facts if r.metric == "net_buy_foreign_value"}
+    assert "035420.KS" not in subjects, "표본 전용 종목은 개별 줄로 나오지 않는다"
+    assert "005930.KS" in subjects, "관측 기업은 그대로 개별로 본다"
+    assert "KOSPI_TOP20" in subjects, "합계 막대가 있어야 한다"
+
+    total = next(r for r in report.facts
+                 if r.subject == "KOSPI_TOP20" and r.metric == "net_buy_foreign_value")
+    assert total.raw_value == 1.5e12, "합계는 표본 전체를 더한다(관측 기업 포함)"
+    assert "표본" in total.label, "시장 전체가 아니라 표본이라고 써야 한다"
+
+
+def test_a_flow_subject_outside_the_sample_is_never_dropped(settings):
+    """화이트리스트로 거르면 표본에도 관측에도 없는 수급이 **합계에도 안 들어가고
+    개별 줄에도 없어 통째로 사라진다**. 새 소스가 다른 subject로 수급을 주기
+    시작하면 아무도 모르게 리포트에서 빠진다."""
+    conn = _flow_rows(settings)
+    _seed_flow(conn, settings, "KOSPI", "net_buy_foreign_value", 3e12)
+
+    report = build_mod.build_report(conn, "close_delta", date(2026, 8, 1),
+                                    cutoff_mod.cutoff_for("close_delta", date(2026, 8, 1)))
+    assert any(r.subject == "KOSPI" for r in report.facts), "모르는 subject를 삼키면 안 된다"
+
+
+def test_the_total_never_mixes_days(settings):
+    """종목마다 마지막 거래일이 다를 수 있다(거래정지 등). 섞어 더하면 '그날
+    시장'이 아니라 여러 날의 잡탕이 된다."""
+    conn = _flow_rows(settings)
+    _seed_flow(conn, settings, "005930.KS", "net_buy_foreign_value", 1e12, day="2026-08-01")
+    _seed_flow(conn, settings, "035420.KS", "net_buy_foreign_value", 9e11, day="2026-07-28")
+
+    report = build_mod.build_report(conn, "close_delta", date(2026, 8, 1),
+                                    cutoff_mod.cutoff_for("close_delta", date(2026, 8, 1)))
+    total = next(r for r in report.facts
+                 if r.subject == "KOSPI_TOP20" and r.metric == "net_buy_foreign_value")
+    assert total.raw_value == 1e12, "가장 최근 날짜의 값만 더한다"
+    assert "1종목" in total.comparison, "몇 종목을 더했는지 밝힌다"

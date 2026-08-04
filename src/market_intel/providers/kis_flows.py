@@ -36,6 +36,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from ..models import CollectContext, FactCandidate, ProviderResult, RawItem
+from ..universe import KOSPI_FLOW_SAMPLE
 
 KR_TZ = ZoneInfo("Asia/Seoul")
 BASE_URL = "https://openapi.koreainvestment.com:9443"
@@ -140,8 +141,18 @@ class KisFlowsProvider:
             # 키가 없으면 네트워크를 두드리지도 않는다(다른 provider와 같은 규율).
             return ProviderResult(status="NO_DATA", reason_code="키없음")
 
-        symbols = [m for m in ctx.universe
-                   if m.get("market") == "KR" and m.get("asset_type") == "equity"]
+        # 관측 기업(Core 16의 한국 상장분) + 수급 표본(코스피 시총 상위 20).
+        # 표본을 따로 두는 이유는 `universe.KOSPI_FLOW_SAMPLE` 참조 — 시장 전체
+        # 수급을 주는 경로가 없어서 상위 20종목 합으로 대신한다. 이 종목들은
+        # 관측 기업이 아니므로 UNIVERSE에 넣지 않는다(업종·재무·가설이 딸리면
+        # 안 된다). 여기서만 합친다.
+        seen: dict[str, str] = {}
+        for m in ctx.universe:
+            if m.get("market") == "KR" and m.get("asset_type") == "equity":
+                seen[m["symbol"]] = m.get("name_ko") or m.get("name") or m["symbol"]
+        for symbol, name in KOSPI_FLOW_SAMPLE:
+            seen.setdefault(symbol, name)
+        symbols = [{"symbol": sym, "name_ko": nm} for sym, nm in seen.items()]
         if not symbols:
             return ProviderResult(status="NO_DATA", reason_code="no_subjects")
 

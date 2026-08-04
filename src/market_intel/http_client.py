@@ -32,6 +32,9 @@ HOST_WHITELIST: dict[str, set[str]] = {
     # KRX가 그 화면을 회원 전용으로 바꾼 뒤 남은 유일한 키 기반 경로다
     # (2026-08-03 실측: KRX 오픈API에 수급 엔드포인트 없음, KRX 회원 화면은 `LOGOUT`).
     "kis": {"openapi.koreainvestment.com"},
+    # KRX 오픈API — 전종목 일별매매정보(시세·시가총액). 수급은 여기 없다
+    # (2026-08-03 실측: 투자자 구분 필드 자체가 없다) — 수급은 KIS가 준다.
+    "krx": {"data-dbg.krx.co.kr"},
 }
 
 SECRET_PARAM_NAMES = {"api_key", "apikey", "key", "authkey", "servicekey", "crtfc_key"}
