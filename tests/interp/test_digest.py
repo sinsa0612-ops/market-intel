@@ -1,10 +1,26 @@
 """SA-6 digest builder + evidence resolution tests."""
 from __future__ import annotations
 
+import dataclasses
+
 from market_intel.interp import digest as digest_mod
 from market_intel.reporting.model import CalendarRow, FactRow, MissingItem
 
 from conftest import make_fact_row, make_report, macro_fc, price_fc, seed_fact
+
+
+def test_build_header_includes_kr_market_breadth():
+    """서브태스크 B spec §3 항목3: 시장 폭(관측기업 + 한국 전체)이 AI 해석이
+    보는 다이제스트에도 실려야 한다. 안 실리면 화면은 "종목 폭은 평범"인데
+    해석은 "시장이 5% 빠졌다"고 쓰는 모순이 생긴다."""
+    report = dataclasses.replace(
+        make_report(),
+        breadth="관측기업 4/6개 상승 · 반도체·공급망 4/4\n"
+                "코스피 -5.15%(근사)인데 오른 종목 455 / 내린 종목 419 — 상승비율 52%",
+    )
+    text, _ = digest_mod.build(report)
+    assert "코스피 -5.15%(근사)인데 오른 종목 455 / 내린 종목 419 — 상승비율 52%" in text
+    assert "시장 폭:" in text
 
 
 def test_build_numbers_facts_then_market_reaction_continuously():

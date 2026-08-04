@@ -455,6 +455,144 @@ def _breadth_line(summaries: list[SectorSummary]) -> str:
     return f"관측기업 {up}/{observed}개 상승 · " + " · ".join(parts)
 
 
+# --- 한국 시장 폭 (서브태스크 B, spec §1·§2) --------------------------------
+#
+# `_breadth_line`(위)은 관측기업(Core 16) 등락만 본다 — CEO 지적(2026-08-04):
+# 그것은 우리 관측군이지 "한국 시장"이 아니다. 여기서는 `providers/krx_breadth.py`
+# 가 채운 코스피·코스닥 **전종목** 집계(§0 목적)를 한 줄씩 덧붙인다.
+#
+# 정직성 규칙(§2, 재량 없음)을 코드로:
+#   1. `index_change_pct`는 전종목 시총 역산 근사치이므로 항상 "(근사)"를 붙인다
+#      (절대 "지수"라고만 쓰지 않는다).
+#   2. 지수 방향과 상승/하락 종목 수 다수 방향이 실제로 어긋날 때만 "…인데"로
+#      잇는다(`_kr_breadth_market_line`의 `contrarian` 분기). 같은 방향이면
+#      "·"로 나열만 한다.
+#   3. 2년 백분위 문맥은 표본이 모자라면 아예 쓰지 않는다
+#      (`_KR_BREADTH_MIN_HISTORY_DAYS`, 근거는 그 상수 옆 주석).
+#   4. 값은 전부 `db.facts_as_of(cutoff)` 한 번의 결과에서만 나온다 — 별도
+#      SELECT가 없으므로 차단선 이후 관측이 섞일 수 없다.
+
+_KR_BREADTH_LABELS = {"KOSPI": "코스피", "KOSDAQ": "코스닥"}
+
+# 백분위를 낼 때 요구하는 최소 과거 관측(오늘 제외) 일수. 60거래일(약 3개월)
+# 미만이면 하루 추가될 때마다 백분위가 크게 흔들려("이번 주 안에서 최고"류의
+# 착시) "2년 중 X%"라는 문장이 실제로 갖지 않은 정밀도를 주장하게 된다.
+# [ASSUMPTION] 정확한 임계값은 CEO가 정하지 않았다 — 분기(60거래일)를 문맥이
+# 안정되기 시작하는 최소선으로 잡았다. 표본이 60일 미만이면 percentile 절
+# 전체를 생략한다(§2-3).
+_KR_BREADTH_MIN_HISTORY_DAYS = 60
+
+
+def _kr_breadth_history(conn, cutoff, subject: str) -> dict[str, dict[str, float]]:
+    """subject(KOSPI/KOSDAQ)의 날짜별 {metric: value} — **`facts_as_of(cutoff)`
+    한 번의 결과만** 쓴다(§2 규칙4). 날짜별로만 묶는다, 그 이상 가공하지 않는다."""
+    rows = db_mod.facts_as_of(conn, cutoff, category="breadth", subject=subject)
+    by_date: dict[str, dict[str, float]] = {}
+    for r in rows:
+        day = (r["event_at"] or "")[:10]
+        if not day or r["value_num"] is None:
+            continue
+        by_date.setdefault(day, {})[r["metric"]] = r["value_num"]
+    return by_date
+
+
+def _kr_up_ratio(day_metrics: dict[str, float]) -> float | None:
+    adv, dec = day_metrics.get("breadth_advancers"), day_metrics.get("breadth_decliners")
+    if adv is None or dec is None or adv + dec <= 0:
+        return None
+    return adv / (adv + dec) * 100
+
+
+def _kr_breadth_span_label(dates: list[str]) -> str:
+    """과거 표본이 실제로 걸쳐 있는 기간을 사람이 읽는 말로("2년"/"5개월").
+    이 근거로 현재 완료된 2년 백필(spec 헤더: 483거래일)에서는 자연히 "2년"이
+    나오고, 데이터가 아직 짧을 때는 그 실제 기간을 말한다 — "2년"을 하드코딩해
+    실제보다 긴 문맥을 주장하지 않는다."""
+    span_days = (date.fromisoformat(max(dates)) - date.fromisoformat(min(dates))).days
+    years = span_days / 365.25
+    if years >= 1.5:
+        return f"{round(years)}년"
+    return f"{max(1, round(span_days / 30))}개월"
+
+
+def _kr_breadth_context(by_date: dict[str, dict], today: str, today_ratio: float) -> str:
+    """오늘을 뺀 과거 표본에서 오늘 상승비율의 위치. 표본이
+    `_KR_BREADTH_MIN_HISTORY_DAYS` 미만이면 빈 문자열(§2-3 — 맥락 없으면
+    그 절을 아예 쓰지 않는다)."""
+    hist_dates = [d for d in by_date if d != today]
+    hist_ratios = {d: _kr_up_ratio(by_date[d]) for d in hist_dates}
+    hist_ratios = {d: r for d, r in hist_ratios.items() if r is not None}
+    if len(hist_ratios) < _KR_BREADTH_MIN_HISTORY_DAYS:
+        return ""
+    vals = sorted(hist_ratios.values())
+    rank = sum(1 for v in vals if v <= today_ratio) / len(vals) * 100
+    span = _kr_breadth_span_label(list(hist_ratios.keys()))
+    if 25 <= rank <= 75:
+        return f"{span} 중 중간"
+    # 역대 최고/최저(rank 100/0)는 반올림하면 "상위 0%"가 되어 "아무도 없다"는
+    # 말처럼 읽힌다 — 최소 1%로 바닥을 둔다.
+    if rank > 75:
+        return f"{span} 중 상위 {max(1, round(100 - rank))}%"
+    return f"{span} 중 하위 {max(1, round(rank))}%"
+
+
+def _kr_breadth_market_line(by_date: dict[str, dict], subject: str,
+                            report_date: date) -> str | None:
+    """`by_date`가 비어 있거나 오늘치에 등락 종목 수가 없으면 그 시장은 아예
+    낸 줄이 없다(None) — 없는 관측을 지어내지 않는다.
+
+    **가장 최근 관측이 리포트 날짜가 아니면 그 날짜를 이름표에 박는다.** 이게
+    없으면 KRX 수집이 며칠 실패했을 때 2주 전 숫자가 날짜 표기 없이 오늘 줄에
+    실린다(심사 실측: 7/20 자료만 있는 상태로 8/3 리포트를 만들었더니
+    `코스피 +3.50%(근사) · 오른 종목 900 …`이 그대로 나왔다). 아침 리포트처럼
+    **정상적으로** 전 거래일이 최신인 경우도 있으므로 줄을 빼지는 않는다 —
+    빼면 매일 아침 한국 시장이 통째로 사라진다. 날짜를 밝히는 쪽이 맞다."""
+    if not by_date:
+        return None
+    today = max(by_date)
+    metrics = by_date[today]
+    adv, dec = metrics.get("breadth_advancers"), metrics.get("breadth_decliners")
+    if adv is None or dec is None:
+        return None
+    idx = metrics.get("index_change_pct")
+
+    label = _KR_BREADTH_LABELS[subject]
+    if today != report_date.isoformat():
+        label += f"({date.fromisoformat(today):%-m/%-d} 기준)"
+    # 규칙1: "지수"라고 쓰지 않는다 — 전종목 시총 역산 근사치임을 항상 드러낸다.
+    idx_part = f"{idx:+.2f}%(근사)" if idx is not None else "지수 근사치 미확인"
+
+    up_ratio = _kr_up_ratio(metrics)
+    if up_ratio is None:
+        tail = "상승비율 계산 불가(등락 종목 없음)"
+    else:
+        ctx = _kr_breadth_context(by_date, today, up_ratio)
+        tail = f"상승비율 {up_ratio:.0f}%" + (f", {ctx}" if ctx else "")
+
+    counts = f"오른 종목 {adv:,.0f} / 내린 종목 {dec:,.0f}"
+
+    # 규칙2: 지수 방향과 다수 종목 방향이 실제로 어긋날 때만 역접.
+    idx_sign = None if idx is None else (1 if idx > 0 else (-1 if idx < 0 else 0))
+    maj_sign = 1 if adv > dec else (-1 if dec > adv else 0)
+    contrarian = idx_sign not in (None, 0) and maj_sign != 0 and idx_sign != maj_sign
+
+    if contrarian:
+        return f"{label} {idx_part}인데 {counts} — {tail}"
+    return f"{label} {idx_part} · {counts} — {tail}"
+
+
+def _kr_breadth_lines(conn, cutoff, report_date: date) -> list[str]:
+    """§1 목표 형태의 2·3번째 줄. 시장별로 독립 계산 — 한쪽 provider가
+    실패해도 다른 쪽은 그대로 나온다."""
+    lines = []
+    for subject in ("KOSPI", "KOSDAQ"):
+        line = _kr_breadth_market_line(
+            _kr_breadth_history(conn, cutoff, subject), subject, report_date)
+        if line:
+            lines.append(line)
+    return lines
+
+
 # --- macro ----------------------------------------------------------------
 
 def _macro_map(conn, cutoff) -> dict[str, dict]:
@@ -942,7 +1080,10 @@ def build_report(
     headline = _headline(price_map)
     sector_summary = _sector_summary(price_map)
     sector_index = _sector_index_rows(price_map)
-    breadth = _breadth_line(sector_summary)
+    # 첫 줄은 관측기업(Core 16), 이어지는 줄은 한국 시장 전체(§1) — 없으면
+    # (한국 사실이 아예 없을 때) 첫 줄만 남는다.
+    breadth = "\n".join(
+        [_breadth_line(sector_summary)] + _kr_breadth_lines(conn, cutoff, report_date))
     win = _EVENTS_WINDOW_DAYS[report_type]
     events = _events_rows(conn, cutoff, win)
     schedule_changes = _schedule_change_rows(conn, cutoff, win)

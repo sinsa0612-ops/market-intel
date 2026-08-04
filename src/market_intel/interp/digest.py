@@ -47,6 +47,10 @@ def build(report: Report) -> tuple[str, dict[str, FactRow]]:
             f"[리포트] {report.title} ({report.report_type})",
             f"날짜: {report.report_date}  차단선(KST): {report.cutoff_kst}  차단선(UTC): {report.cutoff_utc}",
             f"헤드라인: {report.headline}",
+            # 서브태스크 B: 시장 폭(관측기업 + 한국 전체)을 AI 해석이 보는
+            # 요약에 넣는다. 안 넣으면 화면은 "종목 폭은 평범"인데 해석은
+            # "시장이 5% 빠졌다"고 쓰는 모순이 생긴다(spec §3).
+            f"시장 폭: {report.breadth}",
             "",
             "[사실]",
         ]

@@ -313,7 +313,12 @@ def _block_html(block: dict) -> str:
     if kind == "legend":
         return f'<p class="legend">{_esc(LEGEND_HTML)}</p>'
     if kind == "breadth":
-        return f'<p class="breadth">{_esc(block["text"])}</p>' if block["text"] else ""
+        # 시장 폭이 여러 줄이면(관측기업 + 코스피 + 코스닥) 줄바꿈이 살아야
+        # 한다 — `_esc` 다음에 개행만 `<br>`로 바꾼다(내용은 이미 이스케이프됐다).
+        if not block["text"]:
+            return ""
+        escaped = _esc(block["text"]).replace("\n", "<br>")
+        return f'<p class="breadth">{escaped}</p>'
     if kind == "sector":
         return _sector_table_html(block["rows"])
     if kind == "sector_index":

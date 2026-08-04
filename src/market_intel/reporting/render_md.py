@@ -400,9 +400,9 @@ def _sector_index(report: Report) -> dict:
 
 def _subheading(text: str) -> dict:
     """표 제목(h3/###). 표가 둘이 되면서 어느 표가 무엇인지 이름이 필요해졌다.
-    제목을 표 렌더러 안이 아니라 **레이아웃에** 두는 이유는 시장 폭 한 줄이
-    자기 제목 **아래**에 붙어야 하기 때문이다 — 제목이 표 함수 안에 있으면 그
-    한 줄은 두 표 사이에 떠서 어느 쪽 이야기인지 알 수 없다.
+    제목을 표 렌더러 안이 아니라 **레이아웃에** 두면 제목과 본문의 순서를 여기
+    한 곳에서 정할 수 있다(시장 폭이 제목 아래에서 머릿줄로 올라간 것도 이 덕분이다
+    — `_market_blocks` 참조).
     빈 문자열이면 아무것도 내지 않는다(딸린 내용이 없는 제목은 안 낸다)."""
     return {"kind": "subheading", "text": text}
 
@@ -413,14 +413,21 @@ def _market_blocks(report: Report) -> list[dict]:
     만든다 — 타입마다 손으로 베낀 레이아웃이 예전에 두 타입의 해석 칸을 동시에
     떨어뜨린 적이 있다.
 
-    순서는 넓은 것 → 좁은 것이다: 시장 전체(업종 지수) 다음에 내가 보는 16개
-    기업(시장 폭 + 업종 묶음). 두 업종 표는 붙어 있어야 비교가 된다."""
+    순서는 넓은 것 → 좁은 것이다: 시장 폭 요약(코스피·코스닥 전종목 + 관측기업)
+    다음에 개별 종목, 업종 지수, 업종 묶음. 두 업종 표는 붙어 있어야 비교가 된다.
+
+    **시장 폭은 섹션 머릿줄이다 — 어느 표에도 딸리지 않는다.** 예전에는 관측기업
+    한 줄뿐이라 `업종 묶음` 제목 아래에 뒀는데, 코스피·코스닥 전종목 2,763개 줄이
+    붙으면서 그 자리가 거짓 이름표가 됐다(전종목은 "내가 관측하는 기업"이 아니다).
+    세 줄 모두 자기가 무엇인지 밝히므로(`관측기업`/`코스피`/`코스닥`) 표 사이에
+    떠서 소속을 알 수 없던 옛 문제도 없다. CEO 결정 2026-08-04."""
     return [
+        _breadth(report),
         _facts(report.market_reaction),
         _subheading(SECTOR_INDEX_TITLE), _sector_index(report),
         # 옛 리포트 JSON에는 sector_summary가 없다 — 딸린 표가 없으면 제목도 안 낸다.
         _subheading(SECTOR_TITLE if report.sector_summary else ""),
-        _breadth(report), _sector(report),
+        _sector(report),
     ]
 
 
@@ -635,7 +642,12 @@ def _block_md(block: dict) -> str:
     if kind == "legend":
         return LEGEND_MD
     if kind == "breadth":
-        return block["text"]
+        # `report.breadth`가 여러 줄이면(관측기업 줄 + 코스피/코스닥 줄,
+        # spec-b subtask B) 마크다운 한 문단 안에서 줄바꿈이 살아야 한다 —
+        # 빈 줄로 나누면 별도 문단이 되어 시각적으로 너무 벌어진다. 마크다운의
+        # "하드 브레이크"(줄 끝 공백 두 칸)로 잇는다. 옛 한 줄짜리 텍스트는
+        # split이 원소 하나짜리 리스트를 주므로 그대로 통과한다.
+        return "  \n".join(block["text"].split("\n"))
     if kind == "sector":
         return _sector_table_md(block["rows"])
     if kind == "sector_index":
