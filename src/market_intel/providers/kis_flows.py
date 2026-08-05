@@ -110,7 +110,14 @@ def _read_cached_token(settings) -> str | None:
     return token if isinstance(token, str) and token else None
 
 
-def _write_cached_token(settings, token: str, expires_in) -> None:
+def _write_cached_token(settings, token: str, expires_in) -> str | None:
+    """-> 실패 사유(있으면). 캐시를 못 써도 수집은 계속한다.
+
+    **못 썼다는 사실은 반드시 남긴다.** KIS는 "1일 1회 발급 원칙, 유효기간 내
+    잦은 발급 시 이용 제한"이라고 명시한다. 캐시가 조용히 죽으면 수집할 때마다
+    새 토큰을 받아 하루 6번(06:50·07:40·13:00·15:50·16:15·22:00)이 되고,
+    **계정이 막힐 때까지 아무도 모른다.** 예전에는 `except OSError: pass`라
+    흔적조차 없었다."""
     path = _token_cache_path(settings)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -121,8 +128,10 @@ def _write_cached_token(settings, token: str, expires_in) -> None:
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(payload)
-    except OSError:
-        pass  # 캐시는 최적화지 필수가 아니다 — 못 쓰면 매번 발급받는다
+    except OSError as exc:
+        # 경로는 남기되 토큰은 절대 남기지 않는다.
+        return f"token_cache_write_failed:{exc.__class__.__name__}:{path}"
+    return None
 
 
 def _num(value) -> float | None:
@@ -137,6 +146,10 @@ class KisFlowsProvider:
 
     def collect(self, ctx: CollectContext) -> ProviderResult:
         settings = ctx.settings
+        # 이 수집에서 토큰을 새로 받았는지 / 캐시 쓰기에 실패했는지.
+        # 인스턴스는 레지스트리에서 재사용되므로 매 수집마다 초기화한다.
+        self._token_issued = False
+        self._token_cache_warning = ""
         if not (settings.kis_app_key and settings.kis_app_secret):
             # 키가 없으면 네트워크를 두드리지도 않는다(다른 provider와 같은 규율).
             return ProviderResult(status="NO_DATA", reason_code="키없음")
@@ -207,14 +220,20 @@ class KisFlowsProvider:
                     ))
             _ = payload  # 원자료는 raw_items로 이미 보관된다
 
+        notes = list(missing[:8])
+        if self._token_cache_warning:
+            # 맨 앞에 둔다 — 뒤로 밀리면 `[:400]`에서 잘려 사라진다.
+            notes.insert(0, self._token_cache_warning)
+        elif self._token_issued:
+            notes.append("token_issued(캐시 만료)")
+        detail = "; ".join(notes)[:400]
+
         if not facts:
             return ProviderResult(status="NO_DATA", reason_code="empty_response",
-                                  raw_items=raw_items,
-                                  safe_detail="; ".join(missing[:8])[:400])
+                                  raw_items=raw_items, safe_detail=detail)
         return ProviderResult(
             status="PARTIAL" if missing else "OK", reason_code=None,
-            raw_items=raw_items, facts=facts,
-            safe_detail="; ".join(missing[:8])[:400])
+            raw_items=raw_items, facts=facts, safe_detail=detail)
 
     def _token(self, client, settings) -> str:
         """접근 토큰. **디스크에 캐시해 만료 전까지 재사용한다.**
@@ -228,6 +247,9 @@ class KisFlowsProvider:
         cached = _read_cached_token(settings)
         if cached:
             return cached
+        # 캐시가 비어 있어 **새로 발급받는다.** KIS는 발급 때마다 고객에게
+        # 알림을 보내므로, 왜 받았는지가 기록에 남아야 대조할 수 있다.
+        self._token_issued = True
         resp = client.post(
             BASE_URL + TOKEN_PATH,
             json={"grant_type": "client_credentials",
@@ -240,7 +262,10 @@ class KisFlowsProvider:
         token = body.get("access_token")
         if not token:
             raise RuntimeError("token missing in response")
-        _write_cached_token(settings, token, body.get("expires_in"))
+        failure = _write_cached_token(settings, token, body.get("expires_in"))
+        if failure:
+            # 수집을 막지는 않는다 — 캐시는 최적화다. 다만 조용히 넘어가지 않는다.
+            self._token_cache_warning = failure
         return token
 
     def _investor_rows(self, client, settings, token: str, code: str, base_date: str):
