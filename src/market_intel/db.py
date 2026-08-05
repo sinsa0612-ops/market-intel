@@ -265,6 +265,13 @@ _ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("theses", "rules_sha256", "TEXT NOT NULL DEFAULT ''"),
     ("thesis_reviews", "rules_sha256", "TEXT NOT NULL DEFAULT ''"),
     ("thesis_reviews", "rules_changed", "INTEGER NOT NULL DEFAULT 0"),
+    # 해석 재사용 판단용 사실 지문(`interp.digest.facts_fingerprint`).
+    # 빈 문자열은 "지문을 안 남기던 시절의 판" = 재사용 대상 아님이다.
+    ("interpretations", "facts_sha256", "TEXT NOT NULL DEFAULT ''"),
+    # 해석 **본문**. 지금까지는 칸별 상태(ok/blank)만 남기고 글 자체는 리포트
+    # JSON에만 있었다 — 그래서 리포트를 다시 만들면 글이 사라지고 되살릴
+    # 방법이 없었다(CEO 지적 2026-08-05). 원장에 남겨 복원 가능하게 한다.
+    ("interpretations", "text_json", "TEXT NOT NULL DEFAULT ''"),
 )
 
 

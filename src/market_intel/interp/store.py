@@ -150,7 +150,8 @@ def record_interpretation(conn: sqlite3.Connection, row: dict) -> str:
     conn.execute(
         "INSERT INTO interpretations(interpretation_id, report_type, report_date, cutoff_utc, status, "
         "model, prompt_version, prompt_sha256, fields_json, violations_json, evidence_json, "
-        "attempts, elapsed_ms, engine_version, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "attempts, elapsed_ms, engine_version, created_at, facts_sha256, text_json) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             interpretation_id, row["report_type"], row["report_date"], row["cutoff_utc"], row["status"],
             row.get("model"), row.get("prompt_version"), row.get("prompt_sha256"),
@@ -159,10 +160,44 @@ def record_interpretation(conn: sqlite3.Connection, row: dict) -> str:
             json.dumps(row["evidence"], ensure_ascii=False) if row.get("evidence") is not None else None,
             row.get("attempts"), row.get("elapsed_ms"), row.get("engine_version", ENGINE_VERSION),
             db_mod.iso_utc(),
+            row.get("facts_sha256", ""),
+            json.dumps(row["text"], ensure_ascii=False) if row.get("text") else "",
         ),
     )
     conn.commit()
     return interpretation_id
+
+
+def reusable_interpretation(conn: sqlite3.Connection, report_type: str, report_date: str,
+                            cutoff_utc: str, facts_sha256: str) -> dict | None:
+    """같은 리포트(종류·날짜·차단선)에 대해 **같은 사실 위에서** 쓰인 해석 중
+    가장 최근 것. 없으면 None.
+
+    리포트를 다시 만들 때 해석이 사라지는 것을 막는다(CEO 지적 2026-08-05).
+    `facts_sha256`이 맞을 때만 돌려주는 이유: 해석은 "그때 그 사실들"을 보고 쓴
+    글이라, 사실이 바뀐 뒤 옛 글을 붙이면 리포트가 거짓말을 한다. 지문은 표시
+    형식이 아니라 데이터로 재므로(`digest.facts_fingerprint`), 표기만 손댄
+    수정에서는 해석이 그대로 살아남는다.
+
+    `status='ok'`만 대상이다 — 검증에 걸렸거나 LLM이 죽어서 비었던 판을
+    되살리면 그때의 실패를 오늘 리포트에 다시 붙이는 셈이다.
+    """
+    if not facts_sha256:
+        return None
+    row = conn.execute(
+        "SELECT * FROM interpretations WHERE report_type=? AND report_date=? AND cutoff_utc=? "
+        "AND facts_sha256=? AND status='ok' AND text_json<>'' "
+        "ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (report_type, report_date, cutoff_utc, facts_sha256),
+    ).fetchone()
+    if row is None:
+        return None
+    d = dict(row)
+    d["text"] = json.loads(d.pop("text_json") or "{}")
+    d["fields"] = json.loads(d.pop("fields_json") or "{}")
+    d["violations"] = json.loads(d.pop("violations_json")) if d.get("violations_json") else None
+    d["evidence"] = json.loads(d.pop("evidence_json")) if d.get("evidence_json") else None
+    return d
 
 
 def last_interpretation(conn: sqlite3.Connection, report_type: str | None = None) -> dict | None:

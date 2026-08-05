@@ -1193,7 +1193,7 @@ def build_report(
         "sector_index": len(sector_index),
     }
 
-    return Report(
+    report = Report(
         report_type=report_type,
         report_date=report_date.isoformat(),
         cutoff_kst=cutoff.astimezone(KST).isoformat(),
@@ -1213,6 +1213,50 @@ def build_report(
         interpretation=Interpretation(),
         meta=meta,
     )
+    _restore_interpretation(conn, report)
+    return report
+
+
+def _restore_interpretation(conn, report: Report) -> None:
+    """리포트를 다시 만들 때 **같은 사실 위에서 쓰인** 해석이 원장에 있으면
+    되살린다(CEO 지적 2026-08-05 — 수정 요청 때마다 해석이 사라진다).
+
+    지문이 다르면(= 사실이 바뀌었으면) 되살리지 않는다. 해석은 그때 그 사실을
+    보고 쓴 글이라, 바뀐 사실 위에 옛 글을 붙이면 리포트가 거짓말을 한다.
+    그 경우는 지금까지처럼 빈 채로 두고 `interpret`가 새로 쓴다.
+
+    **이 함수는 리포트를 못 만들게 하지 않는다.** 원장이 없거나 옛 스키마여서
+    조회가 실패해도 해석만 비고 리포트는 그대로 나온다 — 이 프로젝트의
+    "어떤 소스가 죽어도 리포트는 나온다" 원칙.
+    """
+    from ..interp import digest as digest_mod  # 순환 import 회피(interp가 build를 읽는다)
+    from ..interp import store as store_mod
+
+    try:
+        saved = store_mod.reusable_interpretation(
+            conn, report.report_type, report.report_date, report.cutoff_utc,
+            digest_mod.facts_fingerprint(report),
+        )
+    except Exception:  # noqa: BLE001 - 원장 조회 실패가 리포트를 막지 않는다
+        return
+    if not saved:
+        return
+    text = saved.get("text") or {}
+    report.interpretation = Interpretation(
+        reading=text.get("reading", ""),
+        counter_reading=text.get("counter_reading", ""),
+        thesis_impact=text.get("thesis_impact", ""),
+        next_check=text.get("next_check", ""),
+        generated_by=text.get("generated_by", ""),
+        # **처음 쓰인 시각을 그대로 지킨다.** 되살린 글에 오늘 시각을 찍으면
+        # 방금 쓴 해석처럼 보인다.
+        generated_at=text.get("generated_at", ""),
+    )
+    report.meta["interpretation_restored"] = {
+        "interpretation_id": saved.get("interpretation_id"),
+        "created_at": saved.get("created_at"),
+        "facts_sha256": saved.get("facts_sha256"),
+    }
 
 
 def stem_for(report: Report, slug: str | None = None) -> str:

@@ -303,6 +303,17 @@ def fill(
         "evidence": evidence,
         "evidence_unresolved": evidence_unresolved,
         "digest_truncated": digest_mod.is_truncated(digest_text),
+        # 재사용 판단용. 지문은 이 리포트가 선 사실들, 본문은 되살릴 글이다.
+        # 둘 다 없으면 리포트를 다시 만드는 순간 해석이 영영 사라진다.
+        "facts_sha256": digest_mod.facts_fingerprint(report),
+        "text": {
+            "reading": interpretation.reading,
+            "counter_reading": interpretation.counter_reading,
+            "thesis_impact": interpretation.thesis_impact,
+            "next_check": interpretation.next_check,
+            "generated_by": interpretation.generated_by,
+            "generated_at": interpretation.generated_at,
+        },
     }
 
     report.interpretation = interpretation

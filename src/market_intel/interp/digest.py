@@ -8,6 +8,8 @@ resolve which PIT fact-table row(s) an F-number actually points at.
 """
 from __future__ import annotations
 
+import hashlib
+
 import re
 
 from .. import db as db_mod
@@ -27,6 +29,31 @@ _FNUM_RE = re.compile(r"(?<![A-Za-z0-9])F(\d+)(?!\d)")
 
 def _fact_line(n: int, row: FactRow) -> str:
     return f"F{n}. {row.label} = {row.value} | {row.comparison}"
+
+
+def facts_fingerprint(report: Report) -> str:
+    """이 리포트가 **어떤 사실 위에 서 있는지**의 지문(sha256).
+
+    해석을 재사용해도 되는지 판단하는 데 쓴다. 해석은 "그때 그 사실들"을 보고
+    쓴 글이므로, 사실이 바뀌었는데 옛 해석을 그대로 붙이면 리포트가 거짓말을 한다.
+
+    **표시 문자열이 아니라 데이터로 잰다.** `_fact_line`이 쓰는 `value`·
+    `comparison`은 사람이 읽는 형식이라, 표기만 손대도(2026-08-05의 `%p` 수정처럼)
+    지문이 바뀌어 멀쩡한 해석이 버려진다. 반대로 `raw_value`·`known_at`이 같으면
+    모델이 본 사실은 같다.
+
+    `known_at`을 넣는 이유: 같은 subject·metric이라도 **수정치가 새 판으로
+    들어오면** 그때 알려져 있던 값이 달라진다. 값(raw_value)만 보면 값이 우연히
+    같은 정정을 놓친다.
+    """
+    parts = []
+    for row in list(report.facts) + list(report.market_reaction):
+        parts.append("|".join((
+            row.subject or "", row.metric or "", repr(row.raw_value), row.known_at or "",
+        )))
+    parts.sort()  # 정렬 순서가 바뀌어도 같은 사실이면 같은 지문
+    payload = f"{report.report_type}\n{report.report_date}\n{report.cutoff_utc}\n" + "\n".join(parts)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def build(report: Report) -> tuple[str, dict[str, FactRow]]:
