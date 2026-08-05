@@ -157,6 +157,40 @@ def allowed_magnitudes(report: dict) -> set[str]:
             scan(row.get("name"))
     return found
 
+# 리포트가 **자기 입으로** 쓴 퍼센트포인트 표현. 규칙 4의 `단위변조`는
+# "+1.76%"를 "1.76%포인트"로 바꿔 쓴 실제 사고 때문에 생겼는데, 2026-08-05부터
+# 금리·실업률은 리포트 자신이 `+0.25%p`라고 쓴다 — 그걸 그대로 인용한 해석문이
+# 반려되면(실측: 그날 마감 리포트의 `reading`이 통째로 반려됐다) 규칙이 지키려던
+# 정직성이 오히려 깨진다. 리포트에 없는 `%p`만 변조로 본다.
+_PP_RE = re.compile(r"[-+]?\d[\d,]*(?:\.\d+)?\s*%\s*[pP](?![A-Za-z])")
+
+
+def _pp_token(text: str) -> str:
+    """`0.25 %p` -> `0.25%p`. 띄어쓰기 차이로 인용이 반려되면 안 된다
+    (`_magnitude_token`과 같은 이유·같은 방식)."""
+    return re.sub(r"\s+", "", str(text)).replace("%P", "%p")
+
+
+def allowed_pp(report: dict) -> set[str]:
+    """리포트가 실제로 쓴 `숫자%p` 표현들. `allowed_magnitudes`와 같은 자리를
+    같은 순서로 훑는다 — 한쪽만 보는 필드가 생기면 그 필드를 인용한 해석문이
+    이유 없이 반려된다."""
+    found: set[str] = set()
+
+    def scan(text) -> None:
+        for m in _PP_RE.finditer(str(text or "")):
+            found.add(_pp_token(m.group(0)))
+
+    scan(report.get("headline"))
+    scan(report.get("breadth"))
+    for key in ("facts", "market_reaction"):
+        for row in report.get(key) or []:
+            scan(row.get("value"))
+            scan(row.get("comparison"))
+            scan(row.get("label"))
+    return found
+
+
 # Rule 4 — banned trade-recommendation / price-target / return-forecast
 # phrasing (BRIEF rule 5, spec §1/§6.1). Context-sensitive regexes, not bare
 # substrings — see correction #1 above for why.
@@ -667,6 +701,22 @@ def allowed_dates(report: dict) -> set[str]:
     return dates
 
 
+def _looks_like_quoted_pp(text: str, match, pp_ok: set[str]) -> bool:
+    """`%p` 매치가 리포트에 실제로 있는 `숫자%p`를 그대로 옮긴 것인가.
+
+    매치 앞의 숫자까지 붙여 리포트의 허용 집합과 대조한다. 숫자를 안 보면
+    "리포트 어딘가에 %p가 있으니 아무 %p나 괜찮다"가 되어 규칙이 무력해진다.
+    `%포인트`·`퍼센트 포인트`·`bp`는 리포트가 쓰지 않는 표기이므로 여기서
+    걸러지지 않고 그대로 위반이다."""
+    token = match.group(0)
+    if "p" not in token.lower():
+        return False  # %포인트 / 퍼센트 포인트 / bp 계열
+    start = max(0, match.start() - 24)
+    window = text[start:match.end()]
+    m = _PP_RE.search(window)
+    return bool(m) and _pp_token(m.group(0)) in pp_ok
+
+
 def check(report: dict, text: str) -> list[tuple[str, str]]:
     """Run all 6 SA-5 rules against `text`. Returns every violation found
     (kind, offending_token) — empty list means the field passes."""
@@ -690,10 +740,16 @@ def check(report: dict, text: str) -> list[tuple[str, str]]:
         if _magnitude_token(m.group(0)) not in magnitudes_ok:
             violations.append(("ko_magnitude", m.group(0)))
 
+    pp_ok = allowed_pp(report)
     for pattern, name in _BANNED_PATTERNS:
-        m = pattern.search(text)
-        if m:
+        for m in pattern.finditer(text):
+            # `%p`가 리포트 자신이 쓴 표현을 그대로 옮긴 것이면 변조가 아니다.
+            # 그 숫자까지 같아야 한다 — `+0.25%p`가 리포트에 있다고 해서
+            # `+3.00%p`까지 통과시키면 규칙이 무력해진다.
+            if name == "단위변조" and _looks_like_quoted_pp(text, m, pp_ok):
+                continue
             violations.append((f"banned:{name}", m.group(0)))
+            break  # 규칙당 첫 위반 하나만 보고한다(기존 동작 유지)
 
     dates_ok = allowed_dates(report)
     for m in _DATE_RE.finditer(text):
