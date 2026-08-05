@@ -274,7 +274,11 @@ def _macro_cards_html(rows: list[FactRow], rest: list[FactRow]) -> str:
         # 동결은 "― +0.00%"가 아니라 "― 변화 없음"이다. 기준금리처럼 몇 달째
         # 그대로인 값이 매일 소수점 둘째 자리까지 0을 찍으면, 읽는 사람은
         # 그것도 움직인 값으로 훑게 된다.
-        change = {"": "―", "flat": "― 변화 없음"}.get(d) or f"{arrow(r.delta_pct)} {fmt_pct(r.delta_pct)}"
+        # 단위는 리포트가 정해서 실어 보낸다(`FactRow.delta_unit`) — 금리·실업률은
+        # `%p`다. 렌더러가 `unit` 문자열을 보고 추측하면 같은 판단이 두 곳에
+        # 생기고, 한쪽만 고쳐지는 날 화면과 문구가 어긋난다.
+        change = ({"": "―", "flat": "― 변화 없음"}.get(d)
+                  or f"{arrow(r.delta_pct)} {fmt_pct(r.delta_pct, r.delta_unit)}")
         cards.append(f'<div class="card"><div class="k">{_esc(r.label)}</div>'
                      f'<div class="v">{_esc(r.value)}</div>'
                      f'<div class="c {d}">{_esc(change)}</div></div>')

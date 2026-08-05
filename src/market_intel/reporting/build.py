@@ -201,6 +201,7 @@ def _fmt_value_with_asof(row) -> str:
 def _row_from_fact(
     row, label: str, comparison: str, delta_pct: float | None = None,
     value: str | None = None, doc_url: str = "", group: str = "",
+    delta_unit: str = "%",
 ) -> FactRow:
     """`value`는 표시 문자열을 직접 지정할 때만 쓴다(공시 행처럼 `value_text`가
     수치가 아닌 경우). 기본은 값+기준일 조합인 `_fmt_value_with_asof`.
@@ -213,11 +214,21 @@ def _row_from_fact(
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",
         known_at=row["known_at"], subject=row["subject"], metric=row["metric"],
         raw_value=row["value_num"] if row["value_num"] is not None else row["value_text"],
-        delta_pct=delta_pct, doc_url=doc_url, group=group,
+        delta_pct=delta_pct, doc_url=doc_url, group=group, delta_unit=delta_unit,
     )
 
 
 # --- prices / market reaction -------------------------------------------
+
+# 값 자체가 이미 퍼센트인 지표의 단위. 이런 값의 변화는 **퍼센트포인트**로
+# 말해야 한다 — 자세한 이유는 `model.FactRow.delta_unit` 주석 참조.
+# 문자열 집합으로 가르는 이유: 어느 소스가 어떤 단위 표기를 쓰는지는 provider가
+# 정하고(FRED `%`, ECOS `연%`, universe `percent`), 여기서는 그 표기를 그대로
+# 받아 판단만 한다. 새 단위 표기가 생기면 이 집합에 없어서 예전처럼 상대
+# 변화율로 나온다 — 조용히 틀리지 않게 `tests/reporting/test_macro_percentage_point.py`가
+# DB와 universe에 실제로 들어 있는 단위 목록을 훑어 빠진 것이 없는지 본다.
+_PERCENT_VALUED_UNITS = frozenset({"%", "연%", "percent", "Percent"})
+
 
 def _price_map(conn, cutoff) -> dict[str, dict]:
     """subject -> {latest, prev, delta_pct, series} using every price_close
@@ -244,8 +255,29 @@ def _price_map(conn, cutoff) -> dict[str, dict]:
             delta = (latest["value_num"] - prev["value_num"]) / prev["value_num"] * 100
         series = [r["value_num"] for r in reversed(rs[:SPARKLINE_POINTS])
                   if r["value_num"] is not None]
-        out[subj] = {"latest": latest, "prev": prev, "delta_pct": delta, "series": series}
+        # `^TNX`(미 10년물)처럼 **시세 자체가 퍼센트**인 종목은 변화를 퍼센트
+        # 포인트로 말해야 한다 — 아래 `_price_delta`가 이 값을 골라 쓴다.
+        # 여기서 미리 계산해 두는 이유는 `prev`가 0일 때 상대 변화율만 None이
+        # 되고 절대 변화는 멀쩡한 경우가 있기 때문이다(금리는 0을 지날 수 있다).
+        delta_abs = None
+        if prev is not None and prev["value_num"] is not None and latest["value_num"] is not None:
+            delta_abs = latest["value_num"] - prev["value_num"]
+        out[subj] = {"latest": latest, "prev": prev, "delta_pct": delta,
+                     "delta_abs": delta_abs, "series": series}
     return out
+
+
+def _price_delta(subject: str, info: dict) -> tuple[float | None, str]:
+    """-> (화면에 찍을 등락값, 그 단위). 시세가 퍼센트인 종목(`unit=percent`,
+    지금은 `^TNX` 하나)은 퍼센트포인트다.
+
+    이걸 안 나누면 같은 미국 10년물 금리를 리포트가 두 군데서 다르게 말한다 —
+    거시 카드(FRED `DGS10`)는 `+0.07%p`, 머리줄(yfinance `^TNX`)은 `+1.8%`.
+    같은 사실이 두 숫자로 보이면 어느 쪽이 맞는지 독자가 알 수 없다."""
+    meta = _UNIVERSE_BY_SYMBOL.get(subject) or {}
+    if (meta.get("unit") or "") in _PERCENT_VALUED_UNITS:
+        return info.get("delta_abs"), "%p"
+    return info.get("delta_pct"), "%"
 
 
 def _fmt_price_value(row) -> str:
@@ -279,34 +311,39 @@ def _session_gap_days(latest, prev) -> int | None:
     return abs((a - b).days)
 
 
-def _comparison_text(info: dict) -> str:
+def _comparison_text(info: dict, subject: str = "") -> str:
     """"전일대비 +1.2%" 같은 비교 문구.
 
     "전일대비" is only true when the two observations really are adjacent
     sessions. After a holiday, a collection outage, or a backfill the
     previous close can be many days back, and calling that "전일" states a
     fact the data does not support (final-review.md F4). Name the actual
-    gap instead; one trading day keeps the familiar wording."""
-    if info["delta_pct"] is None:
+    gap instead; one trading day keeps the familiar wording.
+
+    `subject`를 받는 이유는 단위 때문이다 — 시세가 퍼센트인 종목(`^TNX`)은
+    `%`가 아니라 `%p`로 말한다(`_price_delta` 주석)."""
+    delta, unit = _price_delta(subject, info)
+    if delta is None:
         return "전일 비교 불가(직전 종가 없음)"
     gap = _session_gap_days(info["latest"], info.get("prev"))
     if gap is None:
-        return f"직전 종가 대비 {info['delta_pct']:+.2f}%"
+        return f"직전 종가 대비 {delta:+.2f}{unit}"
     if gap <= 1:
-        return f"전일대비 {info['delta_pct']:+.2f}%"
-    return f"{gap}일 전 종가 대비 {info['delta_pct']:+.2f}%"
+        return f"전일대비 {delta:+.2f}{unit}"
+    return f"{gap}일 전 종가 대비 {delta:+.2f}{unit}"
 
 
 def _market_reaction_row(subj: str, info: dict) -> FactRow:
     row = info["latest"]
     meta = _UNIVERSE_BY_SYMBOL.get(subj, {})
     label = meta.get("name_ko") or meta.get("name", subj)
-    comparison = _comparison_text(info)
+    comparison = _comparison_text(info, subj)
+    delta, delta_unit = _price_delta(subj, info)
     return FactRow(
         label=label, value=_fmt_price_value(row), comparison=comparison,
         source_url=row["safe_source_url"] or "", data_status=row["data_status"] or "unverified",
         known_at=row["known_at"], subject=subj, metric=row["metric"], raw_value=row["value_num"],
-        delta_pct=info["delta_pct"], series=list(info.get("series") or []),
+        delta_pct=delta, series=list(info.get("series") or []), delta_unit=delta_unit,
     )
 
 
@@ -351,8 +388,10 @@ def _headline(price_map: dict) -> str:
         info = price_map.get(symbol)
         if not info or info["latest"]["value_num"] is None:
             return f"{prefix} 미확인"
-        pct = info["delta_pct"]
-        pct_str = f"{pct:+.1f}%" if pct is not None else "미확인"
+        # 금리(^TNX)는 %p다 — 안 그러면 머리줄이 "미10Y 4.75%(+1.5%)"가 되어
+        # 같은 금리를 거시 카드(`+0.07%p`)와 다르게 말한다(`_price_delta`).
+        pct, unit = _price_delta(symbol, info)
+        pct_str = f"{pct:+.1f}{unit}" if pct is not None else "미확인"
         return f"{prefix} {fmt(info['latest']['value_num'])}({pct_str})"
 
     kospi = part("^KS11", "KOSPI", lambda v: f"{v:,.2f}")
@@ -426,7 +465,7 @@ def _sector_index_rows(price_map: dict) -> list[SectorIndexRow]:
             label=meta.get("name_ko") or meta.get("name", symbol),
             market=meta["market"],
             value=_fmt_price_value(row),
-            comparison=_comparison_text(info),
+            comparison=_comparison_text(info, symbol),
             delta_pct=info["delta_pct"],
             series=list(info.get("series") or []),
             source_url=row["safe_source_url"] or "",
@@ -637,11 +676,18 @@ def _macro_facts(mmap: dict) -> list[FactRow]:
     out = []
     for subj, info in mmap.items():
         label = _macro_label(subj, info["latest"])
-        comparison = f"직전 관측 대비 {info['delta_pct']:+.2f}%" if info["delta_pct"] is not None else "직전 관측 없음"
+        # 금리·실업률처럼 값이 이미 퍼센트면 변화는 퍼센트포인트(%p)로 말한다.
+        # 상대 변화율을 쓰면 "한국 기준금리 +10.00%"(실제 2.50->2.75)처럼
+        # 읽는 사람이 금리 수준을 오해한다(CEO 지적 2026-08-05).
+        is_pp = (info["latest"]["unit"] or "") in _PERCENT_VALUED_UNITS
+        delta = info["delta_abs"] if is_pp else info["delta_pct"]
+        unit = "%p" if is_pp else "%"
+        comparison = (f"직전 관측 대비 {delta:+.2f}{unit}"
+                      if delta is not None else "직전 관측 없음")
         # 거시지표는 관측이 1개씩이라 시계열 그래프는 나오지 않는다(series 없음).
         # 방향(화살표·색)은 직전 관측이 있을 때만 붙는다.
         out.append(_row_from_fact(info["latest"], label, comparison,
-                                  delta_pct=info["delta_pct"], group="macro"))
+                                  delta_pct=delta, group="macro", delta_unit=unit))
     out.sort(key=lambda r: r.subject)
     return out
 

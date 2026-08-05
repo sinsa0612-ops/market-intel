@@ -128,8 +128,10 @@ def arrow(delta_pct: float | None) -> str:
     return {"up": UP_MARK, "down": DOWN_MARK, "flat": FLAT_MARK}.get(direction(delta_pct), "")
 
 
-def fmt_pct(value: float | None) -> str:
-    return "-" if value is None else f"{value:+.2f}%"
+def fmt_pct(value: float | None, unit: str = "%") -> str:
+    """`unit`은 값이 이미 퍼센트인 지표에서 `%p`가 된다(`FactRow.delta_unit`).
+    기본값을 `%`로 둬서 기존 호출부(업종 중앙값 등)는 그대로 동작한다."""
+    return "-" if value is None else f"{value:+.2f}{unit}"
 
 
 def fmt_money(value: float | None, unit: str) -> str:
