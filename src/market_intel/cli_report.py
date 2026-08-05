@@ -3,6 +3,7 @@
 name, and this module never touches `cli.py`."""
 from __future__ import annotations
 
+import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -55,6 +56,28 @@ def _cmd_report(conn, settings, args) -> int:
     # An explicit --cutoff always wins over the computed blackout (spec
     # B13) — this is the backfill/catchup seam ST3's jobs.py needs.
     cutoff = _parse_cutoff(args.cutoff) or cutoff_mod.cutoff_for(args.report_type, report_date)
+
+    # **차단선이 아직 오지 않았으면 만들지 않는다.**
+    #
+    # 리포트 첫 줄은 "이 시각까지 알려진 사실만 싣습니다"라고 약속한다. 그
+    # 시각이 미래면 지킬 수 없는 약속이고, 장이 닫히기도 전에 "장마감 델타"가
+    # 발행된다(실측 2026-08-05: 차단선 16:15인 마감 리포트가 12:34에 만들어져
+    # 세 번 발행됐다 — 아무것도 막지 않았다).
+    #
+    # 지난 날짜를 뒤늦게 만드는 캐치업은 그대로 통과한다(차단선이 과거다).
+    # 같은 규율이 백필에도 있다 — `backfill/prices.py`는 아직 마감하지 않은
+    # 세션을 건너뛴다.
+    now = datetime.now(timezone.utc)
+    if cutoff > now:
+        local = cutoff.astimezone(cutoff_mod.KST)
+        print(
+            f"error: 차단선이 아직 오지 않았다 — {local:%Y-%m-%d %H:%M} KST "
+            f"(지금 {now.astimezone(cutoff_mod.KST):%H:%M}). "
+            f"그 시각 이후에 만들어야 리포트의 '이 시각까지 알려진 사실만' 약속이 참이 된다.",
+            file=sys.stderr,
+        )
+        return 2
+
     report = build_mod.build_report(conn, args.report_type, report_date, cutoff, subject=args.subject)
 
     stem = build_mod.stem_for(report, slug=args.slug)
