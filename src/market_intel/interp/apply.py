@@ -315,6 +315,11 @@ def fill(
             "generated_at": interpretation.generated_at,
         },
     }
+    # 본문만 되살리면 **그 해석의 이력이 사라진다** — 어느 모델이 썼는지,
+    # 검증에 걸린 게 있는지, 근거로 무엇을 짚었는지. 실측 2026-08-05: 되살린
+    # 리포트에서 `meta.interpretation` 131줄이 통째로 빠졌다. 감사 추적이
+    # 이 프로젝트의 핵심이므로 본문과 같이 싣는다.
+    result["restorable_meta"] = {k: v for k, v in result.items() if k != "restorable_meta"}
 
     report.interpretation = interpretation
     report.meta["interpretation"] = result

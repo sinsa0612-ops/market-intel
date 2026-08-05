@@ -161,7 +161,10 @@ def record_interpretation(conn: sqlite3.Connection, row: dict) -> str:
             row.get("attempts"), row.get("elapsed_ms"), row.get("engine_version", ENGINE_VERSION),
             db_mod.iso_utc(),
             row.get("facts_sha256", ""),
-            json.dumps(row["text"], ensure_ascii=False) if row.get("text") else "",
+            # 본문 + 그 해석의 이력을 한 덩어리로. 옛 판은 본문만 들어 있고
+            # 읽는 쪽(`reusable_interpretation`)이 두 모양을 모두 받는다.
+            json.dumps({"text": row["text"], "meta": row.get("restorable_meta")},
+                       ensure_ascii=False) if row.get("text") else "",
         ),
     )
     conn.commit()
@@ -193,7 +196,12 @@ def reusable_interpretation(conn: sqlite3.Connection, report_type: str, report_d
     if row is None:
         return None
     d = dict(row)
-    d["text"] = json.loads(d.pop("text_json") or "{}")
+    stored = json.loads(d.pop("text_json") or "{}")
+    # 새 모양은 {"text": …, "meta": …}, 옛 모양은 본문 그대로다.
+    if "text" in stored:
+        d["text"], d["restorable_meta"] = stored.get("text") or {}, stored.get("meta")
+    else:
+        d["text"], d["restorable_meta"] = stored, None
     d["fields"] = json.loads(d.pop("fields_json") or "{}")
     d["violations"] = json.loads(d.pop("violations_json")) if d.get("violations_json") else None
     d["evidence"] = json.loads(d.pop("evidence_json")) if d.get("evidence_json") else None

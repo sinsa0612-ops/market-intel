@@ -1252,10 +1252,18 @@ def _restore_interpretation(conn, report: Report) -> None:
         # 방금 쓴 해석처럼 보인다.
         generated_at=text.get("generated_at", ""),
     )
+    # 본문만 되살리고 이력을 두면 "누가 언제 무엇을 근거로 썼는지"가 사라진다
+    # (실측 2026-08-05: `meta.interpretation` 131줄이 통째로 빠졌다).
+    # 옛 판(이력을 안 남기던 시절)은 `restorable_meta`가 없으므로 그대로 둔다.
+    restored_meta = saved.get("restorable_meta")
+    if restored_meta:
+        report.meta["interpretation"] = restored_meta
     report.meta["interpretation_restored"] = {
         "interpretation_id": saved.get("interpretation_id"),
         "created_at": saved.get("created_at"),
         "facts_sha256": saved.get("facts_sha256"),
+        # 이력까지 되살렸는지 — 옛 판이면 본문만 살아난다.
+        "meta_restored": bool(restored_meta),
     }
 
 

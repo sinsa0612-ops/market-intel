@@ -177,3 +177,50 @@ def test_report_still_builds_when_the_ledger_lookup_fails(settings, monkeypatch)
 
     assert report.facts  # 리포트는 정상적으로 나왔다
     assert report.interpretation.is_empty()
+
+
+# --- ⑤ 이력(누가·언제·무엇을 근거로)도 함께 되살린다 -------------------------
+
+def test_restored_interpretation_keeps_its_provenance(settings):
+    """본문만 되살리면 어느 모델이 썼는지·검증에 걸린 게 있는지·근거가 무엇인지가
+    사라진다. 실측 2026-08-05: 되살린 리포트에서 `meta.interpretation` 131줄이
+    통째로 빠졌다. 감사 추적은 이 프로젝트의 핵심이다."""
+    conn = _open(settings)
+    _seed_one_fact(conn, settings.raw_dir)
+    report = _report(conn)
+    store_mod.record_interpretation(conn, {
+        "report_type": report.report_type, "report_date": report.report_date,
+        "cutoff_utc": report.cutoff_utc, "status": "ok",
+        "facts_sha256": digest_mod.facts_fingerprint(report),
+        "text": TEXT,
+        "restorable_meta": {
+            "model": "claude:haiku", "prompt_version": "interpretation_v2",
+            "status": "ok", "violations": [], "evidence": {"F1": "..."},
+        },
+    })
+    again = _report(conn)
+    conn.close()
+
+    meta = again.meta.get("interpretation")
+    assert meta, "해석 이력이 사라졌다"
+    assert meta["model"] == "claude:haiku"
+    assert meta["prompt_version"] == "interpretation_v2"
+    assert again.meta["interpretation_restored"]["meta_restored"] is True
+
+
+def test_old_record_without_provenance_still_restores_the_text(settings):
+    """이력을 안 남기던 시절의 판도 본문은 되살린다 — 다만 이력은 없다고 밝힌다."""
+    conn = _open(settings)
+    _seed_one_fact(conn, settings.raw_dir)
+    report = _report(conn)
+    store_mod.record_interpretation(conn, {
+        "report_type": report.report_type, "report_date": report.report_date,
+        "cutoff_utc": report.cutoff_utc, "status": "ok",
+        "facts_sha256": digest_mod.facts_fingerprint(report),
+        "text": TEXT,  # restorable_meta 없음
+    })
+    again = _report(conn)
+    conn.close()
+
+    assert again.interpretation.reading == "테스트 해석 본문"
+    assert again.meta["interpretation_restored"]["meta_restored"] is False
