@@ -4,23 +4,24 @@
   "report_date": "2026-08-05",
   "cutoff_kst": "2026-08-05T07:15:00+09:00",
   "cutoff_utc": "2026-08-04T22:15:00+00:00",
-  "generated_at": "2026-08-04T22:40:02+00:00",
+  "generated_at": "2026-08-05T03:35:43+00:00",
   "title": "모닝",
-  "headline": "KOSPI 6,347.20(+1.4%) · S&P500 7,736.52(+1.8%) · 달러/원 1,429.4원(-0.4%) · 미10Y 4.63%(-1.3%) — 관측기업 18곳 중 ±3% 이상 1종목, 결측 0건",
+  "headline": "KOSPI 6,347.20(+1.4%) · S&P500 7,736.52(+1.8%) · 달러/원 1,429.4원(-0.4%) · 미10Y 4.63%(-0.1%p) — 관측기업 18곳 중 ±3% 이상 1종목, 결측 0건",
   "breadth": "관측기업 11/18개 상승 · 플랫폼·AI 수익화 2/4 · 반도체·공급망 3/4 · 금융·신용 1/2 · 전력·산업 2/3 · 소비·수출 1/2 · 헬스케어 0/1 · 소재·철강 1/1 · 부동산·데이터센터 1/1\n코스피(8/3 기준) -5.15%(근사)인데 오른 종목 455 / 내린 종목 419 — 상승비율 52%, 2년 중 중간\n코스닥(8/3 기준) +2.46%(근사) · 오른 종목 1,170 / 내린 종목 468 — 상승비율 71%, 2년 중 상위 12%",
   "data_status": "source_verified",
   "facts": [
     {
       "label": "한국 기준금리",
       "value": "2.75 연%",
-      "comparison": "직전 관측 대비 +10.00%",
+      "comparison": "직전 관측 대비 +0.25%p",
       "source_url": "https://ecos.bok.or.kr/api/StatisticSearch/***/json/kr/1/100/722Y001/M/202601/202608/0101000",
       "data_status": "source_verified",
       "known_at": "2026-08-04T03:44:43+00:00",
       "subject": "722Y001.0101000",
       "metric": "value",
       "raw_value": 2.75,
-      "delta_pct": 10.0,
+      "delta_pct": 0.25,
+      "delta_unit": "%p",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -36,6 +37,7 @@
       "metric": "value",
       "raw_value": 1429.9,
       "delta_pct": -0.2580915178571302,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -51,6 +53,7 @@
       "metric": "value",
       "raw_value": 332.568,
       "delta_pct": -0.42248165303806573,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -58,7 +61,7 @@
     {
       "label": "연방기금금리 상단(목표)",
       "value": "3.75 %",
-      "comparison": "직전 관측 대비 +0.00%",
+      "comparison": "직전 관측 대비 +0.00%p",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DFEDTARU&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
       "known_at": "2026-08-04T21:51:02+00:00",
@@ -66,6 +69,7 @@
       "metric": "value",
       "raw_value": 3.75,
       "delta_pct": 0.0,
+      "delta_unit": "%p",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -73,14 +77,15 @@
     {
       "label": "미국채 10년물 금리",
       "value": "4.70 %",
-      "comparison": "직전 관측 대비 -1.05%",
+      "comparison": "직전 관측 대비 -0.05%p",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
       "known_at": "2026-08-04T21:51:02+00:00",
       "subject": "DGS10",
       "metric": "value",
       "raw_value": 4.7,
-      "delta_pct": -1.0526315789473648,
+      "delta_pct": -0.04999999999999982,
+      "delta_unit": "%p",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -88,14 +93,15 @@
     {
       "label": "미국채 2년물 금리",
       "value": "4.25 %",
-      "comparison": "직전 관측 대비 -0.70%",
+      "comparison": "직전 관측 대비 -0.03%p",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=DGS2&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
       "known_at": "2026-08-04T21:51:02+00:00",
       "subject": "DGS2",
       "metric": "value",
       "raw_value": 4.25,
-      "delta_pct": -0.7009345794392582,
+      "delta_pct": -0.03000000000000025,
+      "delta_unit": "%p",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -103,7 +109,7 @@
     {
       "label": "연방기금금리(실효)",
       "value": "3.63 %",
-      "comparison": "직전 관측 대비 +0.00%",
+      "comparison": "직전 관측 대비 +0.00%p",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=FEDFUNDS&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
       "known_at": "2026-08-03T21:51:12+00:00",
@@ -111,6 +117,7 @@
       "metric": "value",
       "raw_value": 3.63,
       "delta_pct": 0.0,
+      "delta_unit": "%p",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -126,6 +133,7 @@
       "metric": "value",
       "raw_value": 102.6395,
       "delta_pct": 0.07693012716384695,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -141,6 +149,7 @@
       "metric": "value",
       "raw_value": 158984.0,
       "delta_pct": 0.035865523164723426,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -156,6 +165,7 @@
       "metric": "value",
       "raw_value": 131.392,
       "delta_pct": -0.10871631124795733,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -171,6 +181,7 @@
       "metric": "value",
       "raw_value": 768553.0,
       "delta_pct": 0.21867942144492722,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -178,14 +189,15 @@
     {
       "label": "미 10Y-2Y 금리차",
       "value": "0.43 %",
-      "comparison": "직전 관측 대비 -4.44%",
+      "comparison": "직전 관측 대비 -0.02%p",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=T10Y2Y&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
       "known_at": "2026-08-04T21:51:02+00:00",
       "subject": "T10Y2Y",
       "metric": "value",
       "raw_value": 0.43,
-      "delta_pct": -4.444444444444448,
+      "delta_pct": -0.020000000000000018,
+      "delta_unit": "%p",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -193,14 +205,15 @@
     {
       "label": "미국 실업률",
       "value": "4.20 %",
-      "comparison": "직전 관측 대비 -2.33%",
+      "comparison": "직전 관측 대비 -0.10%p",
       "source_url": "https://api.stlouisfed.org/fred/series/observations?series_id=UNRATE&api_key=***&file_type=json&sort_order=desc&limit=1",
       "data_status": "source_verified",
       "known_at": "2026-08-01T10:20:16+00:00",
       "subject": "UNRATE",
       "metric": "value",
       "raw_value": 4.2,
-      "delta_pct": -2.3255813953488293,
+      "delta_pct": -0.09999999999999964,
+      "delta_unit": "%p",
       "series": [],
       "doc_url": "",
       "group": "macro"
@@ -216,6 +229,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0000018230-26-000040",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/18230/000001823026000040/0000018230-26-000040-index.htm",
       "group": "filing"
@@ -231,6 +245,7 @@
       "metric": "filing_event",
       "raw_value": "0000034088-26-000093",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/34088/000003408826000093/0000034088-26-000093-index.htm",
       "group": "filing"
@@ -246,6 +261,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0001101239-26-000145",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1101239/000110123926000145/0001101239-26-000145-index.htm",
       "group": "filing"
@@ -261,6 +277,7 @@
       "metric": "filing_event",
       "raw_value": "20260515000988",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260515000988",
       "group": "filing"
@@ -276,6 +293,7 @@
       "metric": "filing_event",
       "raw_value": "0001101239-26-000147",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1101239/000110123926000147/0001101239-26-000147-index.htm",
       "group": "filing"
@@ -291,6 +309,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0001193125-26-323632",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1193125/000119312526323632/0001193125-26-323632-index.htm",
       "group": "filing"
@@ -306,6 +325,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0001652044-26-000066",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/0001652044-26-000066-index.htm",
       "group": "filing"
@@ -321,6 +341,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0001018724-26-000024",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000024/0001018724-26-000024-index.htm",
       "group": "filing"
@@ -336,6 +357,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0001628280-26-050596",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1628280/000162828026050596/0001628280-26-050596-index.htm",
       "group": "filing"
@@ -351,6 +373,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0001045810-26-000051",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000051/0001045810-26-000051-index.htm",
       "group": "filing"
@@ -366,6 +389,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0001628280-26-048078",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1628280/000162828026048078/0001628280-26-048078-index.htm",
       "group": "filing"
@@ -381,6 +405,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0002115436-26-000006",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/2115436/000211543626000006/0002115436-26-000006-index.htm",
       "group": "filing"
@@ -396,6 +421,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0000004904-26-000055",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/4904/000000490426000055/0000004904-26-000055-index.htm",
       "group": "filing"
@@ -411,6 +437,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0000018230-26-000017",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/18230/000001823026000017/0000018230-26-000017-index.htm",
       "group": "filing"
@@ -426,6 +453,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0000104169-26-000095",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/104169/000010416926000095/0000104169-26-000095-index.htm",
       "group": "filing"
@@ -441,6 +469,7 @@
       "metric": "earnings_release_8k",
       "raw_value": "0000059478-26-000043",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/59478/000005947826000043/0000059478-26-000043-index.htm",
       "group": "filing"
@@ -456,6 +485,7 @@
       "metric": "filing_event",
       "raw_value": "20260515002181",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260515002181",
       "group": "filing"
@@ -471,6 +501,7 @@
       "metric": "filing_event",
       "raw_value": "20260515002287",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260515002287",
       "group": "filing"
@@ -486,6 +517,7 @@
       "metric": "filing_event",
       "raw_value": "20260619000667",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260619000667",
       "group": "filing"
@@ -501,6 +533,7 @@
       "metric": "filing_event",
       "raw_value": "20260515002418",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260515002418",
       "group": "filing"
@@ -516,6 +549,7 @@
       "metric": "filing_event",
       "raw_value": "0001193125-26-226661",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1193125/000119312526226661/0001193125-26-226661-index.htm",
       "group": "filing"
@@ -531,6 +565,7 @@
       "metric": "filing_event",
       "raw_value": "0001172661-26-002336",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1172661/000117266126002336/0001172661-26-002336-index.htm",
       "group": "filing"
@@ -546,6 +581,7 @@
       "metric": "filing_event",
       "raw_value": "0001061768-26-000007",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1061768/000106176826000007/0001061768-26-000007-index.htm",
       "group": "filing"
@@ -561,6 +597,7 @@
       "metric": "filing_event",
       "raw_value": "0000919574-26-003439",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/919574/000091957426003439/0000919574-26-003439-index.htm",
       "group": "filing"
@@ -576,6 +613,7 @@
       "metric": "filing_event",
       "raw_value": "0001647251-26-000004",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1647251/000164725126000004/0001647251-26-000004-index.htm",
       "group": "filing"
@@ -591,6 +629,7 @@
       "metric": "filing_event",
       "raw_value": "0001193125-26-323660",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1193125/000119312526323660/0001193125-26-323660-index.htm",
       "group": "filing"
@@ -606,6 +645,7 @@
       "metric": "filing_event",
       "raw_value": "0001652044-26-000071",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000071/0001652044-26-000071-index.htm",
       "group": "filing"
@@ -621,6 +661,7 @@
       "metric": "filing_event",
       "raw_value": "0001018724-26-000026",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000026/0001018724-26-000026-index.htm",
       "group": "filing"
@@ -636,6 +677,7 @@
       "metric": "filing_event",
       "raw_value": "0001628280-26-050705",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1628280/000162828026050705/0001628280-26-050705-index.htm",
       "group": "filing"
@@ -651,6 +693,7 @@
       "metric": "filing_event",
       "raw_value": "0001045810-26-000052",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/0001045810-26-000052-index.htm",
       "group": "filing"
@@ -666,6 +709,7 @@
       "metric": "filing_event",
       "raw_value": "0001046179-26-000459",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1046179/000104617926000459/0001046179-26-000459-index.htm",
       "group": "filing"
@@ -681,6 +725,7 @@
       "metric": "filing_event",
       "raw_value": "0001628280-26-029344",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/1628280/000162828026029344/0001628280-26-029344-index.htm",
       "group": "filing"
@@ -696,6 +741,7 @@
       "metric": "filing_event",
       "raw_value": "0000004904-26-000059",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/4904/000000490426000059/0000004904-26-000059-index.htm",
       "group": "filing"
@@ -711,6 +757,7 @@
       "metric": "filing_event",
       "raw_value": "0000018230-26-000021",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/18230/000001823026000021/0000018230-26-000021-index.htm",
       "group": "filing"
@@ -726,6 +773,7 @@
       "metric": "filing_event",
       "raw_value": "0000104169-26-000102",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/104169/000010416926000102/0000104169-26-000102-index.htm",
       "group": "filing"
@@ -741,6 +789,7 @@
       "metric": "filing_event",
       "raw_value": "0000059478-26-000045",
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "https://www.sec.gov/Archives/edgar/data/59478/000005947826000045/0000059478-26-000045-index.htm",
       "group": "filing"
@@ -756,6 +805,7 @@
       "metric": "net_buy_individual_value",
       "raw_value": 1348009000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -771,6 +821,7 @@
       "metric": "net_buy_institution_value",
       "raw_value": -870203000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -786,6 +837,7 @@
       "metric": "net_buy_foreign_value",
       "raw_value": -536892000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -801,6 +853,7 @@
       "metric": "net_buy_individual_value",
       "raw_value": 569273000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -816,6 +869,7 @@
       "metric": "net_buy_institution_value",
       "raw_value": 30975000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -831,6 +885,7 @@
       "metric": "net_buy_foreign_value",
       "raw_value": -636038000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -846,6 +901,7 @@
       "metric": "net_buy_individual_value",
       "raw_value": 29485000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -861,6 +917,7 @@
       "metric": "net_buy_institution_value",
       "raw_value": -16117000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -876,6 +933,7 @@
       "metric": "net_buy_foreign_value",
       "raw_value": -12703000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -891,6 +949,7 @@
       "metric": "net_buy_individual_value",
       "raw_value": -9426000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -906,6 +965,7 @@
       "metric": "net_buy_institution_value",
       "raw_value": -6661000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -921,6 +981,7 @@
       "metric": "net_buy_foreign_value",
       "raw_value": 16171000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -936,6 +997,7 @@
       "metric": "net_buy_individual_value",
       "raw_value": 689254000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -951,6 +1013,7 @@
       "metric": "net_buy_institution_value",
       "raw_value": -926889000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -966,6 +1029,7 @@
       "metric": "net_buy_foreign_value",
       "raw_value": 203198000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -981,6 +1045,7 @@
       "metric": "net_buy_individual_value",
       "raw_value": -977000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -996,6 +1061,7 @@
       "metric": "net_buy_institution_value",
       "raw_value": -8362000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -1011,6 +1077,7 @@
       "metric": "net_buy_foreign_value",
       "raw_value": 9054000000.0,
       "delta_pct": null,
+      "delta_unit": "%",
       "series": [],
       "doc_url": "",
       "group": "flow"
@@ -1028,6 +1095,7 @@
       "metric": "price_close",
       "raw_value": 6347.2001953125,
       "delta_pct": 1.434290281163282,
+      "delta_unit": "%",
       "series": [
         6023.66015625,
         5663.240234375,
@@ -1050,6 +1118,7 @@
       "metric": "price_close",
       "raw_value": 780.530029296875,
       "delta_pct": 5.856113804930193,
+      "delta_unit": "%",
       "series": [
         705.8499755859375,
         662.6799926757812,
@@ -1072,6 +1141,7 @@
       "metric": "price_close",
       "raw_value": 7736.52001953125,
       "delta_pct": 1.789619360979541,
+      "delta_unit": "%",
       "series": [
         7428.77978515625,
         7316.14990234375,
@@ -1094,6 +1164,7 @@
       "metric": "price_close",
       "raw_value": 26584.9921875,
       "delta_pct": 2.589698141765584,
+      "delta_unit": "%",
       "series": [
         24876.91015625,
         24442.939453125,
@@ -1116,6 +1187,7 @@
       "metric": "price_close",
       "raw_value": 54085.87890625,
       "delta_pct": 1.7064608500586136,
+      "delta_unit": "%",
       "series": [
         52747.3203125,
         51594.140625,
@@ -1138,6 +1210,7 @@
       "metric": "price_close",
       "raw_value": 3036.975341796875,
       "delta_pct": 1.8466496745552996,
+      "delta_unit": "%",
       "series": [
         2953.800048828125,
         2906.31005859375,
@@ -1160,6 +1233,7 @@
       "metric": "price_close",
       "raw_value": 12179.2626953125,
       "delta_pct": 6.551970075554407,
+      "delta_unit": "%",
       "series": [
         11035.6796875,
         10447.490234375,
@@ -1182,6 +1256,7 @@
       "metric": "price_close",
       "raw_value": 16.5,
       "delta_pct": 4.035311205402872,
+      "delta_unit": "%",
       "series": [
         18.209999084472656,
         20.65999984741211,
@@ -1196,14 +1271,15 @@
     {
       "label": "미 10년물",
       "value": "4.63%",
-      "comparison": "전일대비 -1.26%",
+      "comparison": "전일대비 -0.06%p",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/^TNX",
       "data_status": "source_verified",
       "known_at": "2026-08-04T21:50:10+00:00",
       "subject": "^TNX",
       "metric": "price_close",
       "raw_value": 4.626999855041504,
-      "delta_pct": -1.2590699294024557,
+      "delta_pct": -0.05900001525878906,
+      "delta_unit": "%p",
       "series": [
         4.604000091552734,
         4.622000217437744,
@@ -1226,6 +1302,7 @@
       "metric": "price_close",
       "raw_value": 1429.3699951171875,
       "delta_pct": -0.4408968635487338,
+      "delta_unit": "%",
       "series": [
         1442.280029296875,
         1420.5999755859375,
@@ -1248,6 +1325,7 @@
       "metric": "price_close",
       "raw_value": 99.88700103759766,
       "delta_pct": -0.07302725844696331,
+      "delta_unit": "%",
       "series": [
         100.80000305175781,
         100.01000213623047,
@@ -1270,6 +1348,7 @@
       "metric": "price_close",
       "raw_value": 75.13999938964844,
       "delta_pct": -6.472488405864815,
+      "delta_unit": "%",
       "series": [
         84.45999908447266,
         83.58999633789062,
@@ -1292,6 +1371,7 @@
       "metric": "price_close",
       "raw_value": 4134.2001953125,
       "delta_pct": 2.491515119051618,
+      "delta_unit": "%",
       "series": [
         4034.699951171875,
         4100.10009765625,
@@ -1314,6 +1394,7 @@
       "metric": "price_close",
       "raw_value": 6.63100004196167,
       "delta_pct": 1.7961330072627995,
+      "delta_unit": "%",
       "series": [
         6.273499965667725,
         6.444499969482422,
@@ -1336,6 +1417,7 @@
       "metric": "price_close",
       "raw_value": 876.5399780273438,
       "delta_pct": 5.6034055502627655,
+      "delta_unit": "%",
       "series": [
         840.8499755859375,
         782.7100219726562,
@@ -1472,7 +1554,14 @@
       "data_status": ""
     }
   ],
-  "missing": [],
+  "missing": [
+    {
+      "area": "AI 해석",
+      "reason": "AI 해석 일부 또는 전체 필드가 근거 검증에 실패해 비웠다(partial). 위반 상세는 meta.interpretation.violations 참고. 사실 계층은 정상.",
+      "since": "2026-08-05T03:37:55+00:00",
+      "gap_id": "interp:partial"
+    }
+  ],
   "sector_summary": [
     {
       "sector": "플랫폼·AI 수익화",
@@ -1838,12 +1927,12 @@
     }
   ],
   "interpretation": {
-    "reading": "미국 10년물 금리가 F76에서 4.63%로 하락했고 미국 실업률도 F13에서 4.20%으로 개선되면서 금리와 고용이 동시에 우호적으로 움직였다. 이 속에서 S&P500은 F70에서 +1.79%, KOSPI는 F68에서 +1.43% 상승했으며, 개인 투자자가 삼성전자(F62 6,893억 원 순매수)와 SK하이닉스(F53 5,693억 원 순매수)를 적극 매수했다. 달러/원도 F77에서 -0.44% 약세로 돌아서면서 한국 주식에 유리한 환경이 형성된 것으로 읽힌다.",
-    "counter_reading": "금리 급락의 배경에는 경제 둔화에 대한 우려가 깔려 있을 수 있다. 기관 투자자들은 코스피 상위 20종목에서 F51 -8,702억 원, 외국인도 F52 -5,369억 원을 순매도했으며, SK하이닉스에서는 F55 -6,360억 원의 외국인 순매도가 나왔다. 개인의 매수가 이루어진 것은 사실이지만, 기관과 해외 투자자의 동시 매도 패턴은 현재 랠리가 개인 중심의 반발일 수 있으며 구조적 지지가 약할 수 있음을 시사한다.",
+    "reading": "미국의 물가(F3, F10) 및 실업률(F13) 개선으로 인플레이션 완화 신호가 강화되면서 미 10Y 금리가 F76의 4.63%로 하락하고 있습니다. 이에 따라 S&P500 +1.79%(F70), 나스닥 +2.59%(F71), SOX +6.55%(F74) 등이 상승하며 성장주와 기술주에 대한 수요가 회복되고 있습니다. 한국도 KOSPI +1.43%(F68), KOSDAQ +5.86%(F69) 상승하고 원/달러가 F77의 1,429.4원으로 약세를 보이는 것은 글로벌 동반 상승장 심화를 보여줍니다.",
+    "counter_reading": "",
     "thesis_impact": "가설 7건 판정 — 강화 5 · 유지 2 · 약화 0 · 무효 0 · 판정 불가 0.\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[소비·경기 #1] 강화 — RSAFS value 12구간 전 대비 6.72% (조건 >= 3% 충족).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.7 (조건 >= 4.5 충족).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[정책·지정학 #1] 강화 — 731Y001.0000001 value 최신값 1429.9 (조건 >= 1400 충족).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인.",
-    "next_check": "2026-08-07의 Employment Situation 발표와 2026-08-12의 Consumer Price Index 발표에서 미국 인플레이션 추이와 금리 정책 방향이 확정되면, 현재 반도체 랠리의 정당성을 판단할 수 있습니다. 아울러 2026-08-14 이후 기관과 외국인의 거래 방향이 계속 순매도로 진행되는지, 개인의 매수력이 유지되는지를 추적하면 읽기와 반대 읽기 중 어느 관점이 옳은지 확인할 수 있습니다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-09-01",
+    "next_check": "다가오는 일정에서 8/7 고용통계와 8/12 소비자물가지수 발표가 있을 때 F13 실업률과 F3 CPI의 개선 추세가 실제로 지속되는지 확인이 필요합니다. 또한 F76 미 10Y 금리가 지속적으로 하락하는지 아니면 반등하는지가 인플레이션 기대감의 방향성을 판단하는 기준이 될 것입니다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-09-01",
     "generated_by": "ai:claude:haiku · interpretation_v2",
-    "generated_at": "2026-08-04T22:41:08+00:00"
+    "generated_at": "2026-08-05T03:37:55+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -1859,39 +1948,49 @@
     },
     "interpretation": {
       "engine_version": "2b.2",
-      "status": "ok",
+      "status": "partial",
       "model": "claude:haiku",
       "prompt_version": "interpretation_v2",
       "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
-      "generated_at": "2026-08-04T22:41:08+00:00",
-      "elapsed_ms": 64805,
+      "generated_at": "2026-08-05T03:37:55+00:00",
+      "elapsed_ms": 131216,
       "attempts": 2,
       "fields": {
         "reading": "ok",
-        "counter_reading": "ok",
+        "counter_reading": "rejected",
         "thesis_impact": "rules",
         "next_check": "ok"
       },
-      "violations": {},
+      "violations": {
+        "counter_reading": [
+          [
+            "banned:단위변조",
+            "%p"
+          ],
+          [
+            "sign",
+            "8,702"
+          ],
+          [
+            "sign",
+            "5,369"
+          ]
+        ]
+      },
       "evidence": [
         [
-          "F13",
-          "fred:UNRATE:value:20260601",
+          "F3",
+          "fred:CPIAUCSL:value:20260601",
           2
         ],
         [
-          "F53",
-          "kis:000660.KS:net_buy_individual_value:20260804",
-          1
+          "F10",
+          "fred:PCEPI:value:20260601",
+          2
         ],
         [
-          "F55",
-          "kis:000660.KS:net_buy_foreign_value:20260804",
-          1
-        ],
-        [
-          "F62",
-          "kis:005930.KS:net_buy_individual_value:20260804",
+          "F13",
+          "fred:UNRATE:value:20260601",
           2
         ],
         [
@@ -1900,8 +1999,33 @@
           4
         ],
         [
+          "F69",
+          "yfinance:^KQ11:price_close:20260804",
+          4
+        ],
+        [
           "F70",
           "yfinance:^GSPC:price_close:20260804",
+          1
+        ],
+        [
+          "F71",
+          "yfinance:^IXIC:price_close:20260803",
+          2
+        ],
+        [
+          "F71",
+          "yfinance:^IXIC:price_close:20260804",
+          1
+        ],
+        [
+          "F74",
+          "yfinance:^SOX:price_close:20260803",
+          2
+        ],
+        [
+          "F74",
+          "yfinance:^SOX:price_close:20260804",
           1
         ],
         [
@@ -1915,11 +2039,122 @@
           5
         ]
       ],
-      "evidence_unresolved": [
-        "F51",
-        "F52"
-      ],
+      "evidence_unresolved": [],
       "digest_truncated": false,
+      "facts_sha256": "fd8b6947d38fea19c6ef06bf2a2de934a34f2455921e82d1da4bf3517a4a4002",
+      "text": {
+        "reading": "미국의 물가(F3, F10) 및 실업률(F13) 개선으로 인플레이션 완화 신호가 강화되면서 미 10Y 금리가 F76의 4.63%로 하락하고 있습니다. 이에 따라 S&P500 +1.79%(F70), 나스닥 +2.59%(F71), SOX +6.55%(F74) 등이 상승하며 성장주와 기술주에 대한 수요가 회복되고 있습니다. 한국도 KOSPI +1.43%(F68), KOSDAQ +5.86%(F69) 상승하고 원/달러가 F77의 1,429.4원으로 약세를 보이는 것은 글로벌 동반 상승장 심화를 보여줍니다.",
+        "counter_reading": "",
+        "thesis_impact": "가설 7건 판정 — 강화 5 · 유지 2 · 약화 0 · 무효 0 · 판정 불가 0.\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[소비·경기 #1] 강화 — RSAFS value 12구간 전 대비 6.72% (조건 >= 3% 충족).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.7 (조건 >= 4.5 충족).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[정책·지정학 #1] 강화 — 731Y001.0000001 value 최신값 1429.9 (조건 >= 1400 충족).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인.",
+        "next_check": "다가오는 일정에서 8/7 고용통계와 8/12 소비자물가지수 발표가 있을 때 F13 실업률과 F3 CPI의 개선 추세가 실제로 지속되는지 확인이 필요합니다. 또한 F76 미 10Y 금리가 지속적으로 하락하는지 아니면 반등하는지가 인플레이션 기대감의 방향성을 판단하는 기준이 될 것입니다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-09-01",
+        "generated_by": "ai:claude:haiku · interpretation_v2",
+        "generated_at": "2026-08-05T03:37:55+00:00"
+      },
+      "restorable_meta": {
+        "engine_version": "2b.2",
+        "status": "partial",
+        "model": "claude:haiku",
+        "prompt_version": "interpretation_v2",
+        "prompt_sha256": "9804ac3df0efb21c439b542e0d5bba4404af5de4fdcc37288da2241ff0e9d82e",
+        "generated_at": "2026-08-05T03:37:55+00:00",
+        "elapsed_ms": 131216,
+        "attempts": 2,
+        "fields": {
+          "reading": "ok",
+          "counter_reading": "rejected",
+          "thesis_impact": "rules",
+          "next_check": "ok"
+        },
+        "violations": {
+          "counter_reading": [
+            [
+              "banned:단위변조",
+              "%p"
+            ],
+            [
+              "sign",
+              "8,702"
+            ],
+            [
+              "sign",
+              "5,369"
+            ]
+          ]
+        },
+        "evidence": [
+          [
+            "F3",
+            "fred:CPIAUCSL:value:20260601",
+            2
+          ],
+          [
+            "F10",
+            "fred:PCEPI:value:20260601",
+            2
+          ],
+          [
+            "F13",
+            "fred:UNRATE:value:20260601",
+            2
+          ],
+          [
+            "F68",
+            "yfinance:^KS11:price_close:20260804",
+            4
+          ],
+          [
+            "F69",
+            "yfinance:^KQ11:price_close:20260804",
+            4
+          ],
+          [
+            "F70",
+            "yfinance:^GSPC:price_close:20260804",
+            1
+          ],
+          [
+            "F71",
+            "yfinance:^IXIC:price_close:20260803",
+            2
+          ],
+          [
+            "F71",
+            "yfinance:^IXIC:price_close:20260804",
+            1
+          ],
+          [
+            "F74",
+            "yfinance:^SOX:price_close:20260803",
+            2
+          ],
+          [
+            "F74",
+            "yfinance:^SOX:price_close:20260804",
+            1
+          ],
+          [
+            "F76",
+            "yfinance:^TNX:price_close:20260804",
+            1
+          ],
+          [
+            "F77",
+            "yfinance:KRW=X:price_close:20260804",
+            5
+          ]
+        ],
+        "evidence_unresolved": [],
+        "digest_truncated": false,
+        "facts_sha256": "fd8b6947d38fea19c6ef06bf2a2de934a34f2455921e82d1da4bf3517a4a4002",
+        "text": {
+          "reading": "미국의 물가(F3, F10) 및 실업률(F13) 개선으로 인플레이션 완화 신호가 강화되면서 미 10Y 금리가 F76의 4.63%로 하락하고 있습니다. 이에 따라 S&P500 +1.79%(F70), 나스닥 +2.59%(F71), SOX +6.55%(F74) 등이 상승하며 성장주와 기술주에 대한 수요가 회복되고 있습니다. 한국도 KOSPI +1.43%(F68), KOSDAQ +5.86%(F69) 상승하고 원/달러가 F77의 1,429.4원으로 약세를 보이는 것은 글로벌 동반 상승장 심화를 보여줍니다.",
+          "counter_reading": "",
+          "thesis_impact": "가설 7건 판정 — 강화 5 · 유지 2 · 약화 0 · 무효 0 · 판정 불가 0.\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인.\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[소비·경기 #1] 강화 — RSAFS value 12구간 전 대비 6.72% (조건 >= 3% 충족).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.7 (조건 >= 4.5 충족).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[정책·지정학 #1] 강화 — 731Y001.0000001 value 최신값 1429.9 (조건 >= 1400 충족).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인.",
+          "next_check": "다가오는 일정에서 8/7 고용통계와 8/12 소비자물가지수 발표가 있을 때 F13 실업률과 F3 CPI의 개선 추세가 실제로 지속되는지 확인이 필요합니다. 또한 F76 미 10Y 금리가 지속적으로 하락하는지 아니면 반등하는지가 인플레이션 기대감의 방향성을 판단하는 기준이 될 것입니다.\n\n확인 일정: 2026-08-07 Employment Situation(A) · 2026-08-12 Consumer Price Index(A) · 가설 재점검 2026-09-01",
+          "generated_by": "ai:claude:haiku · interpretation_v2",
+          "generated_at": "2026-08-05T03:37:55+00:00"
+        }
+      },
       "thesis_reviews": [
         {
           "thesis_id": "ai_semi_1",
