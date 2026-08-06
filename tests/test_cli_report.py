@@ -58,10 +58,11 @@ def test_report_stdout_flag_prints_markdown_in_daily_header_order(settings, caps
     assert rc == 0
 
     headers = [line for line in out.splitlines() if line.startswith("## ")]
-    assert headers[:7] == [
-        "## 시장 한 줄", "## 핵심 사실", "## 시장 반응",
-        "## 당시 해석", "## 반대 해석", "## 기존 가설 영향", "## 다음 검증",
-    ]
+    # 이 테스트는 아무 fact도 심지 않으므로 "오늘 유별난 것"(spec
+    # 20260806-report-visual §1①)은 보여줄 내용이 없어 헤딩을 내지 않는다.
+    # 4개였던 해석 헤딩은 §1②에 따라 `## 해석` 하나로 묶인다(내용은 `### `
+    # 소제목 4개로 그대로 남는다 — test_report_repair.py가 그쪽을 지킨다).
+    assert headers[:4] == ["## 시장 한 줄", "## 핵심 사실", "## 시장 반응", "## 해석"]
     assert "AI 해석 미생성" in out
 
     # --stdout keeps the B13 summary too: ST3's jobs.py/site build parse this

@@ -178,6 +178,34 @@ td.sp { width:7.5rem; text-align:right; }
 .mgrid .c.up { color:var(--up); } .mgrid .c.down { color:var(--down); }
 
 details > summary { cursor:pointer; font-weight:600; margin:.6rem 0; color:var(--accent); }
+
+/* "오늘 유별난 것"(spec 20260806-report-visual §1①) — 상승비율 2년 추이 +
+   오늘 점 강조, 가장 크게 움직인 것의 좌우 막대. 색·화살표 규약은 위와 같다. */
+.unusual { margin:.3rem 0 1rem; }
+.unusual-headline { font-size:.95rem; margin:.2rem 0 .6rem; }
+.trend-caption, .movers-caption { color:var(--muted); font-size:.8rem; margin:.6rem 0 .2rem; }
+.trend { display:block; width:100%; height:auto; margin:.2rem 0; color:var(--muted); }
+.trend.up { color:var(--up); } .trend.down { color:var(--down); }
+/* 원시선은 배경으로 깔고(옅게·가늘게), 20일 이동평균이 추세를 말한다.
+   484개 일별 점을 같은 굵기로 그리면 톱니만 보이고 오늘 점이 묻힌다. */
+.trend .line { fill:none; stroke:currentColor; stroke-width:1; opacity:.3; stroke-linejoin:round; }
+.trend .ma { fill:none; stroke:currentColor; stroke-width:2.4; stroke-linejoin:round; }
+.trend .mid { stroke:var(--line); stroke-width:1; stroke-dasharray:4 3; }
+/* 오늘 점은 배경색 테두리를 둘러 선 위에서도 떨어져 보이게 한다. */
+.trend .today { fill:currentColor; stroke:var(--bg); stroke-width:2; }
+.trend .ax { fill:var(--muted); font-size:9px; text-anchor:end; }
+.movers { margin:.2rem 0 .4rem; }
+.mv-row { display:grid; grid-template-columns:6.5rem 1fr 4.5rem; align-items:center;
+          gap:.5rem; font-size:.85rem; margin:.3rem 0; }
+.mv-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mv-track { position:relative; height:.7rem; background:var(--th-bg); border-radius:3px; }
+.mv-track::after { content:""; position:absolute; left:50%; top:0; bottom:0; width:1px;
+                    background:var(--line); }
+.mv-bar { position:absolute; top:0; bottom:0; border-radius:3px; }
+.mv-bar.pos { left:50%; background:var(--up); }
+.mv-bar.neg { right:50%; background:var(--down); }
+.mv-val { text-align:right; font-weight:650; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.mv-val.up { color:var(--up); } .mv-val.down { color:var(--down); }
 """
 
 

@@ -94,6 +94,112 @@ def sparkline_svg(series: list[float], direction_class: str) -> str:
     )
 
 
+# "오늘 유별난 것" 추이 그래프 좌표계(spec 20260806-report-visual §1①-3).
+# 스파크라인과 달리 y축을 0~100(상승비율 %) **고정**으로 둔다 — min/max로
+# 늘리면 48%->52% 같은 잔물결도 꽉 찬 그래프가 되어 "오늘이 얼마나 먼지"를
+# 실제보다 과장해서 보여준다.
+TREND_W, TREND_H = 600, 140
+TREND_TOP, TREND_BOTTOM = 10.0, 110.0
+
+
+# 추세를 드러내는 이동평균 창. 20거래일 = 약 한 달 — 하루하루의 톱니는
+# 지우고 국면 변화는 남긴다.
+_TREND_MA_WINDOW = 20
+
+
+def unusual_trend_svg(series: list[float]) -> str:
+    """상승비율 추이(오래된 값 -> 최신 값) -> 인라인 SVG, 마지막 점(오늘)을
+    강조한다. 점이 2개 미만이면 빈 문자열 — `sparkline_svg`와 같은 이유로
+    없는 추세를 그리지 않는다. 외부 라이브러리·CDN·<script> 없음(spec §3,
+    `tests/reporting/test_visual_readability.py`가 이 정책을 못박는다)."""
+    points = [v for v in series if v is not None]
+    if len(points) < 2:
+        return ""
+    step = (TREND_W - 2) / (len(points) - 1)
+
+    def y_of(v: float) -> float:
+        v = max(0.0, min(100.0, v))
+        return TREND_BOTTOM - (v / 100.0) * (TREND_BOTTOM - TREND_TOP)
+
+    coords = [(1 + i * step, y_of(v)) for i, v in enumerate(points)]
+    line = " L".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+
+    # **원시선만 그리면 오늘 점이 톱니에 묻힌다.** 484개 일별 점은 매일
+    # 30~70%를 오가서 화면에서는 잡음 덩어리이고, 그 위에 찍은 오늘 점은
+    # "높은 데 있네" 이상을 말해주지 못한다(심사 지적 2026-08-06). 원시선은
+    # 옅게 깔고 **20일 이동평균을 굵게** 얹어 추세를 드러낸다 — 오늘 점이
+    # 그 추세선 대비 어디인지가 CEO가 보려는 것이다.
+    smooth = ""
+    if len(points) >= _TREND_MA_WINDOW:
+        ma = []
+        for i in range(_TREND_MA_WINDOW - 1, len(points)):
+            window = points[i - _TREND_MA_WINDOW + 1:i + 1]
+            ma.append((1 + i * step, y_of(sum(window) / len(window))))
+        smooth = '<path class="ma" d="M' + " L".join(f"{x:.1f},{y:.1f}" for x, y in ma) + '"/>'
+
+    mid_y = y_of(50.0)
+    end_x, end_y = coords[-1]
+    today = points[-1]
+    cls = "up" if today > 50 else ("down" if today < 50 else "flat")
+    # y축 눈금: 0/50/100이 어디인지 없으면 세로 위치가 아무 뜻이 없다.
+    axis = "".join(
+        f'<text class="ax" x="{TREND_W - 2}" y="{y_of(v) + 3:.1f}">{v:g}</text>'
+        for v in (100, 50, 0)
+    )
+    return (
+        f'<svg class="trend {cls}" viewBox="0 0 {TREND_W} {TREND_H}" aria-hidden="true">'
+        f'<line class="mid" x1="1" y1="{mid_y:.1f}" x2="{TREND_W - 1}" y2="{mid_y:.1f}"/>'
+        f'<path class="line" d="M{line}"/>{smooth}{axis}'
+        f'<circle class="today" cx="{end_x:.1f}" cy="{end_y:.1f}" r="6"/>'
+        "</svg>"
+    )
+
+
+def _movers_html(rows: list[FactRow]) -> str:
+    """오늘 가장 크게 움직인 것 — 이름 + 좌우 막대 + 값(spec §1①-4). 막대는
+    가운데(0%)에서 위/아래 방향으로 자라며, 길이는 이 5개 중 가장 큰 값 대비
+    비중이다. 색만으로 방향을 말하지 않는다 — 화살표·부호가 딸린 값이 항상
+    같이 나간다(기존 규약과 동일, 같은 테스트가 검사)."""
+    if not rows:
+        return ""
+    peak = max((abs(r.delta_pct) for r in rows if r.delta_pct is not None), default=0.0) or 1.0
+    items = []
+    for r in rows:
+        d = direction(r.delta_pct)
+        share = min(1.0, abs(r.delta_pct or 0.0) / peak)
+        side = "pos" if (r.delta_pct or 0) >= 0 else "neg"
+        bar = f'<span class="mv-bar {side}" style="width:{share * 50:.1f}%"></span>'
+        # **비교 기준을 감추지 않는다.** 값만 찍으면 `3일 전 종가 대비 -8.95%`가
+        # 화면에서 `-8.95%`가 되어 사흘치 하락이 하루치로 읽힌다(심사 실측
+        # 2026-08-06, close_delta 2026-08-03의 삼성전자). 마크다운은 `comparison`을
+        # 그대로 쓰는데 여기만 안 쓰고 있었다 — 명세가 경고한 "한쪽만 고치면
+        # 다른 쪽이 조용히 옛 모양으로 남는다"가 그대로 일어난 자리다.
+        value = f'<span class="arrow">{arrow(r.delta_pct)}</span>{_esc(r.comparison)}'
+        items.append(
+            f'<div class="mv-row"><span class="mv-label">{_esc(r.label)}</span>'
+            f'<span class="mv-track">{bar}</span>'
+            f'<span class="mv-val {d}">{value}</span></div>'
+        )
+    return f'<div class="movers">{"".join(items)}</div>'
+
+
+def _unusual_day_html(block: dict) -> str:
+    parts = []
+    if block["headline"]:
+        escaped = _esc(block["headline"]).replace("\n", "<br>")
+        parts.append(f'<p class="unusual-headline">{escaped}</p>')
+    series = block["trend_series"]
+    svg = unusual_trend_svg(series)
+    if svg:
+        label = block["trend_label"] or "상승비율"
+        parts.append(f'<p class="trend-caption">{_esc(label)} — 최근 {len(series)}거래일, 굵은 점이 오늘</p>')
+        parts.append(svg)
+    if block["top_movers"]:
+        parts.append('<p class="movers-caption">오늘 가장 크게 움직인 것</p>')
+        parts.append(_movers_html(block["top_movers"]))
+    return f'<div class="unusual">{"".join(parts)}</div>' if parts else ""
+
+
 def _change_cell(delta_pct: float | None, text: str) -> str:
     """등락 셀: 색(.up/.down) + 화살표를 항상 함께. 색만 붙이면 흑백·색각이상
     에서 그 셀은 아무 말도 하지 않는다."""
@@ -304,6 +410,8 @@ def _filing_summary_html(rows: list[FactRow]) -> str:
 
 def _block_html(block: dict) -> str:
     kind = block["kind"]
+    if kind == "unusual_day":
+        return _unusual_day_html(block)
     if kind == "facts":
         return _facts_table_html(block["rows"])
     if kind == "flow":

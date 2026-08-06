@@ -433,6 +433,18 @@ def _market_blocks(report: Report) -> list[dict]:
     ]
 
 
+def _unusual_day(report: Report) -> dict:
+    """spec 20260806-report-visual §1① — "오늘 유별난 것" 블록. 판단은 전부
+    `build.py`가 끝냈으므로(`Report.unusual_day`) 여기서는 그 필드를 블록
+    딕셔너리로 옮기기만 한다."""
+    u = report.unusual_day
+    return {
+        "kind": "unusual_day", "headline": u.headline,
+        "trend_label": u.trend_label, "trend_series": u.trend_series,
+        "top_movers": u.top_movers,
+    }
+
+
 NO_INTERP = "AI 해석 미생성"
 # 반대 해석만 비어 있는 것과, 반박할 대상 자체가 없는 것은 다른 사정이다.
 # 앞의 것은 그 문단이 검증에 걸렸다는 뜻이고, 뒤의 것은 애초에 실을 수 없다는
@@ -511,7 +523,23 @@ def sections(report: Report) -> list[tuple[str, list[dict]]]:
     if out:
         header, blocks = out[0]
         out[0] = (header, [_hero(report), {"kind": "legend"}] + blocks)
-    out += [(header, [_interp(report, field)]) for header, field in INTERPRETATION_HEADERS]
+    # spec 20260806-report-visual §1① — "오늘 유별난 것"은 `## 시장 한 줄`
+    # **위**에 얹는다(그 헤딩이 있는 타입 = 일간 3종뿐). 위 hero/legend
+    # 부착 다음에 끼워 넣는 이유: 그 로직이 "첫 섹션"을 그 타입의 머리
+    # 요약으로 보고 있어서, 여기서 앞에 꽂으면 하이라이트 카드가 이 새
+    # 섹션으로 끌려간다. 보여줄 것이 없으면(옛 JSON, 한국 시장 폭 자체가
+    # 없는 날) 빈 헤딩을 내지 않는다 — §2-1과 같은 태도.
+    if report.report_type in ("morning", "week_start", "close_delta") and (
+            report.unusual_day.headline or report.unusual_day.top_movers):
+        out.insert(0, ("오늘 유별난 것", [_unusual_day(report)]))
+    # spec 20260806-report-visual §1② — 당시 해석·반대 해석·기존 가설 영향·
+    # 다음 검증, 4개의 `## ` 섹션이 각각 제목+문단으로 세로 공간을 썼다.
+    # 내용은 한 글자도 지우지 않는다 — 한 섹션 안에 `### ` 소제목 4개로
+    # 묶어 배치만 좁힌다(h2 4번 -> h2 1번 + h3 4번).
+    interp_parts: list[dict] = []
+    for label, field_name in INTERPRETATION_HEADERS:
+        interp_parts += [_subheading(label), _interp(report, field_name)]
+    out.append(("해석", interp_parts))
     out.append((
         "다가오는 일정",
         [{"kind": "calendar", "columns": ["일자", "중요도", "국가", "이름", "상태"],
@@ -626,8 +654,34 @@ def _filing_summary_md(rows: list[FactRow]) -> str:
     return f"{line}\n\n{_facts_table_md(rows)}"
 
 
+def _unusual_day_md(block: dict) -> str:
+    """추이 그래프는 화면(HTML)만의 것이다(`hero`와 같은 이유 — 마크다운에는
+    SVG를 넣지 않는다, spec §3). 대신 추이의 관측 구간을 한 줄로 적어, 마크다운만
+    읽는 사람도 오늘 값이 어느 범위 안의 어디인지 알 수 있게 한다.
+    문구와 상위 5개는 표로 그대로 낸다."""
+    parts = []
+    if block["headline"]:
+        parts.append("  \n".join(block["headline"].split("\n")))
+    series = [v for v in (block.get("trend_series") or []) if v is not None]
+    if len(series) >= 2 and block.get("trend_label"):
+        parts.append(f"{block['trend_label']}: 오늘 {series[-1]:.0f}% "
+                     f"(관측 구간 {min(series):.0f}%~{max(series):.0f}%)")
+    movers = block["top_movers"]
+    if movers:
+        # 표 제목은 "종목"이 아니다 — 금·VIX·지수가 함께 들어온다.
+        lines = ["| 가장 크게 움직인 것 | 등락 |", "|---|---:|"]
+        for r in movers:
+            mark = arrow(r.delta_pct)
+            change = f"{mark} {r.comparison}".strip() if mark else r.comparison
+            lines.append(f"| {r.label} | {change} |")
+        parts.append("\n".join(lines))
+    return "\n\n".join(parts)
+
+
 def _block_md(block: dict) -> str:
     kind = block["kind"]
+    if kind == "unusual_day":
+        return _unusual_day_md(block)
     if kind == "facts":
         return _facts_table_md(block["rows"])
     if kind == "flow":

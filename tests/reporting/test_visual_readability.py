@@ -278,11 +278,19 @@ def test_data_status_badge_survives_the_colour_work(settings):
     report = _report(conn)
     conn.close()
 
-    html_rows = [c for c in render_html_mod.render_html(report).split("<tr>") if "NVIDIA" in c]
+    # `_row_chunk`(파일 위쪽 정의)의 "<td가 있는 조각만 고른다"는 규칙을 그대로
+    # 쓴다 — spec 20260806-report-visual §1①-4("가장 크게 움직인 것 5개")가
+    # 생기면서 NVIDIA가 "오늘 유별난 것" 블록에도 한 번 더 나오는데, 그 자리는
+    # `<td>`도 상태 배지도 없는 별개 요약 줄이다. 걸러내지 않으면 진짜 사실
+    # 표 행 대신 그 요약 줄이 골라진다.
+    html_rows = [c for c in render_html_mod.render_html(report).split("<tr>")
+                 if "NVIDIA" in c and "<td" in c]
     assert html_rows and "부분 확인" in html_rows[0] and 'class="status-warn"' in html_rows[0]
     assert 'class="chg up"' in html_rows[0], "배지와 등락색이 함께 살아 있어야 한다"
+    # 마크다운도 같은 이유로 "오늘 유별난 것" 요약 표(| 종목 | 등락 |, 2칸)와
+    # 사실 표(| 항목 | 수치 | 비교 | 원자료 |, 4칸)를 구별해야 한다.
     md_rows = [ln for ln in render_md_mod.render_markdown(report).splitlines()
-               if ln.startswith("|") and "NVIDIA" in ln]
+               if ln.startswith("|") and "NVIDIA" in ln and ln.count("|") >= 5]
     assert md_rows and "부분 확인" in md_rows[0] and "▲" in md_rows[0]
 
 

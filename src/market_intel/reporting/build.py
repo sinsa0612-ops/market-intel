@@ -82,6 +82,7 @@ from .model import (
     Report,
     SectorIndexRow,
     SectorSummary,
+    UnusualDayBlock,
     worst_data_status,
 )
 # 표시 형식은 렌더러 계층이 정한다(`render_md`가 두 렌더러의 공용 서식 자리).
@@ -554,18 +555,33 @@ def _kr_breadth_span_label(dates: list[str]) -> str:
     return f"{max(1, round(span_days / 30))}개월"
 
 
-def _kr_breadth_context(by_date: dict[str, dict], today: str, today_ratio: float) -> str:
-    """오늘을 뺀 과거 표본에서 오늘 상승비율의 위치. 표본이
-    `_KR_BREADTH_MIN_HISTORY_DAYS` 미만이면 빈 문자열(§2-3 — 맥락 없으면
-    그 절을 아예 쓰지 않는다)."""
+def _kr_breadth_rank(by_date: dict[str, dict], today: str, today_ratio: float) -> tuple[float, str] | None:
+    """오늘을 뺀 과거 표본에서 오늘 상승비율의 순위(0~100 백분위)와 표본이
+    걸친 기간 표기. 표본이 `_KR_BREADTH_MIN_HISTORY_DAYS` 미만이면
+    None(§2-3 — 맥락 없으면 백분위를 아예 말하지 않는다).
+
+    `_kr_breadth_context`(문구)와 `_unusual_day_market`(오늘 유별난 것 블록)
+    양쪽이 이 계산을 공유한다 — 백분위 판단이 두 곳에 따로 생기면 어느 날
+    "상위 2%"와 "중간"이 동시에 나올 수 있다."""
     hist_dates = [d for d in by_date if d != today]
     hist_ratios = {d: _kr_up_ratio(by_date[d]) for d in hist_dates}
     hist_ratios = {d: r for d, r in hist_ratios.items() if r is not None}
     if len(hist_ratios) < _KR_BREADTH_MIN_HISTORY_DAYS:
-        return ""
+        return None
     vals = sorted(hist_ratios.values())
     rank = sum(1 for v in vals if v <= today_ratio) / len(vals) * 100
     span = _kr_breadth_span_label(list(hist_ratios.keys()))
+    return rank, span
+
+
+def _kr_breadth_context(by_date: dict[str, dict], today: str, today_ratio: float) -> str:
+    """오늘을 뺀 과거 표본에서 오늘 상승비율의 위치. 표본이
+    `_KR_BREADTH_MIN_HISTORY_DAYS` 미만이면 빈 문자열(§2-3 — 맥락 없으면
+    그 절을 아예 쓰지 않는다)."""
+    info = _kr_breadth_rank(by_date, today, today_ratio)
+    if info is None:
+        return ""
+    rank, span = info
     if 25 <= rank <= 75:
         return f"{span} 중 중간"
     # 역대 최고/최저(rank 100/0)는 반올림하면 "상위 0%"가 되어 "아무도 없다"는
@@ -620,16 +636,153 @@ def _kr_breadth_market_line(by_date: dict[str, dict], subject: str,
     return f"{label} {idx_part} · {counts} — {tail}"
 
 
-def _kr_breadth_lines(conn, cutoff, report_date: date) -> list[str]:
+def _kr_breadth_lines(by_date_map: dict[str, dict], report_date: date) -> list[str]:
     """§1 목표 형태의 2·3번째 줄. 시장별로 독립 계산 — 한쪽 provider가
-    실패해도 다른 쪽은 그대로 나온다."""
+    실패해도 다른 쪽은 그대로 나온다.
+
+    `by_date_map`은 호출부(`build_report`)가 `_kr_breadth_history(conn, cutoff,
+    subject)`로 시장마다 한 번씩만 미리 읽어 온 것이다 — "오늘 유별난 것"
+    블록(`_unusual_day_block`)도 같은 결과를 쓰므로, 여기서 다시 조회하면
+    같은 cutoff를 두 번 읽는 낭비가 생긴다."""
     lines = []
     for subject in ("KOSPI", "KOSDAQ"):
-        line = _kr_breadth_market_line(
-            _kr_breadth_history(conn, cutoff, subject), subject, report_date)
+        line = _kr_breadth_market_line(by_date_map[subject], subject, report_date)
         if line:
             lines.append(line)
     return lines
+
+
+# --- "오늘 유별난 것" (spec 20260806-report-visual §1①) ---------------------
+#
+# CEO가 세 번째 같은 말을 했다: "시각화로 변화에 집중하게 해달라." 483거래일
+# 중 손꼽는 전면 상승/하락장이 리포트 맨 아래 문장 한 줄에 묻혀 있던 문제
+# (spec §0)를 고치는 자리 — 코스피/코스닥 상승비율의 2년 분포 속 오늘 위치를
+# 맨 위로 끌어올린다. §2 정직성 규칙 5가지가 전부 여기서 코드가 된다.
+
+# 상/하위 몇 %부터 "유별난 날"이라 부를지. CEO가 예로 든 상위 2%·상위 1%는
+# 이 문턱 훨씬 안이다. 정확한 값은 CEO가 정하지 않았다 —
+# `_KR_BREADTH_MIN_HISTORY_DAYS`처럼 "이 정도는 확실히 드문 날"이라 부를 수
+# 있는 보수적인 선을 잡았다. [ASSUMPTION]
+_UNUSUAL_DAY_RANK_THRESHOLD = 5
+_UNUSUAL_DAY_TOP_N = 5  # spec §1①-4: 가장 크게 움직인 것 5개
+
+
+def _unusual_day_market(by_date: dict[str, dict], subject: str, report_date: date) -> dict | None:
+    """subject(KOSPI/KOSDAQ) 하루치 재료. 오늘(또는 가장 최근 관측일) 상승비율을
+    계산할 수 없으면 None — §2-1 "없는 사건을 지어내지 않는다"가 여기서부터
+    시작된다: 이 함수가 None을 내면 그 시장은 블록에 아예 나오지 않는다."""
+    if not by_date:
+        return None
+    today = report_date.isoformat()
+    # `_kr_breadth_market_line`과 같은 이유로 최신 관측일이 리포트 날짜와
+    # 다를 수 있다(수집이 며칠 밀렸을 때) — 그 날짜를 기준으로 삼는다.
+    latest_day = today if today in by_date else max(by_date)
+    ratio = _kr_up_ratio(by_date[latest_day])
+    if ratio is None:
+        return None
+    adv, dec = by_date[latest_day]["breadth_advancers"], by_date[latest_day]["breadth_decliners"]
+    rank_info = _kr_breadth_rank(by_date, latest_day, ratio)
+    is_extreme, percentile_text, rank = False, "", None
+    if rank_info is not None:
+        rank, span = rank_info
+        if rank >= 100 - _UNUSUAL_DAY_RANK_THRESHOLD:
+            is_extreme, percentile_text = True, f"{span} 중 상위 {max(1, round(100 - rank))}%"
+        elif rank <= _UNUSUAL_DAY_RANK_THRESHOLD:
+            is_extreme, percentile_text = True, f"{span} 중 하위 {max(1, round(rank))}%"
+    # 추이 그래프의 입력 — 그래프 자체는 백분위 주장이 아니므로(선을 그릴 뿐
+    # "상위 N%"라고 말하지 않는다) §2-2(표본 부족 시 백분위 생략) 밖이다.
+    dated = sorted((d, _kr_up_ratio(m)) for d, m in by_date.items() if _kr_up_ratio(m) is not None)
+    series = [v for _, v in dated]
+    return {
+        "label": _KR_BREADTH_LABELS[subject], "ratio": ratio, "adv": adv, "dec": dec,
+        "rank": rank, "is_extreme": is_extreme, "percentile_text": percentile_text,
+        "stale": latest_day != today, "as_of": latest_day, "series": series,
+    }
+
+
+def _unusual_day_what_line(m: dict) -> str:
+    """"코스피 오른 종목 788 / 내린 종목 96 (상승비율 89%)" — 극단 여부와
+    무관하게 항상 말할 수 있는 순수 사실(spec §1①-2). 날짜가 밀렸으면 그
+    날짜를 밝힌다(`_kr_breadth_market_line`과 같은 이유).
+
+    **"N종목 중 M개 상승"이라고 쓰지 않는다.** 상승비율의 분모는 거래된 종목
+    중 오르거나 내린 것(adv+dec)이라, 코스피 전체 종목 수(943)와 다르다
+    (보합 31 + 거래없음 28 제외). 어느 쪽 숫자를 분모로 적든 한쪽이 거짓말이
+    된다 — 943을 쓰면 788/943=84%라 아래 줄의 89%와 어긋나고, 884를 쓰면
+    "코스피가 884종목?"으로 읽힌다(심사 2026-08-06, 두 안이 각각 이 두 절벽에
+    떨어졌다). 그래서 **분모를 만들지 않고 오른/내린 종목 수를 그대로** 쓴다."""
+    label = m["label"]
+    if m["stale"]:
+        label += f"({date.fromisoformat(m['as_of']):%-m/%-d} 기준)"
+    return f"{label} 오른 종목 {m['adv']:,.0f} / 내린 종목 {m['dec']:,.0f}"
+
+
+def _unusual_day_headline(markets: list[dict]) -> tuple[bool, str]:
+    """1줄(들)로 "얼마나 드문 날인가" + "무슨 일인가"를 답한다. 극단인
+    시장이 하나도 없으면 **정직하게 그렇다고 말한다** — 표본이 없어서
+    모르는 것과, 표본이 있는데 안 유별난 것은 다른 문장이어야 한다(§2-1·
+    §2-2가 요구하는 구별)."""
+    if not markets:
+        return False, ""
+    what = " · ".join(_unusual_day_what_line(m) for m in markets)
+    extreme = [m for m in markets if m["is_extreme"]]
+    if extreme:
+        how = " · ".join(
+            f"{m['label']} 상승비율 {m['ratio']:.0f}% — {m['percentile_text']}" for m in extreme)
+        return True, f"{how}\n{what}"
+    known = [m for m in markets if m["rank"] is not None]
+    if known:
+        return False, f"오늘은 유별난 날이 아닙니다.\n{what}"
+    return False, f"표본이 부족해 오늘이 얼마나 드문 날인지는 아직 말할 수 없습니다.\n{what}"
+
+
+def _unusual_day_primary(markets: list[dict]) -> dict | None:
+    """추이 그래프에 쓸 시장 하나를 고른다. 백분위를 아는 시장 중 중앙(50%)
+    에서 가장 먼 쪽 — 그게 "오늘 유별난 것"의 주인공이다. 아무 시장도 표본이
+    충분치 않으면 그냥 표본이 더 긴 쪽을 보여준다(그래프는 백분위 주장이
+    아니므로 §2-2 제약 밖 — `_unusual_day_market` 주석 참조)."""
+    if not markets:
+        return None
+    known = [m for m in markets if m["rank"] is not None]
+    if known:
+        return max(known, key=lambda m: abs(m["rank"] - 50))
+    return max(markets, key=lambda m: len(m["series"]))
+
+
+def _top_movers(price_map: dict, n: int = _UNUSUAL_DAY_TOP_N) -> list[FactRow]:
+    """spec §1①-4: 오늘 가장 크게 움직인 n개(관측기업 + 지수·금리·환율·원자재).
+    `_close_delta_rows`와 후보군은 같지만 KOSPI/USD 필수 포함 규칙은 없다 —
+    close_delta의 고정 5종목 규칙이 아니라 순수 "무엇이 컸나"이기 때문이다."""
+    candidates = [
+        (s, price_map[s]) for s in (_MARKET_REACTION_SYMBOLS + CORE16_SYMBOLS)
+        if s in price_map and price_map[s]["delta_pct"] is not None
+    ]
+    ranked = sorted(candidates, key=lambda t: -abs(t[1]["delta_pct"]))
+    seen: set[str] = set()
+    out: list[FactRow] = []
+    for s, info in ranked:
+        if s in seen:
+            continue
+        seen.add(s)
+        out.append(_market_reaction_row(s, info))
+        if len(out) >= n:
+            break
+    return out
+
+
+def _unusual_day_block(by_date_map: dict[str, dict], report_date: date, price_map: dict) -> UnusualDayBlock:
+    markets = [_unusual_day_market(by_date_map.get(s, {}), s, report_date)
+               for s in ("KOSPI", "KOSDAQ")]
+    markets = [m for m in markets if m is not None]
+    is_notable, headline = _unusual_day_headline(markets)
+    primary = _unusual_day_primary(markets)
+    return UnusualDayBlock(
+        is_notable=is_notable,
+        headline=headline,
+        trend_label=f"{primary['label']} 상승비율" if primary else "",
+        trend_series=primary["series"] if primary else [],
+        top_movers=_top_movers(price_map),
+    )
 
 
 # --- macro ----------------------------------------------------------------
@@ -1126,10 +1279,15 @@ def build_report(
     headline = _headline(price_map)
     sector_summary = _sector_summary(price_map)
     sector_index = _sector_index_rows(price_map)
+    # 코스피·코스닥 시장 폭은 한 번만 읽어(`_kr_breadth_history`) 기존 시장
+    # 폭 줄과 "오늘 유별난 것" 블록 양쪽이 나눠 쓴다 — 같은 cutoff를 두 번
+    # 읽지 않는다.
+    kr_breadth_by_date = {s: _kr_breadth_history(conn, cutoff, s) for s in ("KOSPI", "KOSDAQ")}
     # 첫 줄은 관측기업(Core 16), 이어지는 줄은 한국 시장 전체(§1) — 없으면
     # (한국 사실이 아예 없을 때) 첫 줄만 남는다.
     breadth = "\n".join(
-        [_breadth_line(sector_summary)] + _kr_breadth_lines(conn, cutoff, report_date))
+        [_breadth_line(sector_summary)] + _kr_breadth_lines(kr_breadth_by_date, report_date))
+    unusual_day = _unusual_day_block(kr_breadth_by_date, report_date, price_map)
     win = _EVENTS_WINDOW_DAYS[report_type]
     events = _events_rows(conn, cutoff, win)
     schedule_changes = _schedule_change_rows(conn, cutoff, win)
@@ -1210,6 +1368,7 @@ def build_report(
         missing=missing,
         sector_summary=sector_summary,
         sector_index=sector_index,
+        unusual_day=unusual_day,
         interpretation=Interpretation(),
         meta=meta,
     )

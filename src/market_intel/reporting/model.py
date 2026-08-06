@@ -27,7 +27,9 @@ from typing import Any
 # 버전에 남긴다.
 # 2a.3: Report에 sector_index(업종 지수 표)가 추가됐다. 역시 필드 추가뿐이다.
 # 2a.4: FactRow에 doc_url(공시 원문 주소)이 추가됐다. 역시 필드 추가뿐이다.
-SCHEMA_VERSION = "2a.4"
+# 2a.5: Report에 unusual_day(오늘 유별난 것 블록 — spec 20260806-report-visual
+# §1①)가 추가됐다. 역시 필드 추가뿐이라 옛 JSON도 그대로 읽힌다(`from_json`).
+SCHEMA_VERSION = "2a.5"
 
 
 @dataclass
@@ -142,6 +144,31 @@ class SectorIndexRow:
 
 
 @dataclass
+class UnusualDayBlock:
+    """spec 20260806-report-visual §1① "오늘 유별난 것" 블록의 재료.
+
+    렌더러는 이 필드들만 보고 그린다 — 백분위 판단·정직성 규칙(spec §2)은
+    전부 `build.py`가 미리 끝내고 완성된 문구/숫자만 여기 싣는다. 렌더러가
+    직접 백분위를 계산하면 그 판단이 두 렌더러(md/html)에 따로 생기고
+    한쪽만 고쳐지는 날 화면이 어긋난다 — 이 프로젝트 전체의 관례와 같다.
+    """
+    # 오늘이 2년 분포에서 극단(상/하위 몇 % 이내)일 때만 True. 극단이
+    # 아니면 `headline`에 "상위 N%" 같은 문구를 쓰지 않는다(spec §2-1).
+    is_notable: bool = False
+    # "얼마나 드문 날인가"(극단일 때만) + "무슨 일인가"를 담은 문구.
+    # 여러 줄이면 `\n`으로 잇는다(`Report.breadth`와 같은 관례 — 두 렌더러가
+    # 이미 그 줄바꿈 처리를 안다).
+    headline: str = ""
+    # 추이 그래프가 어느 시장의 무엇을 그리는지("코스피 상승비율").
+    trend_label: str = ""
+    # 2년치 상승비율(오래된 값 -> 최신 값, 마지막 = 오늘). 관측이 1개
+    # 이하면 빈 리스트(= 그래프 없음, `FactRow.series`와 같은 관례).
+    trend_series: list[float] = field(default_factory=list)
+    # 오늘 가장 크게 움직인 것 5개(spec §1①-4).
+    top_movers: list[FactRow] = field(default_factory=list)
+
+
+@dataclass
 class Interpretation:
     reading: str = ""
     counter_reading: str = ""
@@ -175,6 +202,8 @@ class Report:
     # 업종 지수(시장 전체). `sector_summary`(Core 16 기업 묶음)와 나란히 놓이는
     # 별개의 표이며, 둘은 서로 다른 질문에 답한다 — `SectorIndexRow` 참조.
     sector_index: list[SectorIndexRow] = field(default_factory=list)
+    # spec 20260806-report-visual §1① — "오늘 유별난 것" 블록(2a.5).
+    unusual_day: UnusualDayBlock = field(default_factory=UnusualDayBlock)
     interpretation: Interpretation = field(default_factory=Interpretation)
     meta: dict = field(default_factory=dict)
 
@@ -195,6 +224,14 @@ class Report:
         d["missing"] = [MissingItem(**m) for m in d["missing"]]
         d["sector_summary"] = [SectorSummary(**s) for s in d.get("sector_summary", [])]
         d["sector_index"] = [SectorIndexRow(**s) for s in d.get("sector_index", [])]
+        raw_unusual = d.get("unusual_day") or {}
+        d["unusual_day"] = UnusualDayBlock(
+            is_notable=raw_unusual.get("is_notable", False),
+            headline=raw_unusual.get("headline", ""),
+            trend_label=raw_unusual.get("trend_label", ""),
+            trend_series=raw_unusual.get("trend_series", []),
+            top_movers=[FactRow(**f) for f in raw_unusual.get("top_movers", [])],
+        )
         d["interpretation"] = Interpretation(**d["interpretation"])
         return cls(**d)
 

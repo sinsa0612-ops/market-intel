@@ -267,6 +267,9 @@ def test_interpretation_survives_every_type_in_both_renderers(settings):
 
 
 def test_every_type_renders_the_four_interpretation_headers(settings):
+    """spec 20260806-report-visual §1②: 4개 해석 항목은 이제 각자 `## `
+    섹션이 아니라 하나의 `## 해석` 섹션 안에 `### ` 소제목 4개로 묶인다 —
+    내용은 그대로, 배치만 바뀐다(요구사항 문구 그대로)."""
     db_mod.init_db(settings.db_path)
     conn = db_mod.connect(settings.db_path)
     for report_type in build_mod.TITLES:
@@ -275,9 +278,11 @@ def test_every_type_renders_the_four_interpretation_headers(settings):
         report = build_mod.build_report(conn, report_type, REPORT_DATE, cutoff, subject=subject)
         md = render_md_mod.render_markdown(report)
         html_doc = render_html_mod.render_html(report)
+        assert "## 해석" in md, f"{report_type} md is missing the merged '해석' section"
+        assert "<h2>해석</h2>" in html_doc, f"{report_type} html is missing the merged '해석' section"
         for header in ("당시 해석", "반대 해석", "기존 가설 영향", "다음 검증"):
-            assert f"## {header}" in md, f"{report_type} md is missing '{header}'"
-            assert f"<h2>{header}</h2>" in html_doc, f"{report_type} html is missing '{header}'"
+            assert f"### {header}" in md, f"{report_type} md is missing '{header}'"
+            assert f"<h3>{header}</h3>" in html_doc, f"{report_type} html is missing '{header}'"
     conn.close()
 
 
@@ -294,8 +299,11 @@ def test_spec_header_orders_are_preserved(settings):
         return [line[3:] for line in md.splitlines() if line.startswith("## ")]
 
     daily = headers("morning")
-    assert daily[:7] == ["시장 한 줄", "핵심 사실", "시장 반응",
-                         "당시 해석", "반대 해석", "기존 가설 영향", "다음 검증"]
+    # 이 테스트는 아무 fact도 심지 않으므로 "오늘 유별난 것"(§1①)은 보여줄
+    # 내용이 없어 헤딩 자체를 내지 않는다(§2-1과 같은 태도) — 그 유무는
+    # test_unusual_day.py가 별도로 지킨다. 4개였던 해석 헤딩은 §1②에 따라
+    # `## 해석` 하나로 묶인다(내용은 `### ` 소제목 4개로 그대로 남는다).
+    assert daily[:4] == ["시장 한 줄", "핵심 사실", "시장 반응", "해석"]
 
     weekly = headers("weekly_review")
     assert weekly[:5] == ["이번 주 시장의 지배 변수", "자산·섹터 성과",
