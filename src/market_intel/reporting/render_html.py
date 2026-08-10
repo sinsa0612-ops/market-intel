@@ -26,6 +26,8 @@ import html as html_mod
 
 from .model import FactRow, Report, SectorSummary
 from .render_md import (
+    APPENDIX_SECTIONS,
+    appendix_count,
     LEGEND_HTML,
     SECTOR_INDEX_NOTE,
     SECTOR_INDEX_TITLE,
@@ -40,8 +42,11 @@ from .render_md import (
     heading,
     safe_href,
     sections,
+    split_unchanged,
     status_ko,
 )
+
+NO_DATA_HTML = "<p>(해당 없음)</p>"
 
 # 스파크라인 좌표계(승인된 시안과 동일). 세로 3~28은 선이 위아래로 잘리지
 # 않게 남긴 여백이다.
@@ -216,7 +221,7 @@ def _scroll(table: str) -> str:
     return f'<div class="scroll">{table}</div>'
 
 
-def _facts_table_html(rows: list[FactRow]) -> str:
+def _facts_table_html_raw(rows: list[FactRow]) -> str:
     if not rows:
         return "<p>(해당 없음)</p>"
     # 그릴 시계열이 하나도 없는 표(거시지표·재무제표)에는 빈 '추이' 칸을
@@ -252,6 +257,24 @@ def _facts_table_html(rows: list[FactRow]) -> str:
     return _scroll("".join(out))
 
 
+def _facts_table_html(rows: list[FactRow]) -> str:
+    """spec 20260810-period-report §1③-1: 등락이 사실상 0인 행은
+    `<details>`로 접는다(§2 규칙4 "접은 것은 접었다고 밝혀라" — 개수를 보이고
+    펼칠 수 있게)."""
+    if not rows:
+        return "<p>(해당 없음)</p>"
+    changed, unchanged = split_unchanged(rows)
+    parts = []
+    if changed:
+        parts.append(_facts_table_html_raw(changed))
+    elif not unchanged:
+        return "<p>(해당 없음)</p>"
+    if unchanged:
+        parts.append(f"<details><summary>변화 없음 {len(unchanged)}건 펼치기</summary>"
+                     f"{_facts_table_html_raw(unchanged)}</details>")
+    return "".join(parts)
+
+
 def _hero_html(rows: list[FactRow]) -> str:
     """"오늘 올랐나 내렸나"에 스크롤 없이 답하는 카드 줄. 좁은 화면에서는
     `flex-wrap`으로 접힌다(스타일은 site.py)."""
@@ -272,11 +295,16 @@ def _hero_html(rows: list[FactRow]) -> str:
 
 def _sector_index_table_html(groups) -> str:
     """업종 지수 표(HTML). 시장별로 표를 나누고, 각 표는 등락률 내림차순이라
-    맨 윗줄이 그날 주도 업종이다. 색·화살표·스파크라인 규약은 사실 표와 동일."""
-    parts = [f'<p class="meta">{_esc(SECTOR_INDEX_NOTE)}</p>']
+    맨 윗줄이 그날 주도 업종이다. 색·화살표·스파크라인 규약은 사실 표와 동일.
+
+    spec 20260810-period-report §1③-4: 설명 문구는 그대로 두고 표만 접는다
+    (`render_md._sector_index_table_md` 주석과 같은 이유 — "시장 반응"
+    섹션의 실측 2,300px 중 이 표가 큰 몫이다)."""
+    note = f'<p class="meta">{_esc(SECTOR_INDEX_NOTE)}</p>'
     if not groups:
-        parts.append("<p>(관측 없음 — 차단선 이전에 알려진 업종 지수 종가가 없습니다)</p>")
-        return "".join(parts)
+        return note + "<p>(관측 없음 — 차단선 이전에 알려진 업종 지수 종가가 없습니다)</p>"
+    n = sum(len(rows) for _, rows in groups)
+    body_parts = []
     for market_label, rows in groups:
         has_spark = any(len(r.series) >= 2 for r in rows)
         spark_head = "<th>추이</th>" if has_spark else ""
@@ -295,12 +323,13 @@ def _sector_index_table_html(groups) -> str:
                 f"<tr><td>{_esc(r.label)}</td><td>{value_cell}</td>"
                 f"{_change_cell(r.delta_pct, r.comparison)}{spark_cell}<td>{src}</td></tr>"
             )
-        parts.append(f'<p class="group">{_esc(market_label)}</p>')
-        parts.append(_scroll(
+        body_parts.append(f'<p class="group">{_esc(market_label)}</p>')
+        body_parts.append(_scroll(
             "<table><thead><tr><th>업종</th><th>수치</th><th>등락</th>"
             f'{spark_head}<th>원자료</th></tr></thead><tbody>{"".join(body)}</tbody></table>'
         ))
-    return "".join(parts)
+    return (note + f"<details><summary>업종 지수 {n}개 펼치기</summary>"
+            f'{"".join(body_parts)}</details>')
 
 
 def _sector_table_html(rows: list[SectorSummary]) -> str:
@@ -321,7 +350,10 @@ def _sector_table_html(rows: list[SectorSummary]) -> str:
         )
     table = ("<table><thead><tr><th>업종</th><th>상승/하락</th><th>중앙값</th>"
              f'<th>종목</th></tr></thead><tbody>{"".join(body)}</tbody></table>')
-    return _scroll(table) + f'<p class="meta">{_esc(SECTOR_NOTE)}</p>'
+    # spec 20260810-period-report §1③-4: 표만 접는다(이유는
+    # `_sector_index_table_html` 주석과 같다), 설명 문구는 그대로 둔다.
+    return (f"<details><summary>업종 묶음 {len(rows)}개 펼치기</summary>{_scroll(table)}</details>"
+            f'<p class="meta">{_esc(SECTOR_NOTE)}</p>')
 
 
 def _calendar_table_html(columns: list[str], rows: list[list[str]]) -> str:
@@ -338,35 +370,47 @@ FLOW_LEGEND = ("막대 길이는 종목 안에서의 비중, 색이 진할수록
                "어느 쪽이 사고 어느 쪽이 파는지가 정보입니다.")
 
 
+def _flow_group_html(g: dict) -> str:
+    out = ['<div class="flow">'
+           f'<div class="name">{_esc(g["name"])}'
+           f'<span class="story">{_esc(g["story"])}</span></div>']
+    if g["quiet"]:
+        out.append('<div class="bar"><span class="zero">움직임 작음</span></div>')
+    else:
+        # `--a`(진하기)는 인라인으로 나갈 수밖에 없지만 **색 자체는 인라인이
+        # 아니다** — 스타일시트가 `--up`/`--down`과 섞으므로 다크모드 팔레트가
+        # 그대로 적용된다(인라인 색은 prefers-color-scheme을 그냥 빠져나간다).
+        bars = "".join(
+            f'<span class="{"buy" if a["buy"] else "sell"}'
+            f'{" pale" if a["intensity"] < PALE_BELOW else ""}" '
+            f'style="flex:{abs(a["value"]) / g["total"]:.4f};--a:{a["intensity"]}">'
+            f'{_esc(a["label"])} {_esc(a["text"])}</span>'
+            for a in g["actors"] if a["value"]
+        )
+        out.append(f'<div class="bar">{bars}</div>')
+    out.append("</div>")
+    return "".join(out)
+
+
 def _flow_html(groups: list[dict]) -> str:
     """수급 — 종목 하나에 막대 하나. 표에서는 안 보이던 "누가 사고 누가
     팔았나"가 이 모양에서는 첫눈에 읽힌다.
 
     막대는 장식이 아니라 데이터이므로 **문장이 항상 함께 나간다**: 흑백
     출력·화면 낭독기·색각이상에서 막대만 남으면 그 줄은 아무 말도 못 한다
-    (색만으로 정보를 주지 않는다는 이 프로젝트의 규약과 같다)."""
+    (색만으로 정보를 주지 않는다는 이 프로젝트의 규약과 같다).
+
+    spec 20260810-period-report §1③-1: "움직임 작음"(`quiet`)도 안 움직인
+    행과 같은 사정이다 — 접는다(§2 규칙4: 개수를 보이고 펼칠 수 있게)."""
     if not groups:
         return "<p>(해당 없음)</p>"
+    active = [g for g in groups if not g["quiet"]]
+    quiet = [g for g in groups if g["quiet"]]
     out = [f'<p class="legend">{_esc(FLOW_LEGEND)}</p>']
-    for g in groups:
-        out.append('<div class="flow">'
-                   f'<div class="name">{_esc(g["name"])}'
-                   f'<span class="story">{_esc(g["story"])}</span></div>')
-        if g["quiet"]:
-            out.append('<div class="bar"><span class="zero">움직임 작음</span></div>')
-        else:
-            # `--a`(진하기)는 인라인으로 나갈 수밖에 없지만 **색 자체는 인라인이
-            # 아니다** — 스타일시트가 `--up`/`--down`과 섞으므로 다크모드 팔레트가
-            # 그대로 적용된다(인라인 색은 prefers-color-scheme을 그냥 빠져나간다).
-            bars = "".join(
-                f'<span class="{"buy" if a["buy"] else "sell"}'
-                f'{" pale" if a["intensity"] < PALE_BELOW else ""}" '
-                f'style="flex:{abs(a["value"]) / g["total"]:.4f};--a:{a["intensity"]}">'
-                f'{_esc(a["label"])} {_esc(a["text"])}</span>'
-                for a in g["actors"] if a["value"]
-            )
-            out.append(f'<div class="bar">{bars}</div>')
-        out.append("</div>")
+    out += [_flow_group_html(g) for g in active]
+    if quiet:
+        out.append(f'<details><summary>움직임 작음 {len(quiet)}건 펼치기</summary>'
+                   f'{"".join(_flow_group_html(g) for g in quiet)}</details>')
     return "".join(out)
 
 
@@ -457,7 +501,16 @@ def render_html(report: Report) -> str:
     parts += [f"<p>{_esc(line)}</p>" for line in head["meta"]]
     for header, blocks in sections(report):
         parts.append(f"<section><h2>{_esc(header)}</h2>")
-        parts += [_block_html(block) for block in blocks]
+        bodies = [b for b in (_block_html(block) for block in blocks) if b]
+        # spec §1③-2 "부록을 맨 뒤로" — 크기가 아니라 접기로 대응한다
+        # (render_md.APPENDIX_SECTIONS 주석 참조).
+        if header in APPENDIX_SECTIONS and bodies and bodies != [NO_DATA_HTML]:
+            combined = "".join(bodies)
+            n = appendix_count(blocks)
+            label = f"{header} {n}건 펼치기" if n else f"{header} 펼치기"
+            parts.append(f"<details><summary>{_esc(label)}</summary>{combined}</details>")
+        else:
+            parts += bodies
         parts.append("</section>")
     body = "".join(parts)
     return f'<article class="mi-report" data-report-type="{_esc(report.report_type)}">{body}</article>'

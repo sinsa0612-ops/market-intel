@@ -326,11 +326,15 @@ def _index_page(entries: list[dict], banner: str = "") -> str:
     # to root-relative ones is *not* needed: render_html emits no internal
     # links at all, only absolute source anchors.
     cards = "".join(_card_li(e) for e in entries[:RECENT_CARDS])
+    # spec 20260810-period-report §1③-2: "최근 보고서"는 실측 1,074px로 리포트
+    # 본문보다 큰 링크 목록이었다(CEO: "읽을 내용이 아니라 링크 목록인데
+    # 본문보다 크다"). 지우거나 옮기지 않고 접는다(§2 규칙4) — 순서는 이미
+    # 본문 다음이라 그대로 두고, 크기만 접어서 줄인다.
     body = (
         banner
         + render_html(latest["report"])
-        + "<h2>최근 보고서</h2>"
-        + f'<ul class="cards">{cards}</ul>'
+        + f"<details><summary>최근 보고서 {min(len(entries), RECENT_CARDS)}건 펼치기</summary>"
+        + f'<ul class="cards">{cards}</ul></details>'
         + f'<p class="meta">전체 {len(entries)}건 — <a href="archive.html">과거 보고서 전체 보기</a></p>'
     )
     return _page("market-intel — 최신", body, depth=0)

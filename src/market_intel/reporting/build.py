@@ -118,6 +118,38 @@ _CLOSE_DELTA_MANDATORY = {"^KS11", "KRW=X"}  # spec B6 close_delta 선정 규칙
 # 6이면 사실상 "있는 만큼 전부"이고, 수집이 쌓여도 리포트 JSON이 무한정
 # 커지지 않는다.
 SPARKLINE_POINTS = 6
+
+# spec 20260810-period-report §1① — 리포트 종류별 비교 창(거래일 기준).
+# "그 주기만" — 병기하지 않는다(CEO 확정). morning/close_delta/week_start/
+# event는 표에 없다 = 지금 그대로 직전 거래일(코드 기본값 lookback=1).
+#
+# 가격(`_price_map`)은 이 숫자를 그대로 **몇 번째 관측 뒤**의 인덱스로 쓴다 —
+# "가격 fact는 심볼당 거래일 하나"라 인덱스 거리가 곧 거래일 거리다(모듈
+# docstring). 거시(`_macro_map`)는 인덱스가 아니라 아래 `_PERIOD_CALENDAR_DAYS`
+# (달력일 목표)를 쓴다 — 이유는 그 상수 옆 주석 참조.
+_PERIOD_LOOKBACK = {"weekly_review": 5, "monthly": 21, "quarterly": 63, "annual": 252}
+_PERIOD_LABEL = {"weekly_review": "1주", "monthly": "1개월", "quarterly": "1분기", "annual": "1년"}
+
+# 거시지표는 매일 관측되지 않는다(CPI는 월 1회). "5거래일 전"을 그대로 인덱스로
+# 적용하면 CPI에서는 다섯 번째 이전 발표(약 5개월 전)를 가리켜 버려 "1주 전"이라는
+# 이름표가 거짓말이 된다. 그래서 거시는 달력일 목표(1주=7일 등)로 바꿔 그 날짜에
+# 가장 가까운(그러나 넘지 않는) 관측을 찾는다 — 그 결과 월간 지표는 주간 리뷰에서
+# 자연히 "직전 관측"(기존과 동일)으로 떨어지고, 월간 리뷰에서는 자연히 "그 달의
+# 직전 발표"가 된다. `_PERIOD_TOLERANCE`는 그 관측이 실제로 그 주기를 대표할 만큼
+# 가까운지 판단한다 — 아니면 §2 규칙1대로 실제 날짜·간격을 그대로 보인다.
+_PERIOD_CALENDAR_DAYS = {"weekly_review": 7, "monthly": 30, "quarterly": 91, "annual": 365}
+# [ASSUMPTION] CEO가 정확한 배수를 정하지 않았다 — 발표 주기(월간지표 약 30일)가
+# 목표 안에 넉넉히 들어오도록 잡은 보수적인 선이다.
+_PERIOD_TOLERANCE = 1.5
+
+# spec §1② 변동성 "평소 대비 몇 배". 예시가 전부 KOSPI라 대표 지표 하나만
+# 보인다(§1②: "어디에 몇 개를 보일지는 네 판단" — 모든 행에 붙이지 않는다).
+# [ASSUMPTION] 다른 지표로 넓히는 결정은 CEO 확인 없이 내리지 않는다.
+_VOLATILITY_SUBJECT = "^KS11"
+# §2 규칙2: 기간 관측 3개 미만이거나 기준 표본이 60거래일 미만이면 변동성을
+# 아예 말하지 않는다(기존 `_KR_BREADTH_MIN_HISTORY_DAYS`와 같은 태도).
+_VOL_MIN_PERIOD_OBS = 3
+_VOL_MIN_BASELINE_DAYS = 60
 # n<=2인 축은 '업종'이 아니라 개별 종목이다(§12 기준 금융·신용 2, 소비·수출 2,
 # 헬스케어 1). 대표값을 지우지는 않되 표본이 적다는 사실을 함께 싣는다.
 _SMALL_SAMPLE_MAX = 2
@@ -231,18 +263,32 @@ def _row_from_fact(
 _PERCENT_VALUED_UNITS = frozenset({"%", "연%", "percent", "Percent"})
 
 
-def _price_map(conn, cutoff) -> dict[str, dict]:
-    """subject -> {latest, prev, delta_pct, series} using every price_close
-    fact known as of `cutoff` (spec A5-compliant: one `facts_as_of` call, no
-    per-symbol filter, grouped in Python — one fact_id exists per trading
-    day per symbol, so a subject filter alone would not collapse to
-    "today's close").
+def _price_map(conn, cutoff, lookback: int = 1) -> dict[str, dict]:
+    """subject -> {latest, prev, delta_pct, series, hist} using every
+    price_close fact known as of `cutoff` (spec A5-compliant: one
+    `facts_as_of` call, no per-symbol filter, grouped in Python — one
+    fact_id exists per trading day per symbol, so a subject filter alone
+    would not collapse to "today's close").
 
-    `series` (추이 그래프의 입력) is built from **these same rows**, i.e. from
-    the one `facts_as_of(cutoff)` read, so the sparkline inherits the report's
-    information barrier instead of needing a second PIT rule of its own. A
-    close known after the blackout is not in `rows` and therefore cannot be
-    in `series`."""
+    `lookback` (spec 20260810-period-report §1①) is how many trading days
+    back `prev` should be — 1 (기본값) for the daily-cadence report types,
+    5/21/63/252 for weekly/monthly/quarterly/annual. Since one row = one
+    trading day, this is a plain index offset into `rs`. When history is
+    shorter than `lookback` (early collection days), `prev` falls back to
+    the oldest observation on hand and `exact_lookback` is False so the
+    caller can honestly disclose the real gap instead of the period name
+    (spec §2 규칙1 — "5거래일 전 관측이 없으면 있는 것 중 가장 가까운 것을
+    쓰되 실제 날짜·간격을 밝힌다").
+
+    `series` (추이 그래프의 입력) and `hist`(변동성 계산의 입력, spec §1②)
+    are both built from **these same rows**, i.e. from the one
+    `facts_as_of(cutoff)` read, so both inherit the report's information
+    barrier instead of needing a second PIT rule of their own. A close known
+    after the blackout is not in `rows` and therefore cannot be in either.
+    `hist` is never trimmed (unlike `series`) and never leaves this module —
+    it is not a `Report`/`FactRow` field, only an input to
+    `_volatility_ratio`, so it does not bloat the JSON the way a full
+    history field would."""
     rows = db_mod.facts_as_of(conn, cutoff, metric="price_close")
     by_subject: dict[str, list] = {}
     for r in rows:
@@ -250,12 +296,20 @@ def _price_map(conn, cutoff) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for subj, rs in by_subject.items():
         rs.sort(key=lambda r: r["event_at"] or "", reverse=True)
-        latest, prev = rs[0], (rs[1] if len(rs) > 1 else None)
+        latest = rs[0]
+        exact_lookback = len(rs) > lookback
+        if exact_lookback:
+            prev = rs[lookback]
+        elif len(rs) > 1:
+            prev = rs[-1]
+        else:
+            prev = None
         delta = None
         if prev is not None and prev["value_num"] not in (None, 0) and latest["value_num"] is not None:
             delta = (latest["value_num"] - prev["value_num"]) / prev["value_num"] * 100
         series = [r["value_num"] for r in reversed(rs[:SPARKLINE_POINTS])
                   if r["value_num"] is not None]
+        hist = [r["value_num"] for r in reversed(rs) if r["value_num"] is not None]
         # `^TNX`(미 10년물)처럼 **시세 자체가 퍼센트**인 종목은 변화를 퍼센트
         # 포인트로 말해야 한다 — 아래 `_price_delta`가 이 값을 골라 쓴다.
         # 여기서 미리 계산해 두는 이유는 `prev`가 0일 때 상대 변화율만 None이
@@ -263,9 +317,45 @@ def _price_map(conn, cutoff) -> dict[str, dict]:
         delta_abs = None
         if prev is not None and prev["value_num"] is not None and latest["value_num"] is not None:
             delta_abs = latest["value_num"] - prev["value_num"]
+        # **월간 국면 규칙(§6.3)이 쓰는 값은 표시 창과 무관하게 "직전 관측"이다.**
+        # 표시 창(21거래일 등)을 그대로 국면 판정에 흘리면, 화면만 바꾸려던 변경이
+        # 판정 자체를 조용히 바꾼다 — 이 파일 상단 주석이 "synthetic 30-day
+        # lookback이 아니다"라고 못박은 규칙이다. 실측(심사 2026-08-10):
+        # `dxy_delta_pct`가 -0.21 -> -1.57로 바뀌어 문턱(-1.0)을 새로 넘었다.
+        prev_immediate = rs[1] if len(rs) > 1 else None
+        delta_immediate = None
+        if (prev_immediate is not None and prev_immediate["value_num"] not in (None, 0)
+                and latest["value_num"] is not None):
+            delta_immediate = ((latest["value_num"] - prev_immediate["value_num"])
+                               / prev_immediate["value_num"] * 100)
         out[subj] = {"latest": latest, "prev": prev, "delta_pct": delta,
-                     "delta_abs": delta_abs, "series": series}
+                     "delta_pct_immediate": delta_immediate,
+                     "delta_abs": delta_abs, "series": series, "hist": hist,
+                     "exact_lookback": exact_lookback}
     return out
+
+
+def _daily_pct_returns(closes_asc: list[float]) -> list[float]:
+    """오래된 -> 최신 종가 목록에서 일간 등락률(%) 목록. 0으로 나누지 않는다."""
+    return [(b - a) / a * 100 for a, b in zip(closes_asc, closes_asc[1:]) if a]
+
+
+def _volatility_ratio(closes_asc: list[float], window: int) -> float | None:
+    """spec §1② "그 기간 일간 등락률의 표준편차 ÷ 가용 전체 기간 일간 등락률의
+    표준편차". 표본이 모자라면(§2 규칙2) None — 호출부는 그 경우 문구를 아예
+    뺀다. `window`는 `_PERIOD_LOOKBACK`과 같은 값이므로, 일간 리포트 타입
+    (lookback=1)은 기간 관측이 1개뿐이라 항상 None이 된다 — 별도 분기 없이
+    "일간 리포트에는 변동성 문구가 없다"가 저절로 성립한다."""
+    returns = _daily_pct_returns(closes_asc)
+    if len(returns) < _VOL_MIN_BASELINE_DAYS:
+        return None
+    period = returns[-window:] if window > 0 else []
+    if len(period) < _VOL_MIN_PERIOD_OBS:
+        return None
+    baseline_sd = statistics.stdev(returns)
+    if not baseline_sd:
+        return None
+    return statistics.stdev(period) / baseline_sd
 
 
 def _price_delta(subject: str, info: dict) -> tuple[float | None, str]:
@@ -312,20 +402,29 @@ def _session_gap_days(latest, prev) -> int | None:
     return abs((a - b).days)
 
 
-def _comparison_text(info: dict, subject: str = "") -> str:
-    """"전일대비 +1.2%" 같은 비교 문구.
+def _comparison_text(info: dict, subject: str = "", report_type: str = "") -> str:
+    """"전일대비 +1.2%" 같은 비교 문구. 리포트 타입에 주기 라벨이 있고
+    (spec §1① `_PERIOD_LABEL`) `_price_map`이 그 거래일 수만큼 실제로 뒤로
+    갈 수 있었으면("exact_lookback") "1주 전 대비"/"1분기 전 대비"처럼 그
+    주기로만 말한다("그 주기 + 전일" 병기 금지, CEO 확정) — 정확히 spec §0의
+    참고 예시 문구("1주 전 대비 -5.10%")와 같은 형태다.
 
     "전일대비" is only true when the two observations really are adjacent
     sessions. After a holiday, a collection outage, or a backfill the
     previous close can be many days back, and calling that "전일" states a
     fact the data does not support (final-review.md F4). Name the actual
-    gap instead; one trading day keeps the familiar wording.
+    gap instead; one trading day keeps the familiar wording. 주기 라벨을 쓸
+    수 없을 때(데이터가 그만큼 없을 때)도 이 규칙 그대로 떨어진다 —
+    §2 규칙1 "있는 것 중 가장 가까운 것을 쓰되 실제 날짜·간격을 밝힌다".
 
     `subject`를 받는 이유는 단위 때문이다 — 시세가 퍼센트인 종목(`^TNX`)은
     `%`가 아니라 `%p`로 말한다(`_price_delta` 주석)."""
     delta, unit = _price_delta(subject, info)
     if delta is None:
         return "전일 비교 불가(직전 종가 없음)"
+    period_label = _PERIOD_LABEL.get(report_type)
+    if period_label and info.get("exact_lookback"):
+        return f"{period_label} 전 대비 {delta:+.2f}{unit}"
     gap = _session_gap_days(info["latest"], info.get("prev"))
     if gap is None:
         return f"직전 종가 대비 {delta:+.2f}{unit}"
@@ -334,11 +433,11 @@ def _comparison_text(info: dict, subject: str = "") -> str:
     return f"{gap}일 전 종가 대비 {delta:+.2f}{unit}"
 
 
-def _market_reaction_row(subj: str, info: dict) -> FactRow:
+def _market_reaction_row(subj: str, info: dict, report_type: str = "") -> FactRow:
     row = info["latest"]
     meta = _UNIVERSE_BY_SYMBOL.get(subj, {})
     label = meta.get("name_ko") or meta.get("name", subj)
-    comparison = _comparison_text(info, subj)
+    comparison = _comparison_text(info, subj, report_type)
     delta, delta_unit = _price_delta(subj, info)
     return FactRow(
         label=label, value=_fmt_price_value(row), comparison=comparison,
@@ -348,16 +447,17 @@ def _market_reaction_row(subj: str, info: dict) -> FactRow:
     )
 
 
-def _market_reaction(price_map: dict) -> list[FactRow]:
-    rows = [_market_reaction_row(s, price_map[s]) for s in _MARKET_REACTION_SYMBOLS if s in price_map]
+def _market_reaction(price_map: dict, report_type: str = "") -> list[FactRow]:
+    rows = [_market_reaction_row(s, price_map[s], report_type)
+            for s in _MARKET_REACTION_SYMBOLS if s in price_map]
     for s in CORE16_SYMBOLS:
         info = price_map.get(s)
         if info and info["delta_pct"] is not None and abs(info["delta_pct"]) >= _CORE16_MOVE_THRESHOLD:
-            rows.append(_market_reaction_row(s, info))
+            rows.append(_market_reaction_row(s, info, report_type))
     return rows
 
 
-def _close_delta_rows(price_map: dict) -> list[FactRow]:
+def _close_delta_rows(price_map: dict, report_type: str = "close_delta") -> list[FactRow]:
     """spec B6: 3~5 items, absolute-move-rank order, KOSPI + USD/KRW always
     included when their data exists."""
     candidates = [
@@ -377,14 +477,18 @@ def _close_delta_rows(price_map: dict) -> list[FactRow]:
         selected.append((s, i))
         if len(selected) >= 5:
             break
-    return [_market_reaction_row(s, i) for s, i in selected]
+    return [_market_reaction_row(s, i, report_type) for s, i in selected]
 
 
-def _headline(price_map: dict) -> str:
+def _headline(price_map: dict, vol_ratio: float | None = None) -> str:
     """spec B6 fixed template. A missing piece becomes the literal word
     '미확인' in place of its value+% fragment (never omitted, never blank —
     [ASSUMPTION]: the label prefix is kept so the reader still knows which
-    indicator is missing, e.g. 'KOSPI 미확인')."""
+    indicator is missing, e.g. 'KOSPI 미확인').
+
+    `vol_ratio`(spec 20260810-period-report §1②)가 있으면 한 줄 끝에 이어
+    붙인다 — 모든 행이 아니라 요약 한 곳에만 보이라는 CEO 확정("모든 행에
+    붙이지 마라")을 지키는 자리다."""
     def part(symbol: str, prefix: str, fmt) -> str:
         info = price_map.get(symbol)
         if not info or info["latest"]["value_num"] is None:
@@ -407,8 +511,11 @@ def _headline(price_map: dict) -> str:
     n_missing = sum(1 for s in CORE16_SYMBOLS if s not in price_map)
     # "Core16"이라고 박아 두면 관측군이 늘 때마다 화면이 거짓말을 한다(실제로
     # 2026-08-03에 18개가 됐다). 개수를 세어 쓴다 — 다음에 또 늘어도 맞는다.
-    return (f"{kospi} · {spx} · {krw} · {us10y} — 관측기업 {len(CORE16_SYMBOLS)}곳 중 "
+    line = (f"{kospi} · {spx} · {krw} · {us10y} — 관측기업 {len(CORE16_SYMBOLS)}곳 중 "
             f"±3% 이상 {n_movers}종목, 결측 {n_missing}건")
+    if vol_ratio is not None:
+        line += f" · 흔들림 평소의 {vol_ratio:.1f}배"
+    return line
 
 
 # --- 업종·시장 폭 (spec §12 표 + §6.1 "시장 폭과 순환은 어떤가") -----------
@@ -442,7 +549,7 @@ def _sector_summary(price_map: dict) -> list[SectorSummary]:
     return out
 
 
-def _sector_index_rows(price_map: dict) -> list[SectorIndexRow]:
+def _sector_index_rows(price_map: dict, report_type: str = "") -> list[SectorIndexRow]:
     """업종 지수 표: 어느 업종이 오르고 내렸나, 등락률 순으로.
 
     **Core 16 집계와 완전히 분리된 계산이다.** 여기 쓰이는 심볼은
@@ -466,7 +573,7 @@ def _sector_index_rows(price_map: dict) -> list[SectorIndexRow]:
             label=meta.get("name_ko") or meta.get("name", symbol),
             market=meta["market"],
             value=_fmt_price_value(row),
-            comparison=_comparison_text(info, symbol),
+            comparison=_comparison_text(info, symbol, report_type),
             delta_pct=info["delta_pct"],
             series=list(info.get("series") or []),
             source_url=row["safe_source_url"] or "",
@@ -749,7 +856,7 @@ def _unusual_day_primary(markets: list[dict]) -> dict | None:
     return max(markets, key=lambda m: len(m["series"]))
 
 
-def _top_movers(price_map: dict, n: int = _UNUSUAL_DAY_TOP_N) -> list[FactRow]:
+def _top_movers(price_map: dict, report_type: str = "", n: int = _UNUSUAL_DAY_TOP_N) -> list[FactRow]:
     """spec §1①-4: 오늘 가장 크게 움직인 n개(관측기업 + 지수·금리·환율·원자재).
     `_close_delta_rows`와 후보군은 같지만 KOSPI/USD 필수 포함 규칙은 없다 —
     close_delta의 고정 5종목 규칙이 아니라 순수 "무엇이 컸나"이기 때문이다."""
@@ -764,13 +871,14 @@ def _top_movers(price_map: dict, n: int = _UNUSUAL_DAY_TOP_N) -> list[FactRow]:
         if s in seen:
             continue
         seen.add(s)
-        out.append(_market_reaction_row(s, info))
+        out.append(_market_reaction_row(s, info, report_type))
         if len(out) >= n:
             break
     return out
 
 
-def _unusual_day_block(by_date_map: dict[str, dict], report_date: date, price_map: dict) -> UnusualDayBlock:
+def _unusual_day_block(by_date_map: dict[str, dict], report_date: date, price_map: dict,
+                       report_type: str = "") -> UnusualDayBlock:
     markets = [_unusual_day_market(by_date_map.get(s, {}), s, report_date)
                for s in ("KOSPI", "KOSDAQ")]
     markets = [m for m in markets if m is not None]
@@ -781,13 +889,31 @@ def _unusual_day_block(by_date_map: dict[str, dict], report_date: date, price_ma
         headline=headline,
         trend_label=f"{primary['label']} 상승비율" if primary else "",
         trend_series=primary["series"] if primary else [],
-        top_movers=_top_movers(price_map),
+        top_movers=_top_movers(price_map, report_type),
     )
 
 
 # --- macro ----------------------------------------------------------------
 
-def _macro_map(conn, cutoff) -> dict[str, dict]:
+def _event_date(row) -> date | None:
+    try:
+        return date.fromisoformat((row["event_at"] or "")[:10])
+    except (ValueError, TypeError, IndexError, KeyError):
+        return None
+
+
+def _macro_map(conn, cutoff, report_type: str = "") -> dict[str, dict]:
+    """spec 20260810-period-report §1① — `_price_map`과 같은 결함("_macro_map도
+    같다", §0)을 고친다. 거시는 인덱스가 아니라 **달력일 목표**로 "그 주기에
+    맞는" 관측을 찾는다(`_PERIOD_CALENDAR_DAYS` 주석 참조) — 발표 주기가
+    지표마다 달라서 가격처럼 "N번째 이전 관측"을 그대로 쓰면 월간 지표에서
+    "1주 전"이 실제로는 5개월 전을 가리키는 거짓말이 된다.
+
+    `period_match`는 그렇게 찾은 관측이 실제로 그 주기를 대표할 만큼 목표에
+    가까운지(`_PERIOD_TOLERANCE`)를 담아 두어, 호출부(`_macro_comparison_text`)가
+    라벨을 쓸지 실제 날짜·간격을 밝힐지(§2 규칙1)를 다시 계산하지 않고
+    고른다."""
+    calendar_days = _PERIOD_CALENDAR_DAYS.get(report_type)
     rows = db_mod.facts_as_of(conn, cutoff, category="macro", metric="value")
     by_subject: dict[str, list] = {}
     for r in rows:
@@ -795,13 +921,42 @@ def _macro_map(conn, cutoff) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for subj, rs in by_subject.items():
         rs.sort(key=lambda r: r["event_at"] or "", reverse=True)
-        latest, prev = rs[0], (rs[1] if len(rs) > 1 else None)
+        latest = rs[0]
+        prev = rs[1] if len(rs) > 1 else None
+        period_match = False
+        if calendar_days and len(rs) > 1:
+            latest_date = _event_date(latest)
+            target = (latest_date - timedelta(days=calendar_days)) if latest_date else None
+            candidate = None
+            if target is not None:
+                candidate = next(
+                    (r for r in rs[1:] if (d := _event_date(r)) is not None and d <= target), None)
+            if candidate is not None:
+                prev = candidate
+                gap = (latest_date - _event_date(candidate)).days
+                period_match = gap <= calendar_days * _PERIOD_TOLERANCE
+            else:
+                # §2 규칙1: 목표만큼 뒤로 갈 관측이 없으면 있는 것 중 가장
+                # 가까운(=가장 오래된) 것을 쓰고, 라벨 대신 실제 간격을 밝힌다.
+                prev = rs[-1]
+                period_match = False
         delta_abs = delta_pct = None
         if prev is not None and latest["value_num"] is not None and prev["value_num"] is not None:
             delta_abs = latest["value_num"] - prev["value_num"]
             if prev["value_num"] != 0:
                 delta_pct = delta_abs / prev["value_num"] * 100
-        out[subj] = {"latest": latest, "prev": prev, "delta_abs": delta_abs, "delta_pct": delta_pct}
+        # 가격 쪽과 같은 이유로 직전 관측 대비 값을 따로 보존한다(§6.3 국면 규칙).
+        prev_immediate = rs[1] if len(rs) > 1 else None
+        delta_abs_immediate = delta_pct_immediate = None
+        if prev_immediate is not None and latest["value_num"] is not None \
+                and prev_immediate["value_num"] is not None:
+            delta_abs_immediate = latest["value_num"] - prev_immediate["value_num"]
+            if prev_immediate["value_num"] != 0:
+                delta_pct_immediate = delta_abs_immediate / prev_immediate["value_num"] * 100
+        out[subj] = {"latest": latest, "prev": prev, "delta_abs": delta_abs, "delta_pct": delta_pct,
+                     "delta_abs_immediate": delta_abs_immediate,
+                     "delta_pct_immediate": delta_pct_immediate,
+                     "period_match": period_match}
     return out
 
 
@@ -825,7 +980,27 @@ def _macro_label(subj: str, latest) -> str:
     return stat_name or subj
 
 
-def _macro_facts(mmap: dict) -> list[FactRow]:
+def _macro_comparison_text(info: dict, is_pp: bool, report_type: str) -> str:
+    """일간 리포트 타입(주기 라벨 없음)은 기존 문구를 **그대로** 유지한다
+    (`test_macro_percentage_point.py`가 "직전 관측 대비"를 무조건 기대한다 —
+    거시는 원래도 "전일" 개념이 없어 그 문구에 날짜 간격을 붙인 적이 없다).
+    주기 라벨이 있는 리포트(weekly_review 등)에서만 §1① 규칙을 적용한다."""
+    delta = info["delta_abs"] if is_pp else info["delta_pct"]
+    unit = "%p" if is_pp else "%"
+    if delta is None:
+        return "직전 관측 없음"
+    period_label = _PERIOD_LABEL.get(report_type)
+    if not period_label:
+        return f"직전 관측 대비 {delta:+.2f}{unit}"
+    if info.get("period_match"):
+        return f"{period_label} 전 관측 대비 {delta:+.2f}{unit}"
+    gap = _session_gap_days(info["latest"], info.get("prev"))
+    if gap is None:
+        return f"직전 관측 대비 {delta:+.2f}{unit}"
+    return f"{gap}일 전 관측 대비 {delta:+.2f}{unit}"
+
+
+def _macro_facts(mmap: dict, report_type: str = "") -> list[FactRow]:
     out = []
     for subj, info in mmap.items():
         label = _macro_label(subj, info["latest"])
@@ -835,8 +1010,7 @@ def _macro_facts(mmap: dict) -> list[FactRow]:
         is_pp = (info["latest"]["unit"] or "") in _PERCENT_VALUED_UNITS
         delta = info["delta_abs"] if is_pp else info["delta_pct"]
         unit = "%p" if is_pp else "%"
-        comparison = (f"직전 관측 대비 {delta:+.2f}{unit}"
-                      if delta is not None else "직전 관측 없음")
+        comparison = _macro_comparison_text(info, is_pp, report_type)
         # 거시지표는 관측이 1개씩이라 시계열 그래프는 나오지 않는다(series 없음).
         # 방향(화살표·색)은 직전 관측이 있을 때만 붙는다.
         out.append(_row_from_fact(info["latest"], label, comparison,
@@ -1231,11 +1405,15 @@ REGIME_GAP_REASON = (
 
 
 def _regime_label(mmap: dict, price_map: dict) -> tuple[str, str]:
-    cpi = mmap.get("CPIAUCSL", {}).get("delta_pct")
-    pce = mmap.get("PCEPI", {}).get("delta_pct")
-    unrate = mmap.get("UNRATE", {}).get("delta_abs")
-    dgs10 = mmap.get("DGS10", {}).get("delta_abs")
-    dxy = price_map.get("DX-Y.NYB", {}).get("delta_pct")
+    """**표시 창이 아니라 `*_immediate`(직전 관측)를 읽는다.** 이 파일 상단
+    주석이 못박은 §6.3 규칙 — "not a synthetic 30-day lookback" — 을 표시
+    변경으로부터 지키기 위해서다. 화면을 21거래일 창으로 바꾸면서 여기까지
+    같이 바뀌면, 리포트 모양만 손보려던 변경이 국면 판정을 조용히 뒤집는다."""
+    cpi = mmap.get("CPIAUCSL", {}).get("delta_pct_immediate")
+    pce = mmap.get("PCEPI", {}).get("delta_pct_immediate")
+    unrate = mmap.get("UNRATE", {}).get("delta_abs_immediate")
+    dgs10 = mmap.get("DGS10", {}).get("delta_abs_immediate")
+    dxy = price_map.get("DX-Y.NYB", {}).get("delta_pct_immediate")
 
     inputs = f"cpi_mom_pct={cpi} pce_mom_pct={pce} unrate_delta_pp={unrate} dgs10_delta_pp={dgs10} dxy_delta_pct={dxy}"
     if all(v is None for v in (cpi, pce, unrate, dgs10, dxy)):
@@ -1270,15 +1448,23 @@ def build_report(
     """Assemble a `Report` for `report_type` as of `cutoff` (spec B6/B7).
     Never raises for missing data — absence goes into `missing` +
     `data_gaps`, per the task's "어떤 소스가 죽어도 리포트는 나온다" intent."""
-    price_map = _price_map(conn, cutoff)
-    mmap = _macro_map(conn, cutoff)
-    macro_facts = _macro_facts(mmap)
+    # spec 20260810-period-report §1① — 리포트 종류별 비교 창(거래일 기준).
+    # morning/close_delta/week_start/event는 표에 없으므로 기본값 1(지금
+    # 그대로 직전 거래일)로 떨어진다.
+    lookback = _PERIOD_LOOKBACK.get(report_type, 1)
+    price_map = _price_map(conn, cutoff, lookback=lookback)
+    mmap = _macro_map(conn, cutoff, report_type=report_type)
+    macro_facts = _macro_facts(mmap, report_type)
     flow_facts, flow_missing = _kr_flows(conn, cutoff)
     filing_facts = _filing_facts(conn, cutoff)
-    market_reaction_all = _market_reaction(price_map)
-    headline = _headline(price_map)
+    market_reaction_all = _market_reaction(price_map, report_type)
+    # spec §1② "평소 대비 몇 배" — KOSPI 하나만(모든 행에 붙이지 않는다).
+    # 일간 리포트는 lookback=1이라 기간 관측이 1개뿐이므로 `_volatility_ratio`가
+    # 자동으로 None을 낸다 — 별도 분기 없이 daily는 문구가 안 생긴다.
+    vol_ratio = _volatility_ratio((price_map.get(_VOLATILITY_SUBJECT) or {}).get("hist") or [], lookback)
+    headline = _headline(price_map, vol_ratio)
     sector_summary = _sector_summary(price_map)
-    sector_index = _sector_index_rows(price_map)
+    sector_index = _sector_index_rows(price_map, report_type)
     # 코스피·코스닥 시장 폭은 한 번만 읽어(`_kr_breadth_history`) 기존 시장
     # 폭 줄과 "오늘 유별난 것" 블록 양쪽이 나눠 쓴다 — 같은 cutoff를 두 번
     # 읽지 않는다.
@@ -1287,7 +1473,7 @@ def build_report(
     # (한국 사실이 아예 없을 때) 첫 줄만 남는다.
     breadth = "\n".join(
         [_breadth_line(sector_summary)] + _kr_breadth_lines(kr_breadth_by_date, report_date))
-    unusual_day = _unusual_day_block(kr_breadth_by_date, report_date, price_map)
+    unusual_day = _unusual_day_block(kr_breadth_by_date, report_date, price_map, report_type)
     win = _EVENTS_WINDOW_DAYS[report_type]
     events = _events_rows(conn, cutoff, win)
     schedule_changes = _schedule_change_rows(conn, cutoff, win)
@@ -1302,7 +1488,7 @@ def build_report(
         market_reaction = market_reaction_all
     elif report_type == "close_delta":
         facts = flow_facts + macro_facts + filing_facts
-        market_reaction = _close_delta_rows(price_map)
+        market_reaction = _close_delta_rows(price_map, report_type)
     elif report_type == "weekly_review":
         since = db_mod.iso_utc(cutoff - timedelta(days=7))
         facts = macro_facts + _filing_facts(conn, cutoff, since=since) + flow_facts
@@ -1321,7 +1507,7 @@ def build_report(
         facts = _financials_facts(conn, cutoff, subjects=[subj]) + _consensus_facts(conn, cutoff, subj)
         market_reaction = [r for r in market_reaction_all if r.subject == subj]
         if not market_reaction and subj in price_map:
-            market_reaction = [_market_reaction_row(subj, price_map[subj])]
+            market_reaction = [_market_reaction_row(subj, price_map[subj], report_type)]
     else:
         raise ValueError(f"build_report: unknown report_type {report_type!r}")
 

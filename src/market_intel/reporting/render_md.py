@@ -256,6 +256,22 @@ def _flow_story(actors: list[dict], total: float) -> str:
     return ", ".join(parts) if parts else "-"
 
 
+# spec 20260810-period-report §1③-2 "부록을 맨 뒤로". 두 절 모두 이미
+# 레이아웃(`sections`) 맨 뒤에 있다 — "최근 일정 변경"은 8종 공통 꼬리
+# 섹션의 마지막이고, "최근 보고서"는 `site.py`가 리포트 본문 다음에 붙인다.
+# CEO 지적은 순서가 아니라 **크기**다("링크 목록인데 본문보다 크다") —
+# 그래서 여기서는 옮기지 않고 접는다. "다가오는 일정"은 뺀다: 그건 앞으로
+# 볼 것이라 펼쳐 둘 값어치가 있다.
+APPENDIX_SECTIONS = {"최근 일정 변경"}
+
+
+def appendix_count(blocks: list[dict]) -> int:
+    """접은 부록 안에 몇 건이 들어 있는지. **개수를 밝히지 않으면 접은 것이
+    아니라 사라진 것으로 읽힌다**(spec §2 규칙4 — 다른 접기들은 이미 개수를
+    보이는데 부록만 빠져 있었다, 심사 2026-08-10 P2)."""
+    return sum(len(b.get("rows") or ()) for b in blocks)
+NO_DATA_MD = "(해당 없음)"
+
 # --- layout (shared with render_html.py) ---------------------------------
 
 def heading(report: Report) -> dict:
@@ -503,7 +519,13 @@ def _lead_sections(report: Report) -> list[tuple[str, list[dict]]]:
             ("자산 성과", _market_blocks(report)),
         ]
     if rt in ("quarterly", "annual"):
+        # spec 20260810-period-report §1③-3 "양식 통일": 다른 7종은 모두 맨
+        # 앞에 헤드라인 요약 한 줄을 보이는데(morning류의 "시장 한 줄",
+        # weekly_review/monthly는 첫 섹션에 접혀 있다) quarterly/annual만
+        # 없었다 — 그 기간 KOSPI 등락(§1①)과 흔들림(§1②)이 요약되는 자리라
+        # 특히 이 두 타입에서 빠져 있던 것이 아쉽다.
         return [
+            ("시장 한 줄", [_text(report.headline)]),
             ("핵심 사실", [*fact_blocks(report.facts), _missing(report)]),
             ("시장 반응", _market_blocks(report)),
         ]
@@ -553,9 +575,36 @@ def sections(report: Report) -> list[tuple[str, list[dict]]]:
     return out
 
 
+# --- 안 움직인 행 접기 (spec 20260810-period-report §1③-1, 두 렌더러 공용) ---
+#
+# CEO: "8화면 -> 3~4화면." 실측(8/6 기준) 32행 중 6행이 등락 사실상 0이었다.
+# 그 행들을 지우지 않고(§2 규칙4 "정보를 지우지는 마라") "변화 없음 N건"으로
+# 접어 펼쳐 볼 수 있게 한다.
+#
+# [ASSUMPTION] CEO가 정확한 문턱을 정하지 않았다. 화면에 소수 둘째 자리까지
+# 찍히는 값이 반올림해도 "0.00%"로 보이는 선(0.005% 미만)은 너무 좁아 거의
+# 아무것도 접지 못한다 — 반대로 너무 넓으면 진짜 움직인 행이 접힌다. 0.05%는
+# "화면에서 0.0X% 대로 보이되 정말 작다"고 부를 수 있는 보수적인 선이다.
+NO_CHANGE_THRESHOLD = 0.05  # % 또는 %p 단위(FactRow.delta_unit과 무관하게 같은 문턱)
+
+
+def _is_unchanged(row: FactRow) -> bool:
+    return row.delta_pct is not None and abs(row.delta_pct) < NO_CHANGE_THRESHOLD
+
+
+def split_unchanged(rows: list[FactRow]) -> tuple[list[FactRow], list[FactRow]]:
+    """(움직인 행, 안 움직인 행). 후자는 호출부가 접어서 낸다. 등락을 아예
+    모르는 행(delta_pct=None)은 "안 움직였다"가 아니라 "모른다"이므로 접지
+    않는다 — 다른 사정이다(§2 규칙4는 접은 사실을 밝히라는 것이지, 모르는
+    것을 접으라는 게 아니다)."""
+    changed = [r for r in rows if not _is_unchanged(r)]
+    unchanged = [r for r in rows if _is_unchanged(r)]
+    return changed, unchanged
+
+
 # --- markdown emission ----------------------------------------------------
 
-def _facts_table_md(rows: list[FactRow]) -> str:
+def _facts_table_md_raw(rows: list[FactRow]) -> str:
     if not rows:
         return "(해당 없음)"
     lines = ["| 항목 | 수치 | 비교 | 원자료 |", "|---|---:|---|---|"]
@@ -573,15 +622,45 @@ def _facts_table_md(rows: list[FactRow]) -> str:
     return "\n".join(lines)
 
 
+def _facts_table_md(rows: list[FactRow]) -> str:
+    """§1③-1 접기 + 기존 표. 접은 부분은 markdown 안에 raw `<details>`로 낸다
+    — Obsidian의 live preview는 CommonMark 원문 안의 raw HTML 블록을 그대로
+    렌더링하고(공식 Help: "HTML은 문서 안에서 그대로 렌더된다"), `<details>`는
+    커뮤니티에서 접이 노트를 만들 때 실제로 쓰는 관용구다. 블록 앞뒤로 빈 줄을
+    둬야 그 안의 마크다운 표가 계속 표로 파싱된다(HTML 블록 규칙)."""
+    if not rows:
+        return "(해당 없음)"
+    changed, unchanged = split_unchanged(rows)
+    parts = []
+    if changed:
+        parts.append(_facts_table_md_raw(changed))
+    elif not unchanged:
+        return "(해당 없음)"
+    if unchanged:
+        parts.append(
+            f"<details><summary>변화 없음 {len(unchanged)}건 펼치기</summary>\n\n"
+            f"{_facts_table_md_raw(unchanged)}\n\n</details>"
+        )
+    return "\n\n".join(parts)
+
+
 def _sector_index_table_md(groups) -> str:
     """업종 지수 표(마크다운). 관측이 0이어도 제목과 "관측 없음"은 낸다 —
-    표가 조용히 사라지면 독자는 그날 업종이 안 움직였다고 읽는다(§3.3)."""
+    표가 조용히 사라지면 독자는 그날 업종이 안 움직였다고 읽는다(§3.3).
+
+    spec 20260810-period-report §1③-4: "시장 반응" 섹션이 실측 2,300px로
+    페이지에서 가장 컸다(개별 종목 표 + 이 업종 지수 표 + 업종 묶음 표 3개가
+    한 섹션에 쌓인다). 업종 지수는 개별 종목표를 이미 본 다음에 보는 두 번째
+    질문("업종별로는?")이라 부록에 가깝다 — 설명 문구는 그대로 보이고 표만
+    접는다(§2 규칙4)."""
     parts = [SECTOR_INDEX_NOTE, ""]
     if not groups:
         parts.append("(관측 없음 — 차단선 이전에 알려진 업종 지수 종가가 없습니다)")
         return "\n".join(parts)
+    n = sum(len(rows) for _, rows in groups)
+    body_parts = []
     for market_label, rows in groups:
-        parts += [f"**{market_label}**", "", "| 업종 | 수치 | 등락 | 원자료 |", "|---|---:|---|---|"]
+        body_parts += [f"**{market_label}**", "", "| 업종 | 수치 | 등락 | 원자료 |", "|---|---:|---|---|"]
         for r in rows:
             badge = status_ko(r.data_status)
             value_cell = f"{r.value} · {badge}" if badge else r.value
@@ -589,12 +668,16 @@ def _sector_index_table_md(groups) -> str:
             src = f"[원자료]({href})" if href else (r.source_url or "-")
             mark = arrow(r.delta_pct)
             change = f"{mark} {r.comparison}".strip() if mark else r.comparison
-            parts.append(f"| {r.label} | {value_cell} | {change} | {src} |")
-        parts.append("")
-    return "\n".join(parts).rstrip()
+            body_parts.append(f"| {r.label} | {value_cell} | {change} | {src} |")
+        body_parts.append("")
+    body = "\n".join(body_parts).rstrip()
+    parts.append(f"<details><summary>업종 지수 {n}개 펼치기</summary>\n\n{body}\n\n</details>")
+    return "\n".join(parts)
 
 
 def _sector_table_md(rows) -> str:
+    """업종 묶음 표(마크다운). 표만 접는다 — 이유는 `_sector_index_table_md`
+    주석과 같다."""
     if not rows:
         return ""
     lines = ["| 업종 | 상승/하락 | 중앙값 | 종목 |", "|---|---|---:|---|"]
@@ -606,7 +689,9 @@ def _sector_table_md(rows) -> str:
         mark = arrow(s.median_pct)
         median = f"{mark} {fmt_pct(s.median_pct)}".strip() if mark else fmt_pct(s.median_pct)
         lines.append(f"| {s.sector} | {s.up}↑ / {s.down}↓ | {median} | {count} |")
-    return "\n".join(lines) + f"\n\n{SECTOR_NOTE}"
+    table = "\n".join(lines)
+    return (f"<details><summary>업종 묶음 {len(rows)}개 펼치기</summary>\n\n{table}\n\n</details>"
+            f"\n\n{SECTOR_NOTE}")
 
 
 def _calendar_table_md(columns: list[str], rows: list[list[str]]) -> str:
@@ -617,11 +702,7 @@ def _calendar_table_md(columns: list[str], rows: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
-def _flow_md(groups: list[dict]) -> str:
-    """마크다운에는 막대도 색도 없다. 대신 **종목당 한 줄**이라는 요점은
-    그대로 살린다 — 표를 종목 하나에 한 행으로 접고, 그 옆에 문장을 둔다."""
-    if not groups:
-        return "(해당 없음)"
+def _flow_table_md_raw(groups: list[dict]) -> str:
     lines = ["| 종목 | 개인 | 기관 | 외국인 | 한 줄 |", "|---|---:|---:|---:|---|"]
     for g in groups:
         cells = {a["label"]: a["text"] for a in g["actors"]}
@@ -630,6 +711,27 @@ def _flow_md(groups: list[dict]) -> str:
             f"| {cells.get('외국인', '-')} | {g['story']} |"
         )
     return "\n".join(lines)
+
+
+def _flow_md(groups: list[dict]) -> str:
+    """마크다운에는 막대도 색도 없다. 대신 **종목당 한 줄**이라는 요점은
+    그대로 살린다 — 표를 종목 하나에 한 행으로 접고, 그 옆에 문장을 둔다.
+
+    spec 20260810-period-report §1③-1: "움직임 작음"도 안 움직인 행과 같은
+    사정이다 — 접는다(`render_html._flow_html`과 같은 판단)."""
+    if not groups:
+        return "(해당 없음)"
+    active = [g for g in groups if not g["quiet"]]
+    quiet = [g for g in groups if g["quiet"]]
+    parts = []
+    if active:
+        parts.append(_flow_table_md_raw(active))
+    if quiet:
+        parts.append(
+            f"<details><summary>움직임 작음 {len(quiet)}건 펼치기</summary>\n\n"
+            f"{_flow_table_md_raw(quiet)}\n\n</details>"
+        )
+    return "\n\n".join(parts) if parts else "(해당 없음)"
 
 
 def _macro_cards_md(rows: list[FactRow], rest: list[FactRow]) -> str:
@@ -748,9 +850,14 @@ def render_markdown(report: Report, obsidian_frontmatter: bool = False) -> str:
     parts = [f"# {head['title']}"] + head["meta"] + [""]
     for header, blocks in sections(report):
         parts += [f"## {header}", ""]
-        for block in blocks:
-            body = _block_md(block)
-            if body:
+        bodies = [b for b in (_block_md(block) for block in blocks) if b]
+        if header in APPENDIX_SECTIONS and bodies and bodies != [NO_DATA_MD]:
+            combined = "\n\n".join(bodies)
+            n = appendix_count(blocks)
+            label = f"{header} {n}건 펼치기" if n else f"{header} 펼치기"
+            parts += [f"<details><summary>{label}</summary>\n\n{combined}\n\n</details>", ""]
+        else:
+            for body in bodies:
                 parts += [body, ""]
     body = "\n".join(parts) + "\n"
     return (_frontmatter(report) + "\n" + body) if obsidian_frontmatter else body
