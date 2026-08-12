@@ -89,6 +89,36 @@ td.sp { width:7.5rem; text-align:right; }
 .spark .area { fill:currentColor; opacity:.10; stroke:none; }
 .spark circle { fill:currentColor; }
 
+/* 차트 (CEO 지시 2026-08-12 "시각화가 부족하다").
+   ⚠️ 부호는 색이 아니라 **0축 위/아래 위치**가 전달한다 — 흑백 출력에서도,
+   색을 못 가리는 눈에도 남는다. 색은 거들 뿐이다. 그래서 계열 구분에도
+   색만 쓰지 않고 선은 점선 패턴을, 막대는 채움 농도를 함께 바꾼다.
+   `figcaption`은 장식이 아니라 그림과 같은 내용의 문장이다(낭독기·흑백용). */
+.chart { margin:1rem 0; }
+.chart svg { display:block; width:100%; height:auto; overflow:visible; }
+.chart figcaption { color:var(--muted); font-size:.85rem; margin-top:.35rem; }
+.chart .axis { stroke:var(--line); stroke-width:1; }
+.chart .axis.base { stroke-dasharray:3 3; }
+.chart .tick { fill:var(--muted); font-size:11px; }
+/* 다이버징 막대: 위(0축 위)가 첫 계열, 아래가 둘째다. */
+.chart-breadth rect.s0 { fill:var(--up); }
+.chart-breadth rect.s1 { fill:var(--down); }
+.chart-breadth .dot { fill:var(--fg); }
+.chart-flows rect.s0 { fill:var(--down); }          /* 외국인 */
+.chart-flows rect.s1 { fill:var(--muted); }         /* 기관 */
+.chart-flows rect.s2 { fill:var(--up); }            /* 개인 */
+/* 꺾은선: 색 + 선 패턴을 함께 바꿔 흑백에서도 갈린다. */
+.chart-rebased .line { fill:none; stroke-width:1.8; stroke-linejoin:round; }
+.chart-rebased .line.s0 { stroke:var(--fg); }
+.chart-rebased .line.s1 { stroke:var(--up); stroke-dasharray:5 3; }
+.chart-rebased .line.s2 { stroke:var(--down); stroke-dasharray:2 2; }
+.chart-rebased .line.s3 { stroke:var(--muted); stroke-dasharray:8 3 2 3; }
+.chart-rebased .lbl { font-size:11px; fill:currentColor; }
+.chart-rebased .lbl.s0 { fill:var(--fg); }
+.chart-rebased .lbl.s1 { fill:var(--up); }
+.chart-rebased .lbl.s2 { fill:var(--down); }
+.chart-rebased .lbl.s3 { fill:var(--muted); }
+
 /* 수급 막대 — 종목 하나에 한 줄. 개인·기관·외국인의 순매수 합은 0이므로
    폭의 비율이 곧 "누가 사고 누가 팔았나"다. 색은 위의 등락 팔레트를 그대로
    쓴다(빨강 = 사는 쪽). 막대 안의 글자는 색 위에 얹히므로 --bg가 아니라
