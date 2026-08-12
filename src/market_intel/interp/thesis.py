@@ -432,10 +432,69 @@ def _evaluate_atom(atom: dict, obs: list[tuple[str, float | None]], cutoff,
 # Verdict (spec SA-7's 5-step, order fixed)
 # ---------------------------------------------------------------------------
 
+# 지속 일수를 되짚을 때 걸어 볼 최대 관측 수. 2년 백필이 ~500관측이므로 그보다
+# 넉넉히 잡되 무한정 걷지는 않는다 — 넘어가면 "이상"으로 표시한다.
+_STREAK_SCAN_LIMIT = 800
+
+
+def _streak(atom: dict, obs: list[tuple[str, float | None]], cutoff,
+            benchmark_obs: list[tuple[str, float | None]] | None = None) -> dict:
+    """이 조건이 **몇 관측째 연속으로 참인가**, 그리고 처음 참이 된 날.
+
+    왜 필요한가 (CEO 지시 2026-08-12): 수준 조건은 상태가 유지되는 한 매일 참이라
+    매일 "강화"를 찍는다. 실측 — `DGS10 >= 4.5`는 19/19회, `환율 >= 1400`은 13/13회,
+    새로 넣은 `DFII10 >= 1.05`는 **505/505일** 전부 강화였다. CEO는 매일 "강화 6건"을
+    읽지만 그중 **새로 알게 된 것은 0건**이다. 확증편향이 심리가 아니라 조건 설계로
+    제조되는 자리다.
+
+    **판정은 바꾸지 않는다.** "지금 긴축적이다"는 참이고 그 정보를 버리면 안 된다 —
+    바꾸면 과거 판정과 비교도 끊긴다. 대신 그 옆에 "오늘 새로 넘었나, 505일째인가"를
+    적어 독자가 news와 state를 구별하게 한다(사외 고문 2인의 처방이 여기서 갈렸는데,
+    GPT는 판정 강등, fable은 메타데이터를 권했다 — 정보를 버리지 않는 쪽을 골랐다).
+
+    되짚기는 관측 단위이지 달력 단위가 아니다. 일간 계열이면 거래일, 분기 재무면
+    분기다 — 그래서 반환 필드 이름도 `periods`다.
+    """
+    if not obs:
+        return {}
+    bench_all = benchmark_obs
+    n = 0
+    first_at = ""
+    for i in range(min(len(obs), _STREAK_SCAN_LIMIT)):
+        window = obs[i:]
+        bench_window = None
+        if bench_all is not None:
+            at = obs[i][0]
+            bench_window = [(a, v) for a, v in bench_all if a and a <= at]
+            if not bench_window:
+                break
+        try:
+            status, _ = _evaluate_atom(atom, window, cutoff, bench_window)
+        except (KeyError, ValueError, TypeError):
+            break
+        if status != "TRUE":
+            break
+        n += 1
+        first_at = obs[i][0]
+    if n == 0:
+        return {}
+    return {"periods": n, "since": (first_at or "")[:10],
+            "capped": n >= min(len(obs), _STREAK_SCAN_LIMIT)}
+
+
 def _eval_group(conn, atoms: list[dict], cutoff) -> list[dict]:
     out = []
     for atom in atoms:
         status, detail = evaluate_atom(conn, atom, cutoff)
+        if status == "TRUE":
+            # 참인 조건에만 계산한다 — 거짓 조건의 "지속"은 화면에 안 나가므로
+            # 되짚을 이유가 없고, 조건 39개를 전부 되짚으면 리포트가 느려진다.
+            obs = _observations(conn, atom, cutoff)
+            bench = (_observations(conn, dict(atom, subject=atom["benchmark"]), cutoff)
+                     if atom.get("benchmark") else None)
+            streak = _streak(atom, obs, cutoff, bench)
+            if streak:
+                detail["streak"] = streak
         out.append({"atom": atom, "status": status, "detail": detail})
     return out
 
@@ -562,15 +621,32 @@ def _evidence_note(row: dict, report_date: str = "") -> str:
         return ""
     evals = (row.get("evals_by_group") or {}).get(group, [])
     fired = [e for e in evals if e["status"] == "TRUE"]
+
+    parts = []
+    # **새 소식인가, 이어지는 상태인가.** 이것이 앞에 온다 — 독자가 먼저 알아야 할
+    # 것은 "오늘 뭐가 달라졌나"이지 근거의 날짜가 아니다.
+    streaks = [(e["detail"]["streak"]) for e in fired
+               if (e.get("detail") or {}).get("streak")]
+    if streaks:
+        # 여럿이 발화했으면 **가장 최근에 넘은 것**을 말한다 — 판정을 바꾼 사건이
+        # 그것이기 때문이다(나머지는 이미 참이던 상태다).
+        newest = min(streaks, key=lambda s: s.get("periods", 0))
+        n = newest.get("periods", 0)
+        if n <= 1:
+            parts.append("오늘 새로 충족")
+        else:
+            since = newest.get("since") or ""
+            tail = "+" if newest.get("capped") else ""
+            parts.append(f"{n}{tail}회째 지속" + (f", {since}부터" if since else ""))
+
     dates = sorted(
         str(e["detail"]["latest_at"])[:10]
         for e in fired if (e.get("detail") or {}).get("latest_at"))
-    if not dates:
-        return ""
-    oldest = dates[0]
-    if report_date and oldest == report_date[:10]:
-        return "근거 오늘"
-    return f"근거 {oldest}"
+    if dates:
+        oldest = dates[0]
+        parts.append("근거 오늘" if (report_date and oldest == report_date[:10])
+                     else f"근거 {oldest}")
+    return " · ".join(parts)
 
 
 # --- 조건 발화 감사 (CEO 지시 2026-08-12) ----------------------------------

@@ -162,6 +162,29 @@
                "subject": "T10Y2Y", "metric": "value", "op": ">=", "value": 0.5}
             ]
           }
+        },
+        {
+          "id": "fin_credit_3",
+          "slot": 3,
+          "statement": "긴축인지 아닌지는 명목이 아니라 실질금리로 재야 한다. 명목 10년물 4.72%는 2년 최고지만 그 숫자만으로는 조이는지 알 수 없다 — 물가가 같이 높으면 실질 부담은 그대로다. 시장이 매일 값을 매기는 실질금리(TIPS 10년물)가 2.43%로 23년 중앙값 1.05%의 두 배가 넘는다는 것이 실제 긴축의 증거다. 그리고 긴축의 부담은 국채가 아니라 신용에서 먼저 드러난다 — 정부는 금리가 올라도 돈을 빌릴 수 있지만 기업은 아니다. [문턱 출처] 실질금리 문턱은 우리가 고른 숫자가 아니라 시스템 밖에서 발행된 앵커다: DFII10 전체 이력 2003-01~2026-08(5,905관측)의 중앙값 1.05%, 하위 25% 0.30%. 연준 SEP의 장기 중립 실질금리(약 1%)와도 맞아 두 독립 근거가 같은 자리를 가리킨다. 우리가 우리 성적표에 손대는 경로를 없애려고 이렇게 잡았다. [한계 — 반드시 읽을 것] 하이일드 스프레드는 이 FRED 계정에서 2023-08부터만 제공돼 785관측(3년)뿐이고, 그 3년이 전부 신용이 좁았던 국면이라 **수준 문턱을 걸 앵커가 없다**. 그래서 신용은 수준이 아니라 변화로만 건다(60거래일 +30% 확대). 나중에 더 긴 이력을 확보하면 수준 조건은 새 id로 등록한다 — 이 조건을 고치지 않는다. [사전등록] 2026-08-12 등록. 아래 조건은 등록 시점에 전부 값을 재기 전에 규칙으로 먼저 정했다.",
+          "leading_indicators": ["DFII10 value", "BAMLH0A0HYM2 value", "T10YIE value"],
+          "next_check_date": "2026-11-01",
+          "conditions": {
+            "falsify": [
+              {"id": "real_rate_easy", "kind": "threshold", "category": "macro",
+               "subject": "DFII10", "metric": "value", "op": "<=", "value": 0.30}
+            ],
+            "weaken": [
+              {"id": "real_rate_below_neutral", "kind": "threshold", "category": "macro",
+               "subject": "DFII10", "metric": "value", "op": "<=", "value": 1.05}
+            ],
+            "strengthen": [
+              {"id": "real_rate_restrictive", "kind": "threshold", "category": "macro",
+               "subject": "DFII10", "metric": "value", "op": ">=", "value": 1.05},
+              {"id": "credit_widening_60d", "kind": "change_pct", "category": "macro",
+               "subject": "BAMLH0A0HYM2", "metric": "value", "op": ">=", "value": 30.0, "lookback": 60}
+            ]
+          }
         }
       ]
     },
