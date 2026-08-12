@@ -32,7 +32,21 @@ THEME_LABELS = {
     "policy_geo": "정책·지정학",
 }
 
-ATOM_KINDS = {"threshold", "change_pct", "consecutive", "stale"}
+# `consecutive` = 값이 **매 구간 전보다 강해지는가**(단조 변화). 분기 재무에는 이것이
+# 옳다 — "MSFT 영업이익 2분기 연속 증가"는 매 분기가 직전 분기보다 커야 참이다.
+#
+# `consecutive_sign` = 값의 **부호가 N구간 유지되는가**. 부호 있는 일간 흐름(순매수/
+# 순매도)에는 이쪽이 옳다. 2026-08-12에 이 종류가 없어서 실제로 사고가 났다:
+# `hynix_foreign_5d_sell`("하이닉스 외국인 5일 연속 순매도")이 `consecutive/down`으로
+# 적혀 있어 코드가 "매일 전날보다 **더 많이** 팔 것"을 요구했다. 실측 8/6 -1.68조 ·
+# 8/7 -667억 · 8/10 -4,088억 · 8/11 -2,998억 — 4거래일 연속 순매도(-2.45조)인데
+# 8/11이 8/10보다 덜 팔았다는 이유로 연속이 1에서 끊겼다. 매일 1조씩 한 달을 팔아도
+# 발화하지 않는, 사실상 죽은 반증 조건이었다.
+#
+# 기존 `consecutive`의 의미는 **일부러 그대로 둔다**: 재무에 걸린 조건들(MSFT 영업이익,
+# EQIX 매출, 소매판매)은 단조 변화가 맞는 뜻이고, 의미를 바꾸면 그 가설들의 지문과
+# 과거 판정이 통째로 흔들린다. 새 종류를 더해 흐름 조건만 옮기면 파급이 그 한 줄이다.
+ATOM_KINDS = {"threshold", "change_pct", "consecutive", "consecutive_sign", "stale"}
 OPS = {
     ">": operator.gt, "<": operator.lt, ">=": operator.ge,
     "<=": operator.le, "==": operator.eq, "!=": operator.ne,
@@ -74,7 +88,7 @@ def _validate_atom(atom: dict, where: str, reasons: list[str]) -> None:
             reasons.append(f"{where}: value가 없음")
     if kind == "change_pct" and "lookback" not in atom:
         reasons.append(f"{where}: lookback이 없음")
-    if kind == "consecutive":
+    if kind in ("consecutive", "consecutive_sign"):
         direction = atom.get("direction")
         if direction not in DIRECTIONS:
             reasons.append(f"{where}: 알 수 없는 방향(direction)={direction!r} (허용: {sorted(DIRECTIONS)})")
@@ -229,12 +243,37 @@ def _cmp(value: float, op: str, target: float) -> bool:
 
 
 def evaluate_atom(conn, atom: dict, cutoff) -> tuple[str, dict]:
-    """-> ("TRUE"|"FALSE"|"UNKNOWN", detail). `detail` always carries a
-    human-readable "message" plus enough structure (observed/required counts,
-    latest values) for `render_impact` and for `thesis_reviews.evidence_json`."""
+    """-> ("TRUE"|"FALSE"|"UNKNOWN", detail).
+
+    `_evaluate_atom`이 실제 판정을 하고, 이 함수는 거기에 **근거의 날짜**를
+    붙인다(CEO 지시 2026-08-12). 분기마다 손으로 넣지 않고 한 곳에서 감싸는
+    이유는, 판정 경로가 다섯 갈래인데 한 갈래만 빠뜨려도 그 가설만 조용히
+    날짜 없이 발행되기 때문이다.
+
+    왜 날짜가 필요한가: 판정은 매일 다시 계산되지만 근거는 그렇지 않다.
+    `ai_semi_1`의 근거인 MSFT 영업이익은 최신치가 2026-06-30이고 다음 값은
+    10월 말에 온다 — 그 사이 2.5개월 동안 시장이 무엇을 하든 매일 똑같은
+    "강화"가 나온다. 날짜를 같이 보여 주면 CEO가 "오늘 새로 안 것"과 "석 달
+    전 사실의 재확인"을 구별할 수 있다.
+
+    관측은 **여기서 한 번만 읽어** 안쪽으로 넘긴다. 날짜를 붙이겠다고 한 번 더
+    읽으면 같은 차단선을 두 번 조회하게 되고, 그 불변식을 지키는 테스트가
+    있다(`test_evaluate_atom_never_bypasses_facts_as_of` — 실제로 이 변경에서
+    걸렸다). 읽기가 하나여야 판정과 날짜가 **같은 관측 집합**에서 나온다.
+    """
+    obs = _observations(conn, atom, cutoff)
+    verdict, detail = _evaluate_atom(atom, obs, cutoff)
+    if obs and obs[0][0]:
+        detail.setdefault("latest_at", obs[0][0])
+    return verdict, detail
+
+
+def _evaluate_atom(atom: dict, obs: list[tuple[str, float | None]], cutoff) -> tuple[str, dict]:
+    """`detail` always carries a human-readable "message" plus enough structure
+    (observed/required counts, latest values) for `render_impact` and for
+    `thesis_reviews.evidence_json`."""
     kind = atom["kind"]
     subject, metric = atom["subject"], atom["metric"]
-    obs = _observations(conn, atom, cutoff)
 
     if kind == "threshold":
         if not obs or obs[0][1] is None:
@@ -294,6 +333,33 @@ def evaluate_atom(conn, atom: dict, cutoff) -> tuple[str, dict]:
                 break
         msg = f"{subject} {metric} 최근 {periods}구간 연속 {direction} {'확인' if ok else '아님'}"
         return ("TRUE" if ok else "FALSE"), {"observed": len(obs), "message": msg}
+
+    if kind == "consecutive_sign":
+        # 부호 유지. `consecutive`와 달리 **직전 값과 비교하지 않으므로** 기준점이
+        # 필요 없다 — N구간이면 관측 N개로 충분하다(단조 쪽은 N+1개가 필요하다).
+        periods = atom["periods"]
+        direction = atom["direction"]
+        if len(obs) < periods:
+            return "UNKNOWN", {
+                "observed": len(obs), "required": periods,
+                "message": f"{subject} {metric} 관측 부족({len(obs)}개, 필요 {periods}개)",
+            }
+        window = obs[:periods]
+        if any(v is None for _at, v in window):
+            return "UNKNOWN", {
+                "observed": len(obs), "required": periods,
+                "message": f"{subject} {metric} 구간에 결측값 있음",
+            }
+        # 0은 어느 쪽 부호도 아니다 — 순매수도 순매도도 아닌 날을 "연속"에
+        # 끼워 주면 흐름이 끊긴 것을 끊기지 않은 것으로 읽는다.
+        ok = all((v > 0) if direction == "up" else (v < 0) for _at, v in window)
+        word = "순매수" if direction == "up" else "순매도"
+        total = sum(v for _at, v in window)
+        msg = (f"{subject} {metric} 최근 {periods}구간 연속 {word} "
+               f"{'확인' if ok else '아님'}"
+               + (f"(합계 {total:,.0f})" if ok else ""))
+        return ("TRUE" if ok else "FALSE"), {
+            "observed": len(obs), "sum": total, "message": msg}
 
     if kind == "stale":
         days = atom["days"]
@@ -428,7 +494,36 @@ def _first_reason(row: dict) -> str:
     return "근거 없음"
 
 
-def render_impact(reviews: list[dict]) -> str:
+def _evidence_note(row: dict, report_date: str = "") -> str:
+    """판정을 만든 근거가 **언제 것인지** 한 마디로. 없으면 빈 문자열.
+
+    발화한 원자들의 `latest_at` 중 **가장 오래된 것**을 쓴다: 조건이 여럿이면
+    판정은 그 전부가 참이어야 서므로, 가장 묵은 근거가 이 판정의 나이다.
+    최신 것을 쓰면 오래된 근거가 새 근거 뒤에 숨는다.
+    """
+    group = _VERDICT_GROUP.get(row["verdict"])
+    if not group:
+        # 유지·판정 불가에는 **판정을 만든 조건이 없다.** 여기서 아무 참인 원자나
+        # 주워 날짜를 붙이면 "유지 — 발화 조건 없음 (근거 8/11)"처럼 자기 자신에
+        # 대해 거짓말하는 문장이 된다(실제로 ai_semi_3에서 나왔다: 반증 그룹의
+        # `sox_60d_up`을 근거로 집었다).
+        return ""
+    evals = (row.get("evals_by_group") or {}).get(group, [])
+    fired = [e for e in evals if e["status"] == "TRUE"]
+    dates = sorted(
+        str(e["detail"]["latest_at"])[:10]
+        for e in fired if (e.get("detail") or {}).get("latest_at"))
+    if not dates:
+        return ""
+    oldest = dates[0]
+    if report_date and oldest == report_date[:10]:
+        return "근거 오늘"
+    return f"근거 {oldest}"
+
+
+def render_impact(reviews: list[dict], report_date: str = "") -> str:
+    """`report_date`를 주면 근거가 그날 것인 판정은 "근거 오늘"로 적는다.
+    안 주면 날짜를 그대로 쓴다 — 옛 호출부가 깨지지 않게 기본값을 둔다."""
     if not reviews:
         return ""
     counts = {"강화": 0, "유지": 0, "약화": 0, "무효": 0, "판정 불가": 0}
@@ -448,7 +543,9 @@ def render_impact(reviews: list[dict]) -> str:
             reason = f"발화 조건 없음(평가 가능 {r['evaluable_atoms']}/{r['total_atoms']})"
         else:
             reason = _first_reason(r)
-        lines.append(f"[{label} #{r['slot']}] {r['verdict']} — {reason}.")
+        note = _evidence_note(r, report_date)
+        suffix = f" ({note})" if note else ""
+        lines.append(f"[{label} #{r['slot']}] {r['verdict']} — {reason}{suffix}.")
     return "\n".join(lines)
 
 

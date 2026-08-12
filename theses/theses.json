@@ -43,12 +43,35 @@
                "subject": "000660.KS", "metric": "price_close", "op": "<=", "value": -30.0, "lookback": 250}
             ],
             "weaken": [
-              {"id": "hynix_foreign_5d_sell", "kind": "consecutive", "category": "flow",
+              {"id": "hynix_foreign_5d_sell", "kind": "consecutive_sign", "category": "flow",
                "subject": "000660.KS", "metric": "net_buy_foreign_value", "direction": "down", "periods": 5}
             ],
             "strengthen": [
               {"id": "hynix_3m_up", "kind": "change_pct", "category": "price",
                "subject": "000660.KS", "metric": "price_close", "op": ">=", "value": 15.0, "lookback": 60}
+            ]
+          }
+        },
+        {
+          "id": "ai_semi_3",
+          "slot": 3,
+          "statement": "한국 메모리는 미국 AI 서사와 따로 재평가되고 있다. 2026-08-11 기준 60거래일 동안 SOX는 +0.20%로 제자리인데 SK하이닉스는 -27.66%, 삼성전자는 -19.09%였고, 8/3~8/11 외국인 순매도 6.60조 중 94%가 이 두 종목에 몰렸다. 즉 'AI가 식었다'가 아니라 '한국 메모리만 값이 다시 매겨지고 있다'는 쪽이다. 이 가설이 사실이면 미국 반도체가 올라도 한국 메모리는 따라 오르지 않고, 외국인 순매도가 이벤트가 아니라 추세로 이어진다. [사전등록] 위 관측은 이 가설을 만든 근거이지 검증이 아니다 — 승자부검은 무엇을 시험할지 알려줄 뿐이다(org/knowledge/market-signal-validation.md). 그래서 채점 조건은 등록일(2026-08-12) 이후 새로 들어오는 관측으로만 발화하도록 골랐다: 외국인 순매도 10거래일 연속은 등록일 기준 4일이라 최소 6거래일이 더 있어야 하고, 되돌림·재동조 조건도 등록 시점에 전부 거짓이다. 그래서 이 가설은 '유지'에서 출발한다.",
+          "leading_indicators": ["000660.KS price_close", "005930.KS price_close", "^SOX price_close", "000660.KS net_buy_foreign_value"],
+          "next_check_date": "2026-11-01",
+          "conditions": {
+            "falsify": [
+              {"id": "hynix_60d_recover", "kind": "change_pct", "category": "price",
+               "subject": "000660.KS", "metric": "price_close", "op": ">=", "value": 10.0, "lookback": 60},
+              {"id": "sox_60d_up", "kind": "change_pct", "category": "price",
+               "subject": "^SOX", "metric": "price_close", "op": ">=", "value": 0.0, "lookback": 60}
+            ],
+            "weaken": [
+              {"id": "hynix_20d_rebound", "kind": "change_pct", "category": "price",
+               "subject": "000660.KS", "metric": "price_close", "op": ">=", "value": 15.0, "lookback": 20}
+            ],
+            "strengthen": [
+              {"id": "hynix_foreign_10d_sell", "kind": "consecutive_sign", "category": "flow",
+               "subject": "000660.KS", "metric": "net_buy_foreign_value", "direction": "down", "periods": 10}
             ]
           }
         }

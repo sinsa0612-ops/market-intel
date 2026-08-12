@@ -138,7 +138,7 @@ def interpret_report(conn, path, *, model: str | None = None, use_llm: bool = Tr
         reviews = thesis_mod.review(conn, theses, cutoff, report.report_type, report.report_date)
         _record_reviews_idempotently(conn, reviews)
 
-    thesis_impact = thesis_mod.render_impact(reviews) if reviews else ""
+    thesis_impact = thesis_mod.render_impact(reviews, report.report_date) if reviews else ""
     next_check_suffix = thesis_mod.render_next_check_suffix(reviews, report) if reviews else ""
 
     report, result = apply_mod.fill(
