@@ -58,6 +58,165 @@ def _esc(value) -> str:
     return html_mod.escape(str(value), quote=True)
 
 
+# --- 차트 (CEO 지시 2026-08-12) --------------------------------------------
+#
+# 스파크라인과 같은 규칙을 따른다: 외부 라이브러리·CDN·<script> 없이 인라인 SVG,
+# 색은 인라인이 아니라 클래스에 맡긴다(인라인 색은 다크모드 미디어쿼리를 빠져나간다).
+#
+# 다만 스파크라인과 **다른 점이 하나** 있다. 스파크라인은 옆 칸의 숫자를 거드는
+# 장식이라 `aria-hidden`이지만, 이 그림들은 그 자체가 정보다 — 그래서
+# `role="img"` + `<title>`/`<desc>`를 달고, 그림 아래에 같은 내용을 문장으로도
+# 싣는다(`ChartBlock.note`). 흑백 출력·화면 낭독기에서 그림만 사라지면 그 자리가
+# 통째로 말을 못 하게 되기 때문이고, 이건 수급 막대에서 이미 정한 원칙이다.
+CHART_W, CHART_H = 640, 190
+CHART_PAD_L, CHART_PAD_R = 34.0, 8.0
+CHART_PAD_T, CHART_PAD_B = 12.0, 26.0
+
+
+def _chart_x(i: int, n: int) -> float:
+    """i번째 눈금의 x 좌표. 눈금이 하나뿐이면 가운데에 둔다(0으로 나누지 않게)."""
+    inner = CHART_W - CHART_PAD_L - CHART_PAD_R
+    if n <= 1:
+        return CHART_PAD_L + inner / 2
+    return CHART_PAD_L + inner * i / (n - 1)
+
+
+def _chart_scale(values: list[float], symmetric: bool) -> tuple[float, float]:
+    """(lo, hi). `symmetric`이면 0을 가운데 두어 위/아래 길이를 견줄 수 있게 한다 —
+    다이버징 막대에서 위아래 배율이 다르면 '더 큰 쪽'이 눈으로 뒤집힌다."""
+    vals = [v for v in values if v is not None]
+    if not vals:
+        return 0.0, 1.0
+    lo, hi = min(vals), max(vals)
+    if symmetric:
+        m = max(abs(lo), abs(hi)) or 1.0
+        return -m, m
+    if lo == hi:  # 완전히 평평한 계열
+        return lo - 1.0, hi + 1.0
+    return lo, hi
+
+
+def _chart_y(v: float, lo: float, hi: float) -> float:
+    span = (hi - lo) or 1.0
+    return CHART_PAD_T + (hi - v) / span * (CHART_H - CHART_PAD_T - CHART_PAD_B)
+
+
+def _date_ticks(dates: list[str]) -> str:
+    """x축 눈금은 처음·가운데·끝 셋만 — 매일 찍으면 글자가 겹쳐 못 읽는다."""
+    n = len(dates)
+    if not n:
+        return ""
+    picks = {0, n // 2, n - 1}
+    out = []
+    for i in sorted(picks):
+        label = dates[i][5:].replace("-", "/")  # 2026-08-03 -> 08/03
+        anchor = "start" if i == 0 else ("end" if i == n - 1 else "middle")
+        out.append(f'<text class="tick" x="{_chart_x(i, n):.1f}" y="{CHART_H - 8}" '
+                   f'text-anchor="{anchor}">{_esc(label)}</text>')
+    return "".join(out)
+
+
+def _chart_frame(body: str, block, desc: str) -> str:
+    title = f"{block.title} ({block.unit})" if block.unit else block.title
+    return (
+        f'<figure class="chart chart-{_esc(block.kind)}">'
+        f'<svg viewBox="0 0 {CHART_W} {CHART_H}" role="img" '
+        f'aria-labelledby="t-{_esc(block.kind)} d-{_esc(block.kind)}">'
+        f'<title id="t-{_esc(block.kind)}">{_esc(title)}</title>'
+        f'<desc id="d-{_esc(block.kind)}">{_esc(desc)}</desc>'
+        f"{body}</svg>"
+        + (f'<figcaption>{_esc(block.note)}</figcaption>' if block.note else "")
+        + "</figure>"
+    )
+
+
+def _diverging_bars_svg(block) -> str:
+    """0축 위/아래로 갈라지는 막대. `breadth`와 `flows`가 같은 그림을 쓴다.
+
+    **부호를 색이 아니라 위치가 전달한다** — 흑백으로 뽑아도, 색을 못 보는
+    사람에게도 위/아래는 남는다. 색은 거들 뿐이다.
+    """
+    n = len(block.dates)
+    if not n or not block.series:
+        return ""
+    flat = [v for s in block.series for v in s.values if v is not None]
+    if not flat:
+        return ""
+    lo, hi = _chart_scale(flat, symmetric=True)
+    zero_y = _chart_y(0.0, lo, hi)
+
+    group = len(block.series)
+    inner = CHART_W - CHART_PAD_L - CHART_PAD_R
+    slot = inner / max(n, 1)
+    bar_w = max(1.5, min(9.0, slot / (group + 1)))
+
+    parts = [f'<line class="axis" x1="{CHART_PAD_L}" y1="{zero_y:.1f}" '
+             f'x2="{CHART_W - CHART_PAD_R}" y2="{zero_y:.1f}"/>']
+    for si, s in enumerate(block.series):
+        offset = (si - (group - 1) / 2) * bar_w
+        for i, v in enumerate(s.values[:n]):
+            if v is None:
+                continue
+            x = _chart_x(i, n) + offset - bar_w / 2
+            y = _chart_y(v, lo, hi)
+            top, height = (min(y, zero_y), abs(zero_y - y))
+            parts.append(f'<rect class="s{si}" x="{x:.1f}" y="{top:.1f}" '
+                         f'width="{bar_w:.1f}" height="{max(height, 0.6):.1f}"/>')
+    for s in block.overlay:
+        pts = [(_chart_x(i, n), _chart_y(v, lo, hi))
+               for i, v in enumerate(s.values[:n]) if v is not None]
+        # 겹치는 점은 **다른 배율의 값**이라 선으로 잇지 않는다 — 이으면 막대와
+        # 같은 축에서 읽히는 두 번째 시계열처럼 보인다.
+        parts += [f'<circle class="dot" cx="{x:.1f}" cy="{y:.1f}" r="2.6"/>' for x, y in pts]
+    parts.append(_date_ticks(block.dates))
+    return "".join(parts)
+
+
+def _rebased_lines_svg(block) -> str:
+    """기준일=100 꺾은선. 계열마다 선 끝에 이름을 직접 붙인다 — 범례를 따로 두면
+    눈이 그림과 범례 사이를 오가야 하고, 흑백에서는 어느 선이 누구인지 못 가린다."""
+    n = len(block.dates)
+    if n < 2 or not block.series:
+        return ""
+    flat = [v for s in block.series for v in s.values if v is not None]
+    if not flat:
+        return ""
+    lo, hi = _chart_scale(flat + [100.0], symmetric=False)
+    base_y = _chart_y(100.0, lo, hi)
+    parts = [f'<line class="axis base" x1="{CHART_PAD_L}" y1="{base_y:.1f}" '
+             f'x2="{CHART_W - CHART_PAD_R}" y2="{base_y:.1f}"/>',
+             f'<text class="tick" x="{CHART_PAD_L - 4}" y="{base_y + 3:.1f}" '
+             f'text-anchor="end">100</text>']
+    for si, s in enumerate(block.series):
+        pts = [(_chart_x(i, n), _chart_y(v, lo, hi))
+               for i, v in enumerate(s.values[:n]) if v is not None]
+        if len(pts) < 2:
+            continue
+        d = " L".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        # 선 종류를 계열마다 다르게 — 색을 못 쓰는 곳에서도 갈린다.
+        parts.append(f'<path class="line s{si}" d="M{d}"/>')
+        ex, ey = pts[-1]
+        parts.append(f'<text class="lbl s{si}" x="{ex - 4:.1f}" y="{ey - 5:.1f}" '
+                     f'text-anchor="end">{_esc(s.label)}</text>')
+    parts.append(_date_ticks(block.dates))
+    return "".join(parts)
+
+
+def chart_svg(block) -> str:
+    """`ChartBlock` -> 인라인 SVG. 그릴 것이 없으면 **빈 문자열**이다
+    (`sparkline_svg`와 같은 관례 — 없는 추세를 그리지 않는다)."""
+    if block.kind in ("breadth", "flows"):
+        body = _diverging_bars_svg(block)
+    elif block.kind == "rebased":
+        body = _rebased_lines_svg(block)
+    else:
+        return ""
+    if not body:
+        return ""
+    desc = block.note or block.title
+    return _chart_frame(body, block, desc)
+
+
 def sparkline_svg(series: list[float], direction_class: str) -> str:
     """최근 종가 시계열 -> 인라인 SVG. 외부 라이브러리·CDN·<script>는 쓰지
     않는다(사이트 정책, spec B8).
@@ -454,6 +613,8 @@ def _filing_summary_html(rows: list[FactRow]) -> str:
 
 def _block_html(block: dict) -> str:
     kind = block["kind"]
+    if kind == "chart":
+        return chart_svg(block["block"])
     if kind == "unusual_day":
         return _unusual_day_html(block)
     if kind == "facts":

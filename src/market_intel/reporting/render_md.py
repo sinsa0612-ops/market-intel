@@ -441,12 +441,22 @@ def _market_blocks(report: Report) -> list[dict]:
     떠서 소속을 알 수 없던 옛 문제도 없다. CEO 결정 2026-08-04."""
     return [
         _breadth(report),
+        # 그림은 표보다 **앞에** 온다. 표는 "오늘 얼마"를 답하고 그림은 "며칠째
+        # 어떤 모양인가"를 답하는데, 뒤에 두면 표 77행을 지나야 도달한다 —
+        # CEO 지적(2026-08-03 "표로 보니 한눈에 안 들어온다")이 가리킨 자리다.
+        *(_chart(c) for c in report.charts),
         _facts(report.market_reaction),
         _subheading(SECTOR_INDEX_TITLE), _sector_index(report),
         # 옛 리포트 JSON에는 sector_summary가 없다 — 딸린 표가 없으면 제목도 안 낸다.
         _subheading(SECTOR_TITLE if report.sector_summary else ""),
         _sector(report),
     ]
+
+
+def _chart(block) -> dict:
+    """`ChartBlock` -> 렌더러 공용 블록. `_unusual_day`와 같은 원칙 — 판단은
+    `build.py`가 끝냈고 여기서는 옮기기만 한다."""
+    return {"kind": "chart", "block": block}
 
 
 def _unusual_day(report: Report) -> dict:
@@ -827,8 +837,19 @@ def _unusual_day_md(block: dict) -> str:
     return "\n\n".join(parts)
 
 
+def _chart_md(block) -> str:
+    """마크다운에는 SVG를 넣지 않는다(spec §3, `_unusual_day_md`와 같은 규칙).
+    대신 **같은 정보를 문장으로** 싣는다 — 그림이 없는 곳에서 정보까지 사라지면
+    옵시디언으로만 읽는 사람은 그 사실 자체를 모르게 된다."""
+    if not block.title or not block.note:
+        return ""
+    return f"**{block.title}** — {block.note}"
+
+
 def _block_md(block: dict) -> str:
     kind = block["kind"]
+    if kind == "chart":
+        return _chart_md(block["block"])
     if kind == "unusual_day":
         return _unusual_day_md(block)
     if kind == "facts":

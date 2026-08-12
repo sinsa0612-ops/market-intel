@@ -169,6 +169,47 @@ class UnusualDayBlock:
 
 
 @dataclass
+class ChartSeries:
+    """차트 한 계열. `values`는 `dates`와 같은 길이이고, 값이 없는 칸은 None."""
+    label: str = ""
+    values: list[float | None] = field(default_factory=list)
+
+
+@dataclass
+class ChartBlock:
+    """리포트에 실리는 그림 한 장의 재료 (CEO 지시 2026-08-12: "시각화가 부족하다").
+
+    `UnusualDayBlock`과 같은 원칙이다 — **판단은 전부 `build.py`가 끝내고 렌더러는
+    좌표만 계산한다.** 렌더러가 백분위나 부호 해석을 직접 하면 그 판단이 md/html에
+    따로 생기고 한쪽만 고쳐지는 날 화면이 어긋난다.
+
+    `kind`가 그림의 종류를 정한다:
+      - `breadth`  — 상승/하락 종목 수를 0축 위아래로, 지수 등락률을 점으로 겹친다.
+      - `flows`    — 투자자 주체별 순매수(+)/순매도(-)를 0축 위아래로.
+      - `rebased`  — 기준일=100으로 맞춘 여러 계열의 꺾은선.
+    세 종류 다 **부호가 위/아래 위치로 전달되므로** 색 없이(흑백 출력에서도) 읽힌다.
+
+    ⚠️ 파이·도넛은 넣지 않는다. 이 리포트의 핵심 수치는 부호가 있는 순매수/순매도라
+    조각으로 나눌 수 없고(음수를 각도로 표현할 방법이 없다), 하루치 구성만 보여 주는
+    그림은 매일 읽는 문서에서 날짜 비교가 안 된다. 사외 고문 2인이 독립적으로 같은
+    결론을 냈다(2026-08-12).
+    """
+    kind: str = ""
+    title: str = ""
+    # x축 눈금(날짜 `YYYY-MM-DD` 또는 계열이 공유하는 라벨).
+    dates: list[str] = field(default_factory=list)
+    series: list[ChartSeries] = field(default_factory=list)
+    # 점으로 겹쳐 그리는 보조 계열(breadth의 지수 등락률). 없으면 빈 리스트.
+    overlay: list[ChartSeries] = field(default_factory=list)
+    # 마크다운에 실을 **같은 정보의 문장**. 마크다운에는 SVG를 넣지 않는다(spec §3)
+    # — 그림이 없는 곳에서 정보가 사라지면 안 되므로 이 문장이 그 자리를 대신한다.
+    # 화면(HTML)에서는 그림 아래 설명으로 함께 실린다.
+    note: str = ""
+    # 단위 꼬리표("종목", "조 원", "=100"). 축 라벨과 낭독기 설명에 쓴다.
+    unit: str = ""
+
+
+@dataclass
 class Interpretation:
     reading: str = ""
     counter_reading: str = ""
@@ -204,6 +245,9 @@ class Report:
     sector_index: list[SectorIndexRow] = field(default_factory=list)
     # spec 20260806-report-visual §1① — "오늘 유별난 것" 블록(2a.5).
     unusual_day: UnusualDayBlock = field(default_factory=UnusualDayBlock)
+    # 그림들(CEO 지시 2026-08-12). 비어 있으면 그림 없이 지금까지의 모양 그대로다 —
+    # 옛 리포트 JSON에는 이 키가 없고, 그것으로 사이트가 무너지면 안 된다.
+    charts: list[ChartBlock] = field(default_factory=list)
     interpretation: Interpretation = field(default_factory=Interpretation)
     meta: dict = field(default_factory=dict)
 
@@ -232,6 +276,15 @@ class Report:
             trend_series=raw_unusual.get("trend_series", []),
             top_movers=[FactRow(**f) for f in raw_unusual.get("top_movers", [])],
         )
+        d["charts"] = [
+            ChartBlock(
+                kind=c.get("kind", ""), title=c.get("title", ""),
+                dates=c.get("dates", []), note=c.get("note", ""), unit=c.get("unit", ""),
+                series=[ChartSeries(**s) for s in c.get("series", [])],
+                overlay=[ChartSeries(**s) for s in c.get("overlay", [])],
+            )
+            for c in d.get("charts", [])
+        ]
         d["interpretation"] = Interpretation(**d["interpretation"])
         return cls(**d)
 

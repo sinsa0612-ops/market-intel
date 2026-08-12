@@ -76,6 +76,8 @@ from ..universe import (
 from .cutoff import KST
 from .model import (
     CalendarRow,
+    ChartBlock,
+    ChartSeries,
     FactRow,
     Interpretation,
     MissingItem,
@@ -328,9 +330,16 @@ def _price_map(conn, cutoff, lookback: int = 1) -> dict[str, dict]:
                 and latest["value_num"] is not None):
             delta_immediate = ((latest["value_num"] - prev_immediate["value_num"])
                                / prev_immediate["value_num"] * 100)
+        # `hist`와 짝이 되는 날짜. 리베이스 차트는 여러 종목을 **같은 x축**에
+        # 세워야 하는데(그래야 "같은 날 A는 오르고 B는 내렸다"가 보인다), 값만
+        # 있으면 종목마다 거래일 수가 달라 축을 맞출 수 없다. 한국·미국 시장은
+        # 휴장일이 달라 실제로 어긋난다.
+        hist_dates = [(r["event_at"] or "")[:10] for r in reversed(rs)
+                      if r["value_num"] is not None]
         out[subj] = {"latest": latest, "prev": prev, "delta_pct": delta,
                      "delta_pct_immediate": delta_immediate,
                      "delta_abs": delta_abs, "series": series, "hist": hist,
+                     "hist_dates": hist_dates,
                      "exact_lookback": exact_lookback}
     return out
 
@@ -875,6 +884,147 @@ def _top_movers(price_map: dict, report_type: str = "", n: int = _UNUSUAL_DAY_TO
         if len(out) >= n:
             break
     return out
+
+
+# --- 차트 (CEO 지시 2026-08-12: "시각화가 충분하지 않다") --------------------
+#
+# 판단은 전부 여기서 끝낸다. 렌더러는 좌표만 계산한다(`ChartBlock` 주석 참조).
+# 그림 종류 선택의 근거는 사외 고문 2인의 독립 자문(2026-08-12)이다 — 파이·도넛은
+# 쓰지 않는다: 이 리포트의 핵심 수치인 순매수는 **부호가 있어** 조각으로 못 나누고,
+# 하루치 구성만 보여 주는 그림은 매일 읽는 문서에서 날짜 비교가 안 된다.
+CHART_DAYS = 20  # 한 달치 거래일. 더 늘리면 막대가 실처럼 가늘어져 못 읽는다.
+
+
+def _chart_days(dates: list[str]) -> list[str]:
+    return sorted(dates)[-CHART_DAYS:]
+
+
+def _breadth_chart(by_date_map: dict[str, dict]) -> ChartBlock | None:
+    """상승/하락 종목 수를 0축 위아래로, 지수 등락률을 점으로 겹친다.
+
+    이 그림이 첫째인 이유: 지수와 종목 다수가 **갈라지는 날**을 다른 어떤 표도
+    보여주지 못한다. 실측 2026-08-03 코스피는 지수 -5.1%인데 오른 종목 455 /
+    내린 종목 419였다 — 대형주가 지수를 끌어내린 날이고, 숫자 표로는 그 구조가
+    눈에 안 들어온다(CEO 지적 2026-08-03 "표로 보니 한눈에 안 들어온다").
+    """
+    hist = by_date_map.get("KOSPI") or {}
+    dates = _chart_days([d for d, m in hist.items()
+                         if m.get("breadth_advancers") is not None])
+    if len(dates) < 2:
+        return None
+    adv = [hist[d].get("breadth_advancers") for d in dates]
+    dec = [(-hist[d]["breadth_decliners"]) if hist[d].get("breadth_decliners") is not None
+           else None for d in dates]
+    idx = [hist[d].get("index_change_pct") for d in dates]
+
+    # 설명 문장은 **그림이 없는 곳(마크다운·낭독기)에서 그림을 대신한다.**
+    # 가장 최근에 "지수와 종목 다수가 어긋난 날"을 짚어 준다 — 그림에서 눈이
+    # 먼저 가는 곳이 그 자리이기 때문이다.
+    note = f"코스피 상승·하락 종목 수(막대)와 지수 등락률(점), 최근 {len(dates)}거래일."
+    for d in reversed(dates):
+        m = hist[d]
+        a, b, chg = m.get("breadth_advancers"), m.get("breadth_decliners"), m.get("index_change_pct")
+        if a is None or b is None or chg is None:
+            continue
+        if (chg < 0 and a > b) or (chg > 0 and b > a):
+            note += (f" 가장 최근 어긋난 날은 {d[5:].replace('-', '/')}로, "
+                     f"지수 {chg:+.1f}%인데 오른 종목 {a:,.0f} / 내린 종목 {b:,.0f}였다.")
+            break
+    return ChartBlock(
+        kind="breadth", title="코스피 시장 폭과 지수", dates=dates, unit="종목",
+        series=[ChartSeries(label="오른 종목", values=adv),
+                ChartSeries(label="내린 종목", values=dec)],
+        overlay=[ChartSeries(label="지수 등락률", values=idx)],
+        note=note)
+
+
+def _flows_chart(conn, cutoff) -> ChartBlock | None:
+    """투자자 주체별 순매수(+)/순매도(-)를 0축 위아래로.
+
+    표는 "오늘 누가 샀나"에 답하고, 이 그림은 "**며칠째** 그러고 있나"에 답한다.
+    수급은 합이 0이라(한쪽이 사면 다른 쪽이 판다) 방향보다 **지속**이 정보다.
+    """
+    rows = db_mod.facts_as_of(conn, cutoff, category="flow")
+    metrics = {"net_buy_foreign_value": "외국인",
+               "net_buy_institution_value": "기관",
+               "net_buy_individual_value": "개인"}
+    by_date: dict[str, dict[str, float]] = {}
+    for r in rows:
+        metric = r["metric"] or ""
+        if metric not in metrics or r["value_num"] is None:
+            continue
+        day = (r["event_at"] or "")[:10]
+        if not day:
+            continue
+        # 종목별 값을 합산한다 — 이 그림이 답하는 것은 개별 종목이 아니라
+        # 표본 전체에서 주체들이 어느 쪽에 서 있는가다.
+        by_date.setdefault(day, {}).setdefault(metric, 0.0)
+        by_date[day][metric] += r["value_num"]
+    dates = _chart_days(list(by_date))
+    if len(dates) < 2:
+        return None
+    series = [ChartSeries(label=label,
+                          values=[(by_date[d].get(m, 0.0) / 1e12) for d in dates])
+              for m, label in metrics.items()]
+    totals = {s.label: sum(v for v in s.values if v is not None) for s in series}
+    parts = " · ".join(f"{k} {v:+.1f}조" for k, v in totals.items())
+    return ChartBlock(
+        kind="flows", title="투자자별 순매수 (코스피 상위 20종목 표본)",
+        dates=dates, unit="조 원", series=series,
+        note=(f"양(+)이 순매수, 음(-)이 순매도. 최근 {len(dates)}거래일 합계 — {parts}. "
+              "시장 전체가 아니라 표본이다."))
+
+
+# 기준=100 꺾은선에 올릴 계열. 한국 메모리와 미국 반도체를 같은 축에 세우는 것이
+# 요점이다 — 2026-08-11 기준 60거래일에서 SOX는 +0.2%인데 SK하이닉스는 -27.7%였다.
+_REBASE_SUBJECTS = (("^KS11", "코스피"), ("^KQ11", "코스닥"),
+                    ("^SOX", "미 반도체"), ("000660.KS", "SK하이닉스"))
+
+
+def _rebased_chart(price_map: dict) -> ChartBlock | None:
+    """여러 시장을 기준일=100으로 맞춰 겹쳐 그린다.
+
+    지수는 단위가 제각각이라(코스피 6,358 · 코스닥 858 · SOX 12,098) 그대로
+    겹치면 큰 숫자만 보인다. 100으로 맞추면 **같은 기간에 누가 얼마나 갔는지**가
+    비로소 비교된다.
+
+    날짜 축은 **한국·미국 공통 거래일의 교집합**이다. 휴장일이 서로 달라 한쪽
+    기준으로 세우면 없는 날의 값을 앞 값으로 끌어다 쓰게 되고, 그건 관측하지
+    않은 값을 그리는 것이다.
+    """
+    have = [(sym, label) for sym, label in _REBASE_SUBJECTS
+            if (price_map.get(sym) or {}).get("hist_dates")]
+    if len(have) < 2:
+        return None
+    common = set.intersection(*(set(price_map[s]["hist_dates"]) for s, _ in have))
+    dates = _chart_days(sorted(common))
+    if len(dates) < 2:
+        return None
+
+    series = []
+    for sym, label in have:
+        info = price_map[sym]
+        by_day = dict(zip(info["hist_dates"], info["hist"]))
+        base = by_day.get(dates[0])
+        if not base:
+            continue
+        series.append(ChartSeries(label=label,
+                                  values=[by_day[d] / base * 100 for d in dates]))
+    if len(series) < 2:
+        return None
+    moves = " · ".join(f"{s.label} {s.values[-1] - 100:+.1f}%" for s in series)
+    return ChartBlock(
+        kind="rebased", title=f"{dates[0]} = 100 기준 상대 추이",
+        dates=dates, unit="=100", series=series,
+        note=(f"같은 기간 상대 성적 — {moves}. "
+              f"관측 {len(dates)}거래일로는 추세가 아니라 이 구간의 기록이다."))
+
+
+def _charts(conn, cutoff, by_date_map: dict[str, dict], price_map: dict) -> list[ChartBlock]:
+    """그릴 수 있는 것만 싣는다. 데이터가 모자라면 그 그림은 아예 없다 —
+    빈 축이나 점 하나짜리 그림은 정보가 아니라 잡음이다(`sparkline_svg`와 같은 관례)."""
+    blocks = [_breadth_chart(by_date_map), _flows_chart(conn, cutoff), _rebased_chart(price_map)]
+    return [b for b in blocks if b is not None]
 
 
 def _unusual_day_block(by_date_map: dict[str, dict], report_date: date, price_map: dict,
@@ -1474,6 +1624,10 @@ def build_report(
     breadth = "\n".join(
         [_breadth_line(sector_summary)] + _kr_breadth_lines(kr_breadth_by_date, report_date))
     unusual_day = _unusual_day_block(kr_breadth_by_date, report_date, price_map, report_type)
+    # 그림은 이미 읽어 둔 것들(`kr_breadth_by_date`·`price_map`)과 흐름 사실
+    # 하나만 더 읽어 만든다 — 같은 cutoff를 다시 읽지 않으므로 차단선이 어긋날
+    # 여지가 없다.
+    charts = _charts(conn, cutoff, kr_breadth_by_date, price_map)
     win = _EVENTS_WINDOW_DAYS[report_type]
     events = _events_rows(conn, cutoff, win)
     schedule_changes = _schedule_change_rows(conn, cutoff, win)
@@ -1555,6 +1709,7 @@ def build_report(
         sector_summary=sector_summary,
         sector_index=sector_index,
         unusual_day=unusual_day,
+        charts=charts,
         interpretation=Interpretation(),
         meta=meta,
     )
