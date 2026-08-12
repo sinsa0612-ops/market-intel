@@ -46,7 +46,13 @@ THEME_LABELS = {
 # 기존 `consecutive`의 의미는 **일부러 그대로 둔다**: 재무에 걸린 조건들(MSFT 영업이익,
 # EQIX 매출, 소매판매)은 단조 변화가 맞는 뜻이고, 의미를 바꾸면 그 가설들의 지문과
 # 과거 판정이 통째로 흔들린다. 새 종류를 더해 흐름 조건만 옮기면 파급이 그 한 줄이다.
-ATOM_KINDS = {"threshold", "change_pct", "consecutive", "consecutive_sign", "stale"}
+#
+# `relative_change_pct` = 같은 기간 **기준 지수 대비** 초과/미달(%p). 2026-08-12
+# 감사에서 `ai_semi_1`의 반증·약화 조건(SOX 절대 -30%/-15%)이 2년 내내 문턱
+# 근접도 0%로 나온 뒤 더했다 — 주도력은 절대 낙폭이 아니라 시장 대비로 먼저
+# 무너진다. `benchmark`(비교 대상 subject)를 함께 적는다.
+ATOM_KINDS = {"threshold", "change_pct", "consecutive", "consecutive_sign",
+              "relative_change_pct", "stale"}
 OPS = {
     ">": operator.gt, "<": operator.lt, ">=": operator.ge,
     "<=": operator.le, "==": operator.eq, "!=": operator.ne,
@@ -80,14 +86,18 @@ def _validate_atom(atom: dict, where: str, reasons: list[str]) -> None:
         return
     if not atom.get("subject") or not atom.get("metric"):
         reasons.append(f"{where}: subject/metric이 비어 있음")
-    if kind in ("threshold", "change_pct"):
+    if kind in ("threshold", "change_pct", "relative_change_pct"):
         op = atom.get("op")
         if op not in OPS:
             reasons.append(f"{where}: 알 수 없는 연산자(op)={op!r} (허용: {sorted(OPS)})")
         if "value" not in atom:
             reasons.append(f"{where}: value가 없음")
-    if kind == "change_pct" and "lookback" not in atom:
+    if kind in ("change_pct", "relative_change_pct") and "lookback" not in atom:
         reasons.append(f"{where}: lookback이 없음")
+    if kind == "relative_change_pct" and not atom.get("benchmark"):
+        # 기준이 없으면 "무엇 대비"가 없다 — 조용히 절대 등락으로 떨어지면
+        # 문턱의 뜻이 통째로 달라진다(-10%p 초과미달 vs -10% 절대 하락).
+        reasons.append(f"{where}: benchmark가 없음(상대강도 조건은 비교 대상이 필수)")
     if kind in ("consecutive", "consecutive_sign"):
         direction = atom.get("direction")
         if direction not in DIRECTIONS:
@@ -262,13 +272,20 @@ def evaluate_atom(conn, atom: dict, cutoff) -> tuple[str, dict]:
     걸렸다). 읽기가 하나여야 판정과 날짜가 **같은 관측 집합**에서 나온다.
     """
     obs = _observations(conn, atom, cutoff)
-    verdict, detail = _evaluate_atom(atom, obs, cutoff)
+    # 상대강도 조건만 두 번 읽는다 — 두 종목을 견주는 것이 정의이기 때문이다.
+    # 나머지는 한 번이고, 그 불변식은 위 주석의 테스트가 지킨다.
+    benchmark_obs = None
+    if atom.get("benchmark"):
+        bench_atom = dict(atom, subject=atom["benchmark"])
+        benchmark_obs = _observations(conn, bench_atom, cutoff)
+    verdict, detail = _evaluate_atom(atom, obs, cutoff, benchmark_obs)
     if obs and obs[0][0]:
         detail.setdefault("latest_at", obs[0][0])
     return verdict, detail
 
 
-def _evaluate_atom(atom: dict, obs: list[tuple[str, float | None]], cutoff) -> tuple[str, dict]:
+def _evaluate_atom(atom: dict, obs: list[tuple[str, float | None]], cutoff,
+                   benchmark_obs: list[tuple[str, float | None]] | None = None) -> tuple[str, dict]:
     """`detail` always carries a human-readable "message" plus enough structure
     (observed/required counts, latest values) for `render_impact` and for
     `thesis_reviews.evidence_json`."""
@@ -309,6 +326,41 @@ def _evaluate_atom(atom: dict, obs: list[tuple[str, float | None]], cutoff) -> t
         msg = (f"{subject} {metric} {lookback}구간 전 대비 {pct:.2f}%"
                f" (조건 {atom['op']} {atom['value']:g}% {'충족' if ok else '미충족'})")
         return ("TRUE" if ok else "FALSE"), {"observed": len(obs), "change_pct": pct, "message": msg}
+
+    if kind == "relative_change_pct":
+        # 상대강도: 같은 기간 **기준 지수보다 얼마나 더/덜 갔는가**(%p).
+        #
+        # 왜 필요했나(2026-08-12 감사): 기존 조건은 전부 단일 종목의 절대
+        # 등락이라 "얼마나 빠졌나"만 물었다. 그 결과 `ai_semi_1`의 반증·약화
+        # 조건(SOX -30%/-15%)이 2년 내내 **문턱 근접도 0%** — 근처에도 못 갔다.
+        # 주도력은 절대 낙폭이 아니라 **시장 대비**로 먼저 무너진다. 반도체가
+        # 시장과 같이 오르내리기만 해도 "주도한다"는 주장은 이미 약해진 것이다.
+        lookback = atom["lookback"]
+        required = lookback + 1
+        if len(obs) < required or len(benchmark_obs or []) < required:
+            return "UNKNOWN", {
+                "observed": min(len(obs), len(benchmark_obs or [])), "required": required,
+                "message": (f"{subject} 또는 기준 {atom.get('benchmark')} 관측 부족"
+                            f"({len(obs)}/{len(benchmark_obs or [])}개, 필요 {required}개)"),
+            }
+        pairs = []
+        for series in (obs, benchmark_obs):
+            latest_val, base_val = series[0][1], series[lookback][1]
+            if latest_val is None or base_val is None or base_val == 0:
+                return "UNKNOWN", {
+                    "observed": len(obs), "required": required,
+                    "message": f"{subject} 또는 기준 지수 값 없음 또는 기준값 0",
+                }
+            pairs.append((latest_val - base_val) / abs(base_val) * 100)
+        subject_pct, bench_pct = pairs
+        spread = subject_pct - bench_pct
+        ok = _cmp(spread, atom["op"], atom["value"])
+        msg = (f"{subject} {lookback}구간 {subject_pct:+.2f}% vs 기준 "
+               f"{atom.get('benchmark')} {bench_pct:+.2f}% -> 격차 {spread:+.2f}%p"
+               f" (조건 {atom['op']} {atom['value']:g}%p {'충족' if ok else '미충족'})")
+        return ("TRUE" if ok else "FALSE"), {
+            "observed": len(obs), "change_pct": subject_pct,
+            "benchmark_change_pct": bench_pct, "spread_pp": spread, "message": msg}
 
     if kind == "consecutive":
         periods = atom["periods"]
@@ -519,6 +571,218 @@ def _evidence_note(row: dict, report_date: str = "") -> str:
     if report_date and oldest == report_date[:10]:
         return "근거 오늘"
     return f"근거 {oldest}"
+
+
+# --- 조건 발화 감사 (CEO 지시 2026-08-12) ----------------------------------
+#
+# 왜 이 코드가 있는가: 2026-08-12에 반증 조건 하나가 **발화 자체가 사실상
+# 불가능한 상태**로 발견됐다(`hynix_foreign_5d_sell` — 단조 감소를 요구해
+# "매일 전날보다 더 많이 팔 것"이 됐다). 그런데 그것을 찾은 것은 검사 장치가
+# 아니라 **우연**이었다. 우연이 QA를 대신하는 한, 나머지 조건 중 몇 개가 더
+# 죽어 있는지 아무도 모른다 — 사외 고문 2인이 독립적으로 이 검사를 첫손에
+# 꼽았다(2026-08-12).
+#
+# 검사는 두 갈래이고, **둘 다 필요하다**:
+#
+#  1. 도달 가능성(`_reachable`) — 합성 관측을 넣어 이 조건이 논리적으로 TRUE가
+#     될 수 있는지. 연산자 오타나 방향 뒤집힘처럼 **어떤 데이터로도 참이 될 수
+#     없는** 조건을 잡는다. 값싸고 데이터가 필요 없다.
+#  2. 실이력 소급(`_replay`) — 실제 관측 이력을 되짚어 이 조건이 **한 번이라도
+#     발화한 적이 있는지**. 오늘 잡은 그 버그는 (1)로는 안 잡힌다: 단조 감소도
+#     논리적으로는 가능하기 때문이다. 현실에서 안 일어날 뿐이다. 그래서 이쪽이
+#     본체다.
+#
+# ⚠️ 소급은 **오늘의 개정본으로 과거를 되짚는다.** 그날 알려져 있던 값이 아니라
+# 지금 아는 값을 쓴다 — 즉 이것은 과거 판정의 재현이 아니라 "이 조건이 이런
+# 모양의 데이터에서 발화할 수 있는가"에 대한 답이다. 리포트 계층의 차단선
+# 규칙과는 목적이 다르므로 섞어 쓰지 말 것.
+
+_AUDIT_BASE = "2026-01-01T00:00:00+00:00"
+
+
+def _synthetic_obs(atom: dict) -> list[tuple[str, float]] | None:
+    """이 조건을 TRUE로 만들도록 **설계된** 관측열. 만들 수 없으면 None."""
+    kind = atom["kind"]
+    day = lambda i: f"2026-06-{(i % 28) + 1:02d}T00:00:00+00:00"  # noqa: E731
+
+    if kind == "threshold":
+        op, target = atom["op"], float(atom["value"])
+        probe = {">": target + 1, ">=": target, "<": target - 1, "<=": target,
+                 "==": target, "!=": target + 1}.get(op)
+        return None if probe is None else [(day(0), probe)]
+
+    if kind == "change_pct":
+        op, target, lb = atom["op"], float(atom["value"]), int(atom["lookback"])
+        # ⚠️ 경계값을 **정확히** 겨냥하면 안 된다. 판정은 `latest`에서 변화율을
+        # 다시 계산하는데 `100 * 1.15 = 114.99999999999999`이라 14.999...%가 나와
+        # `>= 15`를 못 넘긴다. 그러면 멀쩡한 조건이 "발화 불가"로 잘못 신고된다
+        # (이 감사를 처음 돌렸을 때 실제로 2건이 그렇게 나왔다). 만족하는 쪽으로
+        # 아주 조금 밀어 넣는다 — 도달 가능성만 보면 되므로 경계에 붙을 이유가 없다.
+        nudge = max(abs(target), 1.0) * 1e-6
+        pct = {">": target + 1, ">=": target + nudge, "<": target - 1,
+               "<=": target - nudge, "==": target, "!=": target + 1}.get(op)
+        if pct is None:
+            return None
+        base = 100.0
+        latest = base * (1 + pct / 100)
+        # newest first; 사이 값은 판정에 안 쓰이지만 개수는 맞춰야 한다.
+        return [(day(0), latest)] + [(day(i), base) for i in range(1, lb + 1)]
+
+    if kind == "relative_change_pct":
+        # 기준은 제자리에 두고 대상만 움직여 격차를 만든다.
+        op, target, lb = atom["op"], float(atom["value"]), int(atom["lookback"])
+        nudge = max(abs(target), 1.0) * 1e-6
+        spread = {">": target + 1, ">=": target + nudge, "<": target - 1,
+                  "<=": target - nudge, "==": target, "!=": target + 1}.get(op)
+        if spread is None:
+            return None
+        base = 100.0
+        return [(day(0), base * (1 + spread / 100))] + [(day(i), base) for i in range(1, lb + 1)]
+
+    if kind in ("consecutive", "consecutive_sign"):
+        periods, direction = int(atom["periods"]), atom["direction"]
+        n = periods + 1 if kind == "consecutive" else periods
+        if kind == "consecutive":
+            # newest first, 매 구간 직전보다 강해지도록.
+            vals = [float(n - i) for i in range(n)] if direction == "up" \
+                else [float(i) for i in range(n)]
+        else:
+            vals = [1.0] * n if direction == "up" else [-1.0] * n
+        return [(day(i), v) for i, v in enumerate(vals)]
+
+    if kind == "stale":
+        return [("2020-01-01T00:00:00+00:00", 1.0)]
+    return None
+
+
+def _flat_benchmark(atom: dict, obs: list) -> list | None:
+    """상대강도 조건의 짝. 기준을 **제자리(변화 0%)**로 두면 격차가 곧 대상의
+    변화율이 되어, `_synthetic_obs`가 만든 값이 그대로 문턱을 겨냥한다."""
+    if not atom.get("benchmark"):
+        return None
+    return [(at, 100.0) for at, _v in obs]
+
+
+def _reachable(atom: dict) -> bool:
+    obs = _synthetic_obs(atom)
+    if obs is None:
+        return False
+    cutoff = datetime.fromisoformat(_AUDIT_BASE) + timedelta(days=365 * 3)
+    try:
+        status, _ = _evaluate_atom(atom, obs, cutoff, _flat_benchmark(atom, obs))
+    except (KeyError, ValueError, TypeError):
+        return False
+    return status == "TRUE"
+
+
+def _replay(atom: dict, obs_all: list[tuple[str, float | None]],
+            bench_all: list[tuple[str, float | None]] | None = None) -> list[str]:
+    """관측 이력을 하루씩 되짚으며 TRUE였던 날짜들. `obs_all`은 최신순.
+
+    상대강도 조건은 기준 계열도 **같은 날짜로 잘라** 넘긴다 — 개수로 자르면
+    거래일이 어긋난 두 시장(한국·미국)에서 다른 날을 견주게 된다.
+    """
+    bench_by_date = {at: v for at, v in (bench_all or []) if at}
+    fired: list[str] = []
+    for i, (at, _v) in enumerate(obs_all):
+        if not at:
+            continue
+        window = obs_all[i:]
+        bench_window = None
+        if bench_all is not None:
+            bench_window = [(a, v) for a, v in bench_all if a and a <= at]
+            if not bench_window:
+                continue
+        try:
+            status, _ = _evaluate_atom(
+                atom, window, datetime.fromisoformat(db_mod.iso_utc(at)), bench_window)
+        except (KeyError, ValueError, TypeError):
+            continue
+        if status == "TRUE":
+            fired.append(at[:10])
+    return fired
+
+
+def _closest_approach(atom: dict, obs: list[tuple[str, float | None]]) -> float | None:
+    """한 번도 발화하지 않은 조건이 **문턱에 얼마나 가까이 갔는가**(0~1).
+
+    이 숫자가 없으면 "발화한 적 없음"을 읽고 아무 판단도 할 수 없다. 반증
+    조건이 안 울리는 것은 가설이 맞으면 **정상**이기 때문이다. 갈라 주는 것은
+    거리다 — 문턱의 90%까지 갔던 조건은 살아 있는 감시자이고, 20%에서 멈춘
+    조건은 사실상 장식이다(고문 표현으로 "조기 경보가 아니라 부고장").
+
+    수준·변화율 조건에만 뜻이 있다. 연속성 조건은 "몇 구간까지 이어졌나"가
+    거리인데 그건 별개 계산이라 여기서는 None을 낸다.
+    """
+    kind = atom["kind"]
+    vals = [v for _at, v in obs if v is not None]
+    if not vals:
+        return None
+    op = atom.get("op")
+    if kind == "threshold":
+        target = float(atom["value"])
+        best = max(vals) if op in (">", ">=") else min(vals) if op in ("<", "<=") else None
+        if best is None or target == 0:
+            return None
+        return max(0.0, min(1.0, best / target if op in (">", ">=") else target / best))
+    if kind in ("change_pct", "relative_change_pct"):
+        lb = int(atom["lookback"])
+        if len(vals) <= lb:
+            return None
+        target = float(atom["value"])
+        pcts = [(vals[i] - vals[i + lb]) / abs(vals[i + lb]) * 100
+                for i in range(len(vals) - lb) if vals[i + lb]]
+        if kind == "relative_change_pct":
+            # 기준 대비 격차를 정확히 재려면 두 계열이 필요한데 여기에는 대상만
+            # 있다. 절대 변화율로 대신 재면 **문턱보다 후하게** 나와("시장이
+            # 올랐는데 나만 제자리"인 경우를 놓친다) 죽은 조건을 살아 있는 것처럼
+            # 보이게 한다 — 감사 도구가 거짓 안심을 주는 쪽이라 아예 내지 않는다.
+            return None
+        if not pcts or target == 0:
+            return None
+        best = max(pcts) if op in (">", ">=") else min(pcts)
+        # 부호가 같을 때만 비율이 뜻을 가진다(목표 -30%에 관측 +5%면 0이다).
+        if (target > 0) != (best > 0):
+            return 0.0
+        return max(0.0, min(1.0, best / target))
+    return None
+
+
+def audit_conditions(conn, theses: list[dict], cutoff) -> list[dict]:
+    """조건 하나마다 한 줄. `verdict`는 셋 중 하나다:
+
+      `unreachable` — 어떤 데이터로도 참이 될 수 없다. **버그로 보고 고쳐라.**
+      `never_fired` — 논리적으로는 가능하나 보유 이력에서 한 번도 발화하지
+                      않았다. 반증·약화 조건이 여기 있으면 그 가설은 사실상
+                      반증 불가능하다(오늘 고친 그 조건이 이 자리였다).
+      `ok`          — 이력에서 실제로 발화한 적이 있다.
+    """
+    rows: list[dict] = []
+    for th in theses:
+        for group, atoms in (th.get("conditions") or {}).items():
+            for atom in atoms:
+                obs = _observations(conn, atom, cutoff)
+                bench = (_observations(conn, dict(atom, subject=atom["benchmark"]), cutoff)
+                         if atom.get("benchmark") else None)
+                reachable = _reachable(atom)
+                fired = _replay(atom, obs, bench) if reachable else []
+                if not reachable:
+                    verdict = "unreachable"
+                elif not fired:
+                    verdict = "never_fired"
+                else:
+                    verdict = "ok"
+                rows.append({
+                    "thesis_id": th["thesis_id"], "group": group,
+                    "atom_id": atom.get("id", ""), "kind": atom["kind"],
+                    "subject": atom["subject"], "metric": atom["metric"],
+                    "verdict": verdict, "observations": len(obs),
+                    "fired_days": len(fired),
+                    "first_fired": fired[-1] if fired else "",
+                    "last_fired": fired[0] if fired else "",
+                    "closest": None if fired else _closest_approach(atom, obs),
+                })
+    return rows
 
 
 def render_impact(reviews: list[dict], report_date: str = "") -> str:

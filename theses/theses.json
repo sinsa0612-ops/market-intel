@@ -15,13 +15,19 @@
               {"id": "msft_oi_3q_down", "kind": "consecutive", "category": "financials",
                "subject": "MSFT", "metric": "operating_income", "direction": "down", "periods": 3},
               {"id": "sox_1y_deep_down", "kind": "change_pct", "category": "price",
-               "subject": "^SOX", "metric": "price_close", "op": "<=", "value": -30.0, "lookback": 250}
+               "subject": "^SOX", "metric": "price_close", "op": "<=", "value": -30.0, "lookback": 250},
+              {"id": "sox_rs_60d_collapse", "kind": "relative_change_pct", "category": "price",
+               "subject": "^SOX", "benchmark": "^GSPC", "metric": "price_close",
+               "op": "<=", "value": -25.0, "lookback": 60}
             ],
             "weaken": [
               {"id": "msft_oi_2q_down", "kind": "consecutive", "category": "financials",
                "subject": "MSFT", "metric": "operating_income", "direction": "down", "periods": 2},
               {"id": "sox_1y_down", "kind": "change_pct", "category": "price",
-               "subject": "^SOX", "metric": "price_close", "op": "<=", "value": -15.0, "lookback": 250}
+               "subject": "^SOX", "metric": "price_close", "op": "<=", "value": -15.0, "lookback": 250},
+              {"id": "sox_rs_60d_lag", "kind": "relative_change_pct", "category": "price",
+               "subject": "^SOX", "benchmark": "^GSPC", "metric": "price_close",
+               "op": "<=", "value": -10.0, "lookback": 60}
             ],
             "strengthen": [
               {"id": "msft_oi_2q_up", "kind": "consecutive", "category": "financials",

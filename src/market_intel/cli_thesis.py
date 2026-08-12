@@ -35,6 +35,9 @@ def register(sub) -> None:
     p_review.add_argument("--file", required=True)
     p_review.add_argument("--dry-run", action="store_true")
 
+    p_audit = thesis_sub.add_parser("audit")
+    p_audit.add_argument("--json", action="store_true")
+
 
 def dispatch(args, settings) -> int | None:
     if args.command != "thesis":
@@ -49,6 +52,8 @@ def dispatch(args, settings) -> int | None:
             return _cmd_list(conn)
         if args.thesis_command == "review":
             return _cmd_review(conn, args)
+        if args.thesis_command == "audit":
+            return _cmd_audit(conn, args)
         return 1
     finally:
         conn.close()
@@ -85,6 +90,44 @@ def _cmd_list(conn) -> int:
             f"[{label} #{t['slot']}] {t['thesis_id']} next_check={t['next_check_date']} last_verdict={last}"
         )
     return 0
+
+
+def _cmd_audit(conn, args) -> int:
+    """`thesis audit` — 조건 하나하나가 **실제로 발화할 수 있는가**를 묻는다.
+
+    왜 이 명령이 있는가: 2026-08-12에 반증 조건 하나가 사실상 발화 불가능한
+    상태로 발견됐는데, 그것을 찾은 것은 검사 장치가 아니라 우연이었다. 우연이
+    QA를 대신하는 한 나머지 조건이 살아 있는지는 아무도 모른다.
+
+    종료코드: `unreachable`(어떤 데이터로도 참이 될 수 없음)이 하나라도 있으면
+    2 — 그건 버그다. `never_fired`만 있으면 0이다. 반증 조건이 안 울리는 것은
+    가설이 맞으면 정상이라, 실패로 처리하면 매번 빨간불이 되어 아무도 안 본다.
+    대신 문턱 근접도를 함께 찍어 사람이 판단하게 한다.
+    """
+    from datetime import datetime, timezone
+
+    theses = store_mod.list_theses(conn)
+    if not theses:
+        print("thesis_audit: 적재된 가설이 없습니다")
+        return 0
+    rows = thesis_mod.audit_conditions(conn, theses, datetime.now(timezone.utc))
+
+    if args.json:
+        print(json.dumps(rows, ensure_ascii=False, indent=2))
+    else:
+        for r in rows:
+            near = "" if r["closest"] is None else f" closest={r['closest'] * 100:.0f}%"
+            fired = (f" fired_days={r['fired_days']} last_fired={r['last_fired']}"
+                     if r["fired_days"] else "")
+            print(f"audit={r['verdict']} thesis_id={r['thesis_id']} group={r['group']} "
+                  f"atom={r['atom_id']} kind={r['kind']} obs={r['observations']}{fired}{near}")
+
+    counts = {"ok": 0, "never_fired": 0, "unreachable": 0}
+    for r in rows:
+        counts[r["verdict"]] += 1
+    print(f"thesis_audit: 조건={len(rows)} 발화이력있음={counts['ok']} "
+          f"발화이력없음={counts['never_fired']} 발화불가={counts['unreachable']}")
+    return 2 if counts["unreachable"] else 0
 
 
 def _cmd_review(conn, args) -> int:
