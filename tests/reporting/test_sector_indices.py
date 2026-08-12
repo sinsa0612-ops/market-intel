@@ -42,6 +42,16 @@ SPEC_KR_SECTOR_INDICES = {
     "117460.KS": "KODEX 에너지화학", "102970.KS": "KODEX 증권",
     "117680.KS": "KODEX 철강",
 }
+# 명세 밖에서 CEO 결정으로 더한 것(2026-08-12). 명세 목록과 **따로** 둔다 —
+# 섞으면 "명세가 정한 것"과 "우리가 더한 것"을 나중에 구별할 수 없다.
+#
+# 왜 더했나: 목표가 "그 시기 가장 주도적인 섹터"를 재는 것인데 계기가 없는 업종은
+# 아무리 앞서도 영원히 안 보인다. 그런데 이 셋의 대표 종목(한화에어로스페이스·
+# HD현대중공업·두산에너빌리티)은 이미 코스피 상위 20 수급 표본에 있어 **수급은
+# 매일 들어오는데 업종으로는 못 읽는** 상태였다.
+ADDED_KR_SECTOR_INDICES = {
+    "449450.KS": "방산", "466920.KS": "조선", "487240.KS": "AI전력설비",
+}
 
 
 def _seed(conn, raw_dir, symbol, market, country, event_at, value, unit):
@@ -120,13 +130,18 @@ def test_sector_indices_never_join_core16():
 
     기업 수는 여기서 못박지 않는다 — 2026-08-03에 EQIX·POSCO홀딩스가 들어와
     18개가 됐고(비어 있던 소재·부동산 축), 이 파일이 지키려는 계약은 "몇 개냐"가
-    아니라 "두 집계가 서로에게 닿지 않는다"이다."""
+    아니라 "두 집계가 서로에게 닿지 않는다"이다.
+
+    업종 지수 쪽도 같은 이유로 **개수(`== 16`)를 못박던 것을 걷어냈다** — 2026-08-12에
+    방산·조선·AI전력설비가 들어와 19개가 됐다. 대신 **집합을 통째로 비교한다**:
+    개수만 세면 하나가 빠지고 하나가 들어와도 통과하고, 반대로 개수를 안 보면
+    실수로 들어온 종목을 놓친다. 집합 비교가 둘 다 잡는다.
+    """
+    expected = set(SPEC_US_SECTOR_INDICES) | set(SPEC_KR_SECTOR_INDICES) | set(ADDED_KR_SECTOR_INDICES)
     assert len(universe_mod.CORE16_SYMBOLS) == len(universe_mod.CORE16)
-    assert set(universe_mod.CORE16_SYMBOLS).isdisjoint(
-        set(SPEC_US_SECTOR_INDICES) | set(SPEC_KR_SECTOR_INDICES))
-    assert set(universe_mod.SECTOR_BY_SYMBOL).isdisjoint(
-        set(SPEC_US_SECTOR_INDICES) | set(SPEC_KR_SECTOR_INDICES))
-    assert len(universe_mod.SECTOR_INDEX_SYMBOLS) == 16
+    assert set(universe_mod.CORE16_SYMBOLS).isdisjoint(expected)
+    assert set(universe_mod.SECTOR_BY_SYMBOL).isdisjoint(expected)
+    assert set(universe_mod.SECTOR_INDEX_SYMBOLS) == expected
 
 
 def test_collect_universe_carries_the_sector_indices():

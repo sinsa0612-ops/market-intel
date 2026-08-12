@@ -137,6 +137,26 @@ UNIVERSE: list[dict] = [
     _sym("117460.KS", "KR", "KR", "sector_index", "KODEX Energy & Chemicals", name_ko="KODEX 에너지화학"),
     _sym("102970.KS", "KR", "KR", "sector_index", "KODEX Securities", name_ko="KODEX 증권"),
     _sym("117680.KS", "KR", "KR", "sector_index", "KODEX Steel", name_ko="KODEX 철강"),
+    # 2026-08-12 추가 — 한국 업종 계기의 공백을 메운다.
+    #
+    # 왜: CEO의 목표는 "그 시기 가장 주도적인 섹터"를 재는 것인데, 계기가 없는
+    # 업종은 아무리 앞서도 **영원히 안 보인다.** 그런데 이 셋의 대표 종목
+    # (한화에어로스페이스·HD현대중공업·두산에너빌리티)은 이미 코스피 상위 20
+    # 수급 표본에 들어 있어 **수급은 매일 수집되는데 업종으로는 못 읽는** 상태였다.
+    #
+    # 티커는 추측하지 않고 두드려 확인했다. 실제로 두 번 틀렸다 — `385600.KS`는
+    # 방산이 아니라 2차전지, `102960.KS`는 기계장비가 아니라 조선이었다. 영문명이
+    # 모호한 `449450.KS`("ARIRANG Defensive")는 방어주인지 방산인지 이름으로는
+    # 갈리지 않아 **일간 수익률 상관으로 확인**했다(1년): 한화에어로스페이스와
+    # 0.83인데 KOSPI와는 0.52 — 방산이 맞다. 조선 0.88(HD현대중공업), 전력설비
+    # 0.71(두산에너빌리티)도 같은 방법으로 확인했다.
+    #
+    # 같은 업종 후보가 여럿일 때는 **거래량**으로 골랐다. 계기는 그 업종을 faithful
+    # 하게 따라가야 하는데 거래가 얇으면 지수가 아니라 그 ETF의 사정을 재게 된다
+    # (조선: 466920 일평균 169만주 vs 102960 1.1만주).
+    _sym("449450.KS", "KR", "KR", "sector_index", "PLUS K-Defense", name_ko="방산"),
+    _sym("466920.KS", "KR", "KR", "sector_index", "SOL Shipbuilding Top3 Plus", name_ko="조선"),
+    _sym("487240.KS", "KR", "KR", "sector_index", "KODEX AI Power Core Facilities", name_ko="AI전력설비"),
 ]
 
 # 이름의 "16"은 역사다 — 2026-08-03에 EQIX·POSCO홀딩스가 들어와 **18개**다.
