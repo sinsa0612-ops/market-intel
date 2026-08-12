@@ -468,6 +468,53 @@ NO_INTERP = "AI 해석 미생성"
 NO_COUNTER_WITHOUT_READING = "당시 해석이 실리지 않아 반대 해석도 싣지 않습니다 (반박할 대상이 없습니다)."
 
 
+# --- F-번호 화면 제거 (CEO 지적 2026-08-12: "F67 이런 표기가 알아보기 힘들다") ---
+#
+# ⚠️ **지우는 자리는 화면뿐이다.** F-번호는 표시용 장식이 아니라 환각 검증기의
+# 접지 장치다 — 규칙 8(`attribution`)이 "F45 뒤의 주체가 정말 F45의 주체인가"를,
+# 규칙 9(`citation_num`)가 "인용에 붙은 숫자가 그 인용의 숫자인가"를 F-번호로
+# 대조한다. 이 둘이 잡아낸 실제 발행 사고가 있다(F45(KOSPI)에 삼성전자 등락률
+# 26.81%를 붙여 내보낸 2026-08-03 주간 브리핑). 그래서 **생성·검증·저장은 전부
+# F-번호가 붙은 원문 그대로** 두고, 렌더러가 화면에 낼 때만 걷어낸다:
+#
+#   생성 -> 검증기(F-번호 봄) -> 원장·리포트 JSON(F-번호 보존) -> 화면(제거)
+#
+# 원장이 원문을 그대로 갖고 있으므로 "이 문장이 무슨 사실을 인용했나"는 언제든
+# 되짚을 수 있다. 여기서 원문을 지우면 그 감사 추적이 끊긴다 — 하지 말 것.
+#
+# 인용 묶음의 실제 모양(발행본 실측): `F73의` · `F60과 F69에서` · `(F1, F2, F3, F72)` ·
+# `F20-F21의` · `F12에 따르면` · **`F56부터 F58까지는`**.
+#
+# 두 가지가 실제로 물렸다:
+#  - 범위 표기(`-`)를 빼먹으면 `F20-F21의 금리` 가 `-금리`로 남는다(시제품에서 발견).
+#  - `A부터 B까지` 는 **조사가 번호마다 붙어** 묶음 정규식만으로는 안 잡힌다. 빠뜨리면
+#    `F56부터 F58까지는 …` 이 `부터 까지는 …` 이 된다(2026-08-12 발행문에서 실제로 났다).
+#    그래서 이 형태를 **먼저** 통째로 지운다.
+_FNUM_RANGE_RE = re.compile(r"F\d+\s*부터\s*F\d+\s*까지(?:는|도|의|를|을|와|과)?\s*")
+_FNUM_RUN = r"F\d+(?:\s*(?:,|·|/|-|~|–|—|와|과|및|그리고)\s*F\d+)*"
+# 인용에 바로 붙는 조사·연결어. **긴 것부터** — `에`가 먼저 먹으면 `따르면`이 남는다.
+_FNUM_TAIL = (r"(?:에\s*따르면|에\s*기록된|에\s*기재된|에\s*나타난|에\s*따라|"
+              r"에서\s*보이는|에서는|에서도|에서|에는|에도|에|의|은|는|이|가|을|를|도|"
+              r"부터|까지|와|과|처럼|같이|기준)?")
+_FNUM_PAREN_RE = re.compile(r"\s*[(（]\s*" + _FNUM_RUN + r"\s*[)）]")
+_FNUM_INLINE_RE = re.compile(_FNUM_RUN + r"\s*" + _FNUM_TAIL + r"\s*")
+
+
+def strip_fact_numbers(text: str) -> str:
+    """화면에 낼 때만 F-번호를 걷어낸다. 저장된 원문에는 절대 쓰지 않는다(위 주석).
+
+    괄호 묶음을 먼저 지운다 — 인라인 규칙이 먼저 돌면 괄호 안이 비어 `()`만 남는다.
+    """
+    if not text:
+        return text
+    out = _FNUM_PAREN_RE.sub("", text)
+    out = _FNUM_RANGE_RE.sub("", out)
+    out = _FNUM_INLINE_RE.sub("", out)
+    out = re.sub(r"\s{2,}", " ", out)
+    out = re.sub(r"\s+([,.·])", r"\1", out)
+    return out.strip()
+
+
 def _interp(report: Report, field_name: str) -> dict:
     """spec B5 contract 2, per field: blank -> the literal placeholder,
     filled -> the AI badge + the text.
@@ -481,7 +528,7 @@ def _interp(report: Report, field_name: str) -> dict:
         return {"kind": "interp", "badge": "", "text": NO_INTERP}
     return {"kind": "interp",
             "badge": f"AI 자동판정 · {report.interpretation.generated_by or 'ai:unknown'}",
-            "text": text}
+            "text": strip_fact_numbers(text)}
 
 
 _CASHFLOW_METRICS = ("operating_cash_flow", "capex", "free_cash_flow")

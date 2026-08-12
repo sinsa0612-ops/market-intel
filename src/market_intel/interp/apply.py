@@ -32,7 +32,21 @@ from . import validate as validate_mod
 # them. v1 is left on disk untouched: SA-4 versions the prompt precisely so
 # an interpretation already published under `interpretation_v1` stays
 # reproducible from the file its `prompt_sha256` was taken over.
-PROMPT_VERSION = "interpretation_v2"
+# v3 = v2 + 규칙 1-1(“F-번호를 빼도 말이 되게 쓸 것”). CEO 지적(2026-08-12)으로 **화면에
+# 낼 때** F-번호를 걷어내기로 했는데(그 제거는 렌더링 계층이 하고 이 파일은 관여하지
+# 않는다 — 아래 계층 경계 참고), 모델이 F-번호를 문장의 지시 대상으로 쓰면 지운 자리가
+# 비문이 된다. 발행본 실측 40개 필드 중 8건이 그 형태였다(“고용이 F28 수준보다” ->
+# “고용이 수준보다”). 전부 haiku 시절 문장이고 luna는 0건이었지만, 프롬프트로 못박아
+# 두는 편이 모델 교체에 안전하다.
+#
+# ⚠️ 여기서 생성·검증되는 텍스트는 **F-번호가 붙은 원문 그대로** 저장된다. 검증기 규칙
+# 8·9가 그 번호로 귀속을 대조하므로(F45 인용에 남의 숫자를 붙인 실제 발행 사고를 그
+# 규칙이 잡았다), 이 계층에서 번호를 먼저 지우면 그물이 통째로 풀린다. 순서는 항상
+# 생성 -> 검증 -> 저장이고, 제거는 그 뒤 화면 단계에서만 일어난다.
+#
+# v1·v2는 디스크에 그대로 둔다: SA-4는 이미 발행된 해석이 자기 `prompt_sha256`의 파일로
+# 재현되도록 프롬프트를 버전으로 고정한다 — 기존 파일을 고치면 그 재현성이 깨진다.
+PROMPT_VERSION = "interpretation_v3"
 _PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.txt"
 
 # Only 3 keys — `thesis_impact` is never LLM-authored (SA-8 design decision
