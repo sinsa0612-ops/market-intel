@@ -169,6 +169,49 @@ class UnusualDayBlock:
 
 
 @dataclass
+class PriorClaimRow:
+    """지난 해석이 이야기했던 사실 하나 — 그때 값과 지금 값을 나란히."""
+    label: str = ""
+    metric_ko: str = ""
+    then_value: str = ""
+    now_value: str = ""
+    # "그때 -3,000억 -> 지금 +8,500억" 같은 방향 말. 판정이 아니라 서술이다.
+    change_ko: str = ""
+
+
+@dataclass
+class PriorInterpretation:
+    """**지난 해석 대조** (CEO 지시 2026-08-13).
+
+    해석과 반대 해석을 내놓고 아무도 채점하지 않으면 그 글은 검증되지 않는다.
+    그런데 채점에는 함정이 셋 있다 — (1) 같은 LLM이 제 글을 평가하면 합리화한다,
+    (2) 한국어 산문을 조건으로 파싱하는 것은 새 환각 표면이다, (3) 오늘 옛 글을
+    읽고 "실은 이런 뜻이었다"고 정하는 것은 골대 이동이다.
+
+    그래서 **판정하지 않는다.** 지난 해석이 인용한 F-번호를 원장의 `evidence_json`
+    으로 (종목, 지표)로 기계적으로 풀어, 그 값이 그 뒤 어떻게 됐는지만 나란히
+    보여 준다. LLM도 파싱도 개입하지 않고 사후 재해석 여지가 없다 — 누가 맞았는지는
+    읽는 사람이 본다.
+
+    비교 대상은 **같은 종류의 직전 리포트**다(CEO 지시): 일간은 전날, 주간은 지난주,
+    월간은 전월. 리포트 주기와 비교 창이 어긋나면 안 된다는 원칙은 2026-08-10에
+    가격 비교에 이미 적용한 것과 같다.
+    """
+    # 대조 대상 해석이 언제 것인가.
+    report_type: str = ""
+    report_date: str = ""
+    # 그때 쓴 글 그대로(판정하지 않으므로 원문을 보여 준다).
+    reading: str = ""
+    counter_reading: str = ""
+    next_check: str = ""
+    # 그 해석이 인용했던 사실들의 그때/지금.
+    rows: list[PriorClaimRow] = field(default_factory=list)
+    # 대조가 불가능한 경우의 사유("직전 해석 없음"/"인용한 사실을 지금 못 찾음").
+    # 비어 있으면 정상. 채우면 렌더러가 그 문장만 낸다.
+    unavailable: str = ""
+
+
+@dataclass
 class ChartSeries:
     """차트 한 계열. `values`는 `dates`와 같은 길이이고, 값이 없는 칸은 None."""
     label: str = ""
@@ -248,6 +291,8 @@ class Report:
     # 그림들(CEO 지시 2026-08-12). 비어 있으면 그림 없이 지금까지의 모양 그대로다 —
     # 옛 리포트 JSON에는 이 키가 없고, 그것으로 사이트가 무너지면 안 된다.
     charts: list[ChartBlock] = field(default_factory=list)
+    # 지난 해석 대조(CEO 지시 2026-08-13). 옛 리포트 JSON에는 이 키가 없다.
+    prior: PriorInterpretation = field(default_factory=PriorInterpretation)
     interpretation: Interpretation = field(default_factory=Interpretation)
     meta: dict = field(default_factory=dict)
 
@@ -285,6 +330,16 @@ class Report:
             )
             for c in d.get("charts", [])
         ]
+        raw_prior = d.get("prior") or {}
+        d["prior"] = PriorInterpretation(
+            report_type=raw_prior.get("report_type", ""),
+            report_date=raw_prior.get("report_date", ""),
+            reading=raw_prior.get("reading", ""),
+            counter_reading=raw_prior.get("counter_reading", ""),
+            next_check=raw_prior.get("next_check", ""),
+            unavailable=raw_prior.get("unavailable", ""),
+            rows=[PriorClaimRow(**r) for r in raw_prior.get("rows", [])],
+        )
         d["interpretation"] = Interpretation(**d["interpretation"])
         return cls(**d)
 

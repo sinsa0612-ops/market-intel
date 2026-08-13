@@ -81,6 +81,8 @@ from .model import (
     FactRow,
     Interpretation,
     MissingItem,
+    PriorClaimRow,
+    PriorInterpretation,
     Report,
     SectorIndexRow,
     SectorSummary,
@@ -1634,6 +1636,8 @@ def build_report(
     # 하나만 더 읽어 만든다 — 같은 cutoff를 다시 읽지 않으므로 차단선이 어긋날
     # 여지가 없다.
     charts = _charts(conn, cutoff, kr_breadth_by_date, price_map)
+    # 지난 해석 대조(CEO 지시 2026-08-13) — 같은 종류의 직전 리포트와 견준다.
+    prior = _prior_interpretation(conn, cutoff, report_type, report_date)
     win = _EVENTS_WINDOW_DAYS[report_type]
     events = _events_rows(conn, cutoff, win)
     schedule_changes = _schedule_change_rows(conn, cutoff, win)
@@ -1716,11 +1720,113 @@ def build_report(
         sector_index=sector_index,
         unusual_day=unusual_day,
         charts=charts,
+        prior=prior,
         interpretation=Interpretation(),
         meta=meta,
     )
     _restore_interpretation(conn, report)
     return report
+
+
+# 지난 해석이 인용한 사실 중 **대조할 값이 있는 것**만 표에 올린다. 공시 감지처럼
+# 값이 없는 사실(`filing_event`)은 "그때 -> 지금"이 성립하지 않는다.
+_PRIOR_SKIP_METRICS = ("filing_event",)
+# 한 해석이 F-번호를 수십 개 인용한다. 전부 실으면 표가 다시 77행이 된다 —
+# 8/3에 CEO가 지적한 그 자리다. 가장 크게 움직인 것부터 자른다.
+_PRIOR_MAX_ROWS = 6
+
+
+def _parse_fact_id(fact_id: str) -> tuple[str, str] | None:
+    """`provider:종목:지표:날짜[:ah]` -> (종목, 지표). 모양이 다르면 None.
+
+    종목에 콜론이 들어가는 경우는 없다(티커·FRED 코드·ECOS 코드 전부). 그래도
+    형식이 어긋나면 조용히 건너뛴다 — 대조표 한 줄이 빠지는 것이 리포트가
+    깨지는 것보다 낫다."""
+    parts = fact_id.split(":")
+    if len(parts) < 4:
+        return None
+    return parts[1], parts[2]
+
+
+def _prior_interpretation(conn, cutoff, report_type: str, report_date: date) -> PriorInterpretation:
+    """지난 해석 대조 (CEO 지시 2026-08-13) — **판정하지 않고 나란히 놓는다.**
+
+    설계 근거는 `PriorInterpretation` 주석에 있다. 요점만: 산문을 조건으로
+    파싱하지 않고, LLM에게 제 글을 채점시키지 않는다. 원장의 `evidence_json`이
+    F-번호를 (종목, 지표)로 기계적으로 풀어 주므로 그 값의 그때/지금만 뽑는다.
+
+    이 함수는 **리포트를 못 만들게 하지 않는다** — 원장 조회가 실패해도 대조만
+    비고 리포트는 그대로 나온다(`_restore_interpretation`과 같은 원칙).
+    """
+    from ..interp import store as store_mod  # 순환 import 회피(interp가 build를 읽는다)
+
+    try:
+        prev = store_mod.previous_interpretation(conn, report_type, report_date.isoformat())
+    except Exception:  # noqa: BLE001 - 원장 조회 실패가 리포트를 막지 않는다
+        return PriorInterpretation(unavailable="지난 해석을 불러오지 못했습니다.")
+    if not prev:
+        return PriorInterpretation(unavailable="대조할 지난 해석이 아직 없습니다.")
+
+    text = prev.get("text") or {}
+    out = PriorInterpretation(
+        report_type=prev.get("report_type", ""), report_date=prev.get("report_date", ""),
+        reading=text.get("reading", ""), counter_reading=text.get("counter_reading", ""),
+        next_check=text.get("next_check", ""),
+    )
+
+    # evidence: [["F6", "kis:000660.KS:net_buy_foreign_value:20260811", 1], ...]
+    seen: set[tuple[str, str]] = set()
+    rows: list[tuple[float, PriorClaimRow]] = []
+    for item in prev.get("evidence") or []:
+        if not isinstance(item, (list, tuple)) or len(item) < 2:
+            continue
+        parsed = _parse_fact_id(str(item[1]))
+        if not parsed:
+            continue
+        subject, metric = parsed
+        if metric in _PRIOR_SKIP_METRICS or (subject, metric) in seen:
+            continue
+        seen.add((subject, metric))
+
+        obs = db_mod.facts_as_of(conn, cutoff, subject=subject, metric=metric)
+        vals = sorted(((r["event_at"] or "", r["value_num"], r["unit"]) for r in obs
+                       if r["value_num"] is not None), key=lambda x: x[0])
+        # 그때 = 지난 해석의 리포트 날짜 이전 마지막 관측, 지금 = 차단선 기준 최신.
+        then = [v for v in vals if v[0][:10] <= (prev.get("report_date") or "")]
+        if not then or not vals:
+            continue
+        then_v, now_v, unit = then[-1][1], vals[-1][1], vals[-1][2] or ""
+        if then[-1][0] == vals[-1][0]:
+            continue  # 그 뒤로 새 관측이 없다 — 대조할 것이 없다
+        # 이름표는 **기존 것을 그대로 재사용한다** — 새로 만들면 두 화면이 같은 것을
+        # 다르게 부른다(2026-08-03에 이미 정한 원칙: `_macro_label`·`_FLOW_LABELS`).
+        label = _MACRO_LABELS.get(subject) or _subject_name(subject)
+        metric_ko = (_FLOW_LABELS.get(metric) or _FINANCIALS_LABELS.get(metric)
+                     or ("종가" if metric == "price_close" else metric))
+        rows.append((abs(now_v - then_v), PriorClaimRow(
+            label=label, metric_ko=metric_ko,
+            then_value=fmt_money(then_v, unit), now_value=fmt_money(now_v, unit),
+            change_ko=_prior_change_ko(then_v, now_v),
+        )))
+
+    if not rows:
+        out.unavailable = "지난 해석이 인용한 사실에 그 뒤 새 관측이 없습니다."
+        return out
+    rows.sort(key=lambda x: -x[0])
+    out.rows = [r for _k, r in rows[:_PRIOR_MAX_ROWS]]
+    return out
+
+
+def _prior_change_ko(then_v: float, now_v: float) -> str:
+    """**판정이 아니라 서술이다.** "맞았다/틀렸다"를 여기서 쓰지 않는다 — 그 판단은
+    읽는 사람의 몫이고, 코드가 대신하면 사후 재해석이 된다."""
+    if then_v == now_v:
+        return "변화 없음"
+    if then_v < 0 <= now_v:
+        return "음수 → 양수로 전환"
+    if now_v < 0 <= then_v:
+        return "양수 → 음수로 전환"
+    return "같은 방향에서 확대" if abs(now_v) > abs(then_v) else "같은 방향에서 축소"
 
 
 def _restore_interpretation(conn, report: Report) -> None:

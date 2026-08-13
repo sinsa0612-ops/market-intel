@@ -611,8 +611,37 @@ def _filing_summary_html(rows: list[FactRow]) -> str:
             f"{_facts_table_html(rows)}</details>")
 
 
+def _prior_html(p) -> str:
+    """`_prior_md`와 같은 내용을 HTML로. **판정 문구 없음**(그쪽 주석 참조)."""
+    from .render_md import strip_fact_numbers
+
+    if p.unavailable:
+        return f'<p class="muted">{_esc(p.unavailable)}</p>'
+    if not p.rows:
+        return ""
+    rows = "".join(
+        f"<tr><td>{_esc(r.label)}</td><td>{_esc(r.metric_ko)}</td>"
+        f'<td class="num">{_esc(r.then_value)}</td><td class="num">{_esc(r.now_value)}</td>'
+        f"<td>{_esc(r.change_ko)}</td></tr>"
+        for r in p.rows)
+    said = ""
+    for label, text in (("그때 당시 해석", p.reading), ("그때 반대 해석", p.counter_reading)):
+        if text:
+            said += (f'<p class="prior-said"><strong>{_esc(label)}</strong> — '
+                     f"{_esc(strip_fact_numbers(text))}</p>")
+    return (
+        f'<p><strong>{_esc(p.report_date)} {_esc(p.report_type)}</strong> 해석이 인용한 '
+        "사실들이 그 뒤 어떻게 됐나</p>"
+        '<div class="scroll"><table><thead><tr><th>대상</th><th>항목</th>'
+        '<th class="num">그때</th><th class="num">지금</th><th></th></tr></thead>'
+        f"<tbody>{rows}</tbody></table></div>{said}"
+    )
+
+
 def _block_html(block: dict) -> str:
     kind = block["kind"]
+    if kind == "prior":
+        return _prior_html(block["prior"])
     if kind == "chart":
         return chart_svg(block["block"])
     if kind == "unusual_day":

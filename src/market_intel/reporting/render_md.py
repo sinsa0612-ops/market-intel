@@ -453,6 +453,11 @@ def _market_blocks(report: Report) -> list[dict]:
     ]
 
 
+def _prior(report: Report) -> dict:
+    """지난 해석 대조 블록. 판단은 `build.py`가 끝냈으므로 옮기기만 한다."""
+    return {"kind": "prior", "prior": report.prior}
+
+
 def _chart(block) -> dict:
     """`ChartBlock` -> 렌더러 공용 블록. `_unusual_day`와 같은 원칙 — 판단은
     `build.py`가 끝냈고 여기서는 옮기기만 한다."""
@@ -618,6 +623,10 @@ def sections(report: Report) -> list[tuple[str, list[dict]]]:
     interp_parts: list[dict] = []
     for label, field_name in INTERPRETATION_HEADERS:
         interp_parts += [_subheading(label), _interp(report, field_name)]
+    # 지난 해석 대조는 **해석 섹션 안에, 새 해석 뒤에** 붙는다(CEO 지시 2026-08-13).
+    # 앞에 두면 오늘 읽을 것보다 어제 것이 먼저 오고, 별도 섹션으로 빼면 아무도
+    # 안 본다 — 새 해석을 읽은 직후가 "지난번엔 뭐라 했더라"가 가장 궁금한 자리다.
+    interp_parts += [_subheading("지난 해석 대조"), _prior(report)]
     out.append(("해석", interp_parts))
     out.append((
         "다가오는 일정",
@@ -846,8 +855,32 @@ def _chart_md(block) -> str:
     return f"**{block.title}** — {block.note}"
 
 
+def _prior_md(p) -> str:
+    """지난 해석이 무엇을 말했고 그 사실들이 그 뒤 어떻게 됐나.
+
+    **판정 문구를 쓰지 않는다** — "맞았다/틀렸다"는 읽는 사람의 몫이다. 코드가
+    대신 판정하면 오늘 옛 글을 읽고 뜻을 정하는 것(사후 재해석)이 된다.
+    """
+    if p.unavailable:
+        return f"*{p.unavailable}*"
+    if not p.rows:
+        return ""
+    head = f"**{p.report_date} {p.report_type} 해석이 인용한 사실들이 그 뒤 어떻게 됐나**"
+    lines = ["| 대상 | 항목 | 그때 | 지금 | |", "|---|---|---:|---:|---|"]
+    for r in p.rows:
+        lines.append(f"| {r.label} | {r.metric_ko} | {r.then_value} | {r.now_value} | {r.change_ko} |")
+    said = []
+    if p.reading:
+        said.append(f"> **그때 당시 해석** — {strip_fact_numbers(p.reading)}")
+    if p.counter_reading:
+        said.append(f"> **그때 반대 해석** — {strip_fact_numbers(p.counter_reading)}")
+    return "\n\n".join([head, "\n".join(lines), *said])
+
+
 def _block_md(block: dict) -> str:
     kind = block["kind"]
+    if kind == "prior":
+        return _prior_md(block["prior"])
     if kind == "chart":
         return _chart_md(block["block"])
     if kind == "unusual_day":

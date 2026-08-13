@@ -208,6 +208,36 @@ def reusable_interpretation(conn: sqlite3.Connection, report_type: str, report_d
     return d
 
 
+def previous_interpretation(conn: sqlite3.Connection, report_type: str,
+                            before_report_date: str) -> dict | None:
+    """**같은 종류**의 직전 리포트에 쓰인 해석. 없으면 None.
+
+    "같은 종류"가 곧 비교 주기다(CEO 지시 2026-08-13) — 일간 리포트는 전날 일간과,
+    주간은 지난주 주간과, 월간은 전월 월간과 대조된다. 종류를 섞으면 주간 해석이
+    어제 것과 대조돼 "일주일 뒤 어떻게 됐나"라는 질문에 답하지 못한다. 리포트
+    주기와 비교 창이 어긋나면 안 된다는 원칙은 2026-08-10에 가격 비교에서 이미
+    한 번 겪은 것이다(주간 리포트가 전일대비를 쓰고 있었다).
+
+    `status='ok'`만 본다: 검증에 걸려 비었던 판은 대조할 주장 자체가 없다.
+    `evidence_json`이 있는 것만 본다 — 그게 F-번호를 (종목, 지표)로 푸는 유일한
+    열쇠이고, 없으면 무엇을 이야기했는지 기계적으로 알 수 없다.
+    """
+    row = conn.execute(
+        "SELECT * FROM interpretations WHERE report_type=? AND report_date<? "
+        "AND status='ok' AND text_json<>'' AND evidence_json IS NOT NULL "
+        "ORDER BY report_date DESC, created_at DESC, rowid DESC LIMIT 1",
+        (report_type, before_report_date),
+    ).fetchone()
+    if row is None:
+        return None
+    d = dict(row)
+    stored = json.loads(d.pop("text_json") or "{}")
+    d["text"] = stored.get("text") if "text" in stored else stored
+    d["fields"] = json.loads(d.pop("fields_json") or "{}")
+    d["evidence"] = json.loads(d.pop("evidence_json") or "[]")
+    return d
+
+
 def last_interpretation(conn: sqlite3.Connection, report_type: str | None = None) -> dict | None:
     if report_type:
         row = conn.execute(
