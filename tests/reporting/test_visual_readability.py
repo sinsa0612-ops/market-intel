@@ -41,6 +41,17 @@ SPEC_SECTORS = {
     "005490.KS": "소재·철강",
     "EQIX": "부동산·데이터센터",
 }
+# 명세 표 **밖에서** CEO 결정으로 더한 기업. 명세 목록과 따로 둔다 — 섞으면
+# "명세가 정한 것"과 "우리가 더한 것"을 나중에 구별할 수 없다(업종 지수에서 같은
+# 이유로 이미 분리했다, test_sector_indices.py).
+#
+# 2026-08-14: 미국 메모리가 관측군에 하나도 없어서 `ai_semi_2`·`ai_semi_3`(둘 다
+# 한·미 메모리의 차이를 주장한다)이 비교 대상 없이 SOX와만 견주고 있었다. SOX에는
+# 로직(엔비디아·TSMC)이 섞여 "메모리만의 재평가"를 가려낼 수 없다.
+ADDED_SECTORS = {
+    "MU": "반도체·공급망",
+    "SNDK": "반도체·공급망",
+}
 
 
 def _seed_series(conn, raw_dir, symbol, closes, *, market="US", country="US",
@@ -83,8 +94,9 @@ def test_universe_sector_matches_spec_table():
     축이 6개에서 8개가 된 것은 §12 표를 벗어난 CEO 확정 사항이다(2026-08-02):
     GICS 11업종에 대보면 소재·부동산이 0개 기업이라 그 두 업종에는 깊이 층
     (분기 재무·가설)이 통째로 없었다. 근거는 universe.py의 SECTORS 주석."""
+    expected_sectors = {**SPEC_SECTORS, **ADDED_SECTORS}
     by_symbol = {m["symbol"]: m for m in universe_mod.UNIVERSE}
-    for symbol, sector in SPEC_SECTORS.items():
+    for symbol, sector in expected_sectors.items():
         assert by_symbol[symbol]["sector"] == sector, symbol
     for m in universe_mod.UNIVERSE:
         if not m["core16"]:
@@ -94,7 +106,7 @@ def test_universe_sector_matches_spec_table():
         "소재·철강", "부동산·데이터센터",
     ]
     assert all(m["sector"] for m in universe_mod.CORE16), "축 없는 관측 기업이 있다"
-    assert universe_mod.SECTOR_BY_SYMBOL == SPEC_SECTORS
+    assert universe_mod.SECTOR_BY_SYMBOL == expected_sectors
 
 
 # --- ② 업종 묶어보기 + 시장 폭 ---------------------------------------------

@@ -187,7 +187,15 @@ def test_core16_headline_counts_are_untouched_by_sector_indices(settings):
     report = _report(conn)
     conn.close()
 
-    expected = f"관측기업 {len(universe_mod.CORE16_SYMBOLS)}곳 중 ±3% 이상 1종목, 결측 12건"
+    # 결측 건수도 **유도한다.** 예전에는 `결측 12건`을 손으로 박아 뒀는데, 관측군에
+    # 기업이 늘 때마다(2026-08-03 EQIX·POSCO, 2026-08-14 MU·SNDK) 그 숫자가 틀려
+    # 기능과 무관한 실패가 났다. 이 테스트가 지키려는 것은 "업종 지수가 관측기업
+    # 집계에 섞이지 않는다"이지 특정 숫자가 아니다 — 씨앗을 심은 6곳을 뺀 나머지가
+    # 결측이라는 관계만 고정한다.
+    seeded = 6
+    missing = len(universe_mod.CORE16_SYMBOLS) - seeded
+    expected = (f"관측기업 {len(universe_mod.CORE16_SYMBOLS)}곳 중 ±3% 이상 1종목, "
+                f"결측 {missing}건")
     assert expected in report.headline, report.headline
 
 

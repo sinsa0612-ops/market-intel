@@ -70,6 +70,27 @@ UNIVERSE: list[dict] = [
     _sym("TSM", "US", "TW", "equity", "TSMC ADR", True, sector="반도체·공급망"),
     _sym("005930.KS", "KR", "KR", "equity", "Samsung Electronics", True, sector="반도체·공급망", name_ko="삼성전자"),
     _sym("000660.KS", "KR", "KR", "equity", "SK Hynix", True, sector="반도체·공급망", name_ko="SK하이닉스"),
+    # 2026-08-14 추가 — **미국 메모리가 관측군에 하나도 없었다.**
+    #
+    # `ai_semi_2`("AI의 실물 증거는 한국 메모리")와 `ai_semi_3`("한국 메모리가 미국 AI
+    # 서사와 따로 재평가된다")은 둘 다 한·미 메모리의 **차이**를 주장하는데, 정작 비교
+    # 대상인 미국 메모리가 없어서 삼성·하이닉스를 SOX(반도체 전반)와만 견줬다. SOX에는
+    # 엔비디아·TSMC 같은 로직이 섞여 있어 "메모리만의 재평가"를 가릴 수 없다.
+    #
+    # 계기가 된 것은 CEO가 가져온 외부 서사(2026-08-14, 샌디스크 주주환원)였는데, 그때
+    # 샌디스크가 관측군에 없어 **검증 자체가 불가능했다.** 같은 질문이 또 온다.
+    #
+    # 둘을 함께 넣는 이유: SNDK만 넣으면 다음에 "마이크론은?"이 나온다. MU는 DRAM·NAND를
+    # 다 하는 미국 유일 종합 메모리라 삼성·하이닉스의 정면 비교 대상이고, SNDK는 NAND
+    # 전업이라 스토리지 축을 따로 읽는다.
+    #
+    # ⚠️ 딸려오는 비용(의도한 것): `US_CORE_TICKERS`가 자동으로 이 둘을 포함하므로
+    # SEC 재무·공시가 매 수집에 따라붙고, 분기 실적 읽을 것이 2건 는다. 2026-08-02에
+    # EQIX·POSCO를 넣을 때 CEO가 같은 비용을 "의도된 것"으로 판단한 전례를 따른다.
+    _sym("MU", "US", "US", "equity", "Micron Technology", True, sector="반도체·공급망",
+         name_ko="마이크론"),
+    _sym("SNDK", "US", "US", "equity", "SanDisk", True, sector="반도체·공급망",
+         name_ko="샌디스크"),
     _sym("JPM", "US", "US", "equity", "JPMorgan Chase", True, sector="금융·신용"),
     _sym("105560.KS", "KR", "KR", "equity", "KB Financial Group", True, sector="금융·신용", name_ko="KB금융"),
     _sym("XOM", "US", "US", "equity", "Exxon Mobil", True, sector="전력·산업"),

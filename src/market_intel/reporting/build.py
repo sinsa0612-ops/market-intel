@@ -169,6 +169,7 @@ _MACRO_LABELS = {
     # 1.5%p 넘게 벌어져 있다.
     "DFII10": "미 10년물 실질금리(TIPS)", "T10YIE": "미 10년 기대인플레",
     "BAMLH0A0HYM2": "미 하이일드 신용스프레드", "DTWEXBGS": "달러지수(광의)",
+    "PPIFIS": "미국 생산자물가(PPI, 최종수요)",
     "base_rate": "한국 기준금리", "usd_krw_fx": "원/달러 환율(ECOS)",
     "exports_total": "한국 수출(총액)", "semiconductor_exports": "한국 반도체 수출",
 }
@@ -1173,8 +1174,40 @@ def _macro_facts(mmap: dict, report_type: str = "") -> list[FactRow]:
         # 방향(화살표·색)은 직전 관측이 있을 때만 붙는다.
         out.append(_row_from_fact(info["latest"], label, comparison,
                                   delta_pct=delta, group="macro", delta_unit=unit))
+    policy_gap = _policy_path_row(mmap)
+    if policy_gap is not None:
+        out.append(policy_gap)
     out.sort(key=lambda r: r.subject)
     return out
+
+
+def _policy_path_row(mmap: dict) -> FactRow | None:
+    """**시장이 반영한 금리 경로** = 2년물 − 정책금리 상단 (CEO 지시 2026-08-14).
+
+    왜 필요했나: CEO가 "인상 횟수가 2회에서 1회로 줄 것"이라는 외부 서사를 가져왔는데
+    그 원천은 연방기금 선물이고 **무료 API가 없다.** 그래서 "몇 회"는 못 준다. 대신
+    2년물은 앞으로 2년의 정책 경로를 가격에 담으므로, 정책금리와의 격차가 시장이
+    인상/인하 중 어느 쪽을 얼마나 반영했는지를 말한다(사외 고문 fable 제안).
+
+    **새 데이터가 아니다** — 이미 매일 받는 두 값의 차이다. 그래서 수집도 백필도
+    필요 없고, 조건으로도 쓰지 않는다(2026-08-12 조건 39개 동결).
+
+    ⚠️ 이것은 "인상 N회"가 아니다. 화면 문구가 그렇게 읽히지 않도록 라벨에 **격차**임을
+    적는다 — 선물이 주는 확률 분포와 국채 금리차는 다른 물건이다.
+    """
+    y2, pol = mmap.get("DGS2"), mmap.get("DFEDTARU")
+    if not y2 or not pol:
+        return None
+    y2_v = (y2.get("latest") or {})["value_num"]
+    pol_v = (pol.get("latest") or {})["value_num"]
+    if y2_v is None or pol_v is None:
+        return None
+    gap = y2_v - pol_v
+    lean = "인상 쪽" if gap > 0.10 else ("인하 쪽" if gap < -0.10 else "중립 근처")
+    return _row_from_fact(
+        y2["latest"], "시장이 반영한 금리 경로(2년물−정책금리)",
+        f"{gap:+.2f}%p — {lean} (2년물 {y2_v:.2f}% vs 정책금리 상단 {pol_v:.2f}%)",
+        delta_pct=None, group="macro", delta_unit="%p")
 
 
 # --- financials / filings / flows -----------------------------------------
