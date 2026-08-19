@@ -12,9 +12,20 @@ import hashlib
 import json
 import sqlite3
 import uuid
+from datetime import datetime
 
 from .. import db as db_mod
+from ..reporting.cutoff import KST
 
+# 이 상수는 더 이상 판정 엔진의 의미 버전을 대표하지 않는다 — 그 자리는
+# `thesis.ENGINE_VERSION`이다(명세 §2 "지문/엔진버전 함정의 해법": 배선이
+# 틀려 있었다. 이 컬럼이 "판정 엔진"을 버전한다면서 이 모듈의 상수를 찍고
+# 있었고, 판정 의미를 실제로 결정하는 `thesis.ENGINE_VERSION`은 아무도 읽지
+# 않았다). `record_reviews`는 이제 호출자가 행에 담아 넘긴 `engine_version`을
+# 쓴다(`store`가 `thesis`를 import하면 순환이 생긴다 — `thesis.py`가 이미
+# `store`를 지연 import하는 이유와 같다). 이 상수는 그 값을 안 넘기는 호출자
+# (테스트 등)를 위한 폴백 기본값으로만 남는다. **과거 208개 운영 행이 이
+# 값으로 찍혔으므로 바꾸지 않는다** — 바꾸면 그 뜻이 소급 재해석된다.
 ENGINE_VERSION = "2b.1"
 
 
@@ -116,12 +127,44 @@ def last_rules_sha256(conn: sqlite3.Connection, thesis_id: str) -> str | None:
     return row["rules_sha256"] if row else None
 
 
+def last_engine_version(conn: sqlite3.Connection, thesis_id: str) -> str | None:
+    """직전 판정을 만든 판정 엔진의 의미 버전. 없으면 None(= 첫 판정).
+    `last_rules_sha256`의 복제(명세 §2 구현 3) — 같은 이유로 같은 동점 처리
+    (`created_at` DESC, `rowid` DESC)를 쓴다."""
+    row = conn.execute(
+        "SELECT engine_version FROM thesis_reviews WHERE thesis_id=? "
+        "ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (thesis_id,),
+    ).fetchone()
+    return row["engine_version"] if row else None
+
+
+def engine_introduced_on(conn: sqlite3.Connection, engine_version: str) -> str | None:
+    """§2 구현 4: 도입일은 상수가 아니라 원장에서 뽑는다 — 그 엔진 버전을 가진
+    행 중 가장 이른 `created_at`을 KST 날짜로 변환한 값. `report_date`가 아니라
+    `created_at`을 쓰는 이유: 캐치업이 과거 `report_date`로 리포트를 만들 수
+    있어, `report_date`를 쓰면 도입일이 실제보다 앞당겨진다. 그 엔진 버전이
+    원장에 아직 없으면(첫 실행) None — 호출자가 `report_date`로 대체한다."""
+    row = conn.execute(
+        "SELECT MIN(created_at) m FROM thesis_reviews WHERE engine_version=?",
+        (engine_version,),
+    ).fetchone()
+    if not row or not row["m"]:
+        return None
+    return datetime.fromisoformat(row["m"]).astimezone(KST).strftime("%Y-%m-%d")
+
+
 # --- thesis_reviews (append-only) -------------------------------------------
 
 def record_reviews(conn: sqlite3.Connection, rows: list[dict]) -> int:
     """Persists `thesis.review()`'s output rows. Each row must carry
     thesis_id/report_type/report_date/cutoff_utc/verdict/prev_verdict/changed/
-    atoms_json/evidence_json — everything `thesis.review()` already computed."""
+    atoms_json/evidence_json — everything `thesis.review()` already computed.
+
+    `engine_version`/`engine_changed` are read from the row (`thesis.review()`
+    stamps both — spec §2 구현 1/3), falling back to this module's own
+    `ENGINE_VERSION`/0 for callers that don't supply them (existing tests
+    that build rows by hand, e.g. `test_ops.py`)."""
     created_at = db_mod.iso_utc()
     n = 0
     for r in rows:
@@ -129,13 +172,13 @@ def record_reviews(conn: sqlite3.Connection, rows: list[dict]) -> int:
         conn.execute(
             "INSERT INTO thesis_reviews(review_id, thesis_id, report_type, report_date, cutoff_utc, "
             "verdict, prev_verdict, changed, atoms_json, evidence_json, error_type, engine_version, created_at, "
-            "rules_sha256, rules_changed) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "rules_sha256, rules_changed, engine_changed) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 review_id, r["thesis_id"], r["report_type"], r["report_date"], r["cutoff_utc"],
                 r["verdict"], r["prev_verdict"], r["changed"], r["atoms_json"], r["evidence_json"],
-                None, ENGINE_VERSION, created_at,
-                r.get("rules_sha256", ""), r.get("rules_changed", 0),
+                None, r.get("engine_version", ENGINE_VERSION), created_at,
+                r.get("rules_sha256", ""), r.get("rules_changed", 0), r.get("engine_changed", 0),
             ),
         )
         n += 1
@@ -153,7 +196,7 @@ def reviews_for_thesis(conn: sqlite3.Connection, thesis_id: str) -> list[dict]:
     Read-only, and the only 2B accessor `transitions.py` uses — SA-1 keeps
     every raw SQL statement against the 2B tables inside this file."""
     rows = conn.execute(
-        "SELECT report_date, atoms_json, rules_changed, engine_version, verdict "
+        "SELECT report_date, atoms_json, rules_changed, engine_version, engine_changed, verdict "
         "FROM thesis_reviews WHERE thesis_id=? ORDER BY cutoff_utc ASC, rowid ASC",
         (thesis_id,),
     ).fetchall()
@@ -163,6 +206,7 @@ def reviews_for_thesis(conn: sqlite3.Connection, thesis_id: str) -> list[dict]:
             "atoms_json": json.loads(r["atoms_json"]),
             "rules_changed": bool(r["rules_changed"]),
             "engine_version": r["engine_version"],
+            "engine_changed": bool(r["engine_changed"]),
             "verdict": r["verdict"],
         }
         for r in rows

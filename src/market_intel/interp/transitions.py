@@ -16,17 +16,16 @@ retroactive rewrite of past verdicts, which is exactly what the rules doc
 `store.py`'s job alone (spec SA-1), so this module reads through
 `store.reviews_for_thesis` and nothing else.
 
-One derived field is not a literal DB column: R5's third run-breaking
-condition is "그 행의 `engine_changed = 1`" but `thesis_reviews` has no such
-column (only `rules_sha256`/`rules_changed`, which back R5's second
-condition). The engine derives it from the one signal the schema *does*
-carry for this purpose — `engine_version` — comparing each representative
-day's value to the previous representative day's value for the same thesis.
-This is an implementation choice, not a rules-doc edit: `RULES_SHA256` below
-is untouched, and the derivation is documented here rather than silently
-assumed. In the real ledger `engine_version` has never changed (always
-"2b.1"), so this branch is inert today but is what R5.3 will need the day
-the verdict engine's semantics next change.
+R5's third run-breaking condition is "그 행의 `engine_changed = 1`". Until ST3,
+`thesis_reviews` had no such column, so this module derived it from
+`engine_version` changing between representative days. ST3 added the real
+column (`thesis_reviews.engine_changed`, computed by `thesis.review()` the
+same way `rules_changed` is — spec §2 "지문/엔진버전 함정의 해법") and wired
+`store.record_reviews` to persist it, so this module now reads that column
+directly through `store.reviews_for_thesis` instead of re-deriving it. The
+old derivation was a stopgap documented as exactly that; keeping it after the
+real column existed would have let two independently-computed "did the
+engine change" answers drift apart.
 """
 from __future__ import annotations
 
@@ -60,7 +59,7 @@ class AtomDay:
     is_new_observation: bool | None  # True/False, or None = 미상 (R7) or N/A (ledger's first row, R7 bullet 1)
     has_predecessor: bool  # False only for the ledger's very first representative day
     rules_changed: bool  # this day's row.rules_changed (R5.2)
-    engine_changed: bool  # derived vs previous rep day (R5.3, see module docstring)
+    engine_changed: bool  # this day's row.engine_changed (R5.3, real column since ST3)
 
 
 @dataclass(frozen=True)
@@ -147,7 +146,6 @@ def atom_timeline(conn: sqlite3.Connection, thesis_id: str, atom_id: str) -> lis
     rep_rows = _representative_rows(conn, thesis_id)
     out: list[AtomDay] = []
     prev_latest_at: str | None = None
-    prev_engine_version: str | None = None
     for i, row in enumerate(rep_rows):
         status, latest_at, streak_since = _atom_reading(row, atom_id)
         if i == 0:
@@ -159,7 +157,6 @@ def atom_timeline(conn: sqlite3.Connection, thesis_id: str, atom_id: str) -> lis
             is_new = None  # R7 bullet 2: 미상 — either side is missing detail.latest_at
         else:
             is_new = latest_at != prev_latest_at
-        engine_changed = i > 0 and row["engine_version"] != prev_engine_version
         out.append(
             AtomDay(
                 report_date=row["report_date"],
@@ -169,11 +166,10 @@ def atom_timeline(conn: sqlite3.Connection, thesis_id: str, atom_id: str) -> lis
                 is_new_observation=is_new,
                 has_predecessor=i > 0,
                 rules_changed=bool(row["rules_changed"]),
-                engine_changed=engine_changed,
+                engine_changed=bool(row["engine_changed"]),
             )
         )
         prev_latest_at = latest_at
-        prev_engine_version = row["engine_version"]
     return out
 
 
@@ -267,7 +263,7 @@ class VerdictDay:
     report_date: str
     verdict: str  # thesis_reviews.verdict — always one of the 5 values (NOT NULL CHECK)
     rules_changed: bool  # R5.2
-    engine_changed: bool  # R5.3, derived the same way as AtomDay's
+    engine_changed: bool  # R5.3, real column (same as AtomDay's) since ST3
 
 
 def verdict_timeline(conn: sqlite3.Connection, thesis_id: str) -> list[VerdictDay]:
@@ -276,18 +272,15 @@ def verdict_timeline(conn: sqlite3.Connection, thesis_id: str) -> list[VerdictDa
     `verdict` instead of one atom's status."""
     rep_rows = _representative_rows(conn, thesis_id)
     out: list[VerdictDay] = []
-    prev_engine_version: str | None = None
-    for i, row in enumerate(rep_rows):
-        engine_changed = i > 0 and row["engine_version"] != prev_engine_version
+    for row in rep_rows:
         out.append(
             VerdictDay(
                 report_date=row["report_date"],
                 verdict=row["verdict"],
                 rules_changed=bool(row["rules_changed"]),
-                engine_changed=engine_changed,
+                engine_changed=bool(row["engine_changed"]),
             )
         )
-        prev_engine_version = row["engine_version"]
     return out
 
 

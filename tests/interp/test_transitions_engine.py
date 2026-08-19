@@ -9,9 +9,8 @@ direct regression test for that (spec acceptance criterion: "동일 월간 관�
 
 Rows are seeded two ways:
   - `_seed` (raw INSERT, same pattern as `test_thesis.py`'s append-only test)
-    when a test needs to control `engine_version`/`rules_changed`/duplicate
-    `cutoff_utc` directly — `store.record_reviews` hardcodes `engine_version`
-    to its own module constant, so it cannot produce an engine-version change.
+    when a test needs to control `engine_version`/`rules_changed`/
+    `engine_changed`/duplicate `cutoff_utc` directly.
   - `store_mod.record_reviews` for the "does this survive the real write
     path" sanity checks.
 This file never touches `fact_revisions` and never UPDATEs/DELETEs a
@@ -54,14 +53,15 @@ def _atoms_json(atom_id: str | None, status: str | None, latest_at: str | None =
 
 def _seed(conn: sqlite3.Connection, *, thesis_id: str, report_date: str, cutoff_utc: str,
           atoms_json: str, rules_sha256: str = "rs1", rules_changed: int = 0,
-          engine_version: str = "2b.1", report_type: str = "morning", verdict: str = "강화") -> None:
+          engine_version: str = "2b.1", engine_changed: int = 0,
+          report_type: str = "morning", verdict: str = "강화") -> None:
     now = db_mod.iso_utc()
     conn.execute(
         "INSERT INTO thesis_reviews(review_id, thesis_id, report_type, report_date, cutoff_utc, "
         "verdict, prev_verdict, changed, atoms_json, evidence_json, engine_version, created_at, "
-        "rules_sha256, rules_changed) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "rules_sha256, rules_changed, engine_changed) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (f"r_{uuid.uuid4().hex[:16]}", thesis_id, report_type, report_date, cutoff_utc,
-         verdict, None, 0, atoms_json, "{}", engine_version, now, rules_sha256, rules_changed),
+         verdict, None, 0, atoms_json, "{}", engine_version, now, rules_sha256, rules_changed, engine_changed),
     )
     conn.commit()
 
@@ -285,19 +285,21 @@ def test_rules_changed_forces_new_run_even_when_status_is_unchanged(conn):
     ]
 
 
-# --- R5.3: engine_changed (derived) forces a new run ------------------------
+# --- R5.3: engine_changed forces a new run -----------------------------------
 
 def test_engine_version_change_forces_new_run(conn):
-    """R5 condition 3 ('engine_changed = 1', §4 해법) has no literal DB
-    column; the engine derives it from `engine_version` changing between
-    representative days (module docstring). `store.record_reviews` can't
-    produce this on its own — it hardcodes engine_version — so this seeds
-    directly, same as `test_thesis.py`'s append-only test does."""
+    """R5 condition 3 ('그 행의 engine_changed = 1', §4 해법). Until ST3 this
+    column didn't exist and the engine derived it from `engine_version`
+    changing between representative days; ST3 added the real column
+    (`thesis.review()` computes it exactly like `rules_changed`) and this
+    module now reads it directly (see module docstring) — so the test seeds
+    `engine_changed` itself, mirroring `test_rules_changed_forces_new_run_...`
+    above rather than relying on an `engine_version` diff."""
     thesis_id = "t_engine_changed"
     _seed(conn, thesis_id=thesis_id, report_date="2026-07-01", cutoff_utc="2026-07-01T00:00:00+00:00",
           atoms_json=_atoms_json("a1", "TRUE", latest_at="2026-06-01"), engine_version="2b.1")
     _seed(conn, thesis_id=thesis_id, report_date="2026-07-02", cutoff_utc="2026-07-02T00:00:00+00:00",
-          atoms_json=_atoms_json("a1", "TRUE", latest_at="2026-06-01"), engine_version="2b.2")
+          atoms_json=_atoms_json("a1", "TRUE", latest_at="2026-06-01"), engine_version="2b.2", engine_changed=1)
     _seed(conn, thesis_id=thesis_id, report_date="2026-07-03", cutoff_utc="2026-07-03T00:00:00+00:00",
           atoms_json=_atoms_json("a1", "TRUE", latest_at="2026-06-01"), engine_version="2b.2")
 

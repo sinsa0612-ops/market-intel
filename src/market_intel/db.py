@@ -153,6 +153,12 @@ CREATE TABLE IF NOT EXISTS thesis_reviews (
     -- 아니라 자기합리화가 된다.
     rules_sha256 TEXT NOT NULL DEFAULT '',
     rules_changed INTEGER NOT NULL DEFAULT 0 CHECK(rules_changed IN (0,1)),
+    -- 판정 엔진의 **의미**가 바뀐 직후의 첫 판정이면 1(명세 §2 "지문/엔진버전
+    -- 함정의 해법"). `rules_changed`와 완전히 대칭이지만 원인이 다르다:
+    -- rules_changed는 조건(theses.json)이 바뀐 것이고, engine_changed는 조건은
+    -- 그대로인데 판정을 만드는 코드 자체의 뜻이 바뀐 것이다(예: 2026-08-12
+    -- detail.latest_at/streak 도입 — 그때는 이 컬럼이 없어서 안 잡혔다).
+    engine_changed INTEGER NOT NULL DEFAULT 0 CHECK(engine_changed IN (0,1)),
     UNIQUE(thesis_id, report_type, report_date, cutoff_utc)
 );
 
@@ -265,6 +271,7 @@ _ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("theses", "rules_sha256", "TEXT NOT NULL DEFAULT ''"),
     ("thesis_reviews", "rules_sha256", "TEXT NOT NULL DEFAULT ''"),
     ("thesis_reviews", "rules_changed", "INTEGER NOT NULL DEFAULT 0"),
+    ("thesis_reviews", "engine_changed", "INTEGER NOT NULL DEFAULT 0"),
     # 해석 재사용 판단용 사실 지문(`interp.digest.facts_fingerprint`).
     # 빈 문자열은 "지문을 안 남기던 시절의 판" = 재사용 대상 아님이다.
     ("interpretations", "facts_sha256", "TEXT NOT NULL DEFAULT ''"),

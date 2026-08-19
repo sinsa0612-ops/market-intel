@@ -752,3 +752,73 @@ def test_same_second_reviews_do_not_scramble_the_previous_one(settings):
     assert flags == [0, 1, 0, 0], (
         "기준을 바꾼 그 한 번만 표시돼야 한다 — 계속 뜨면 경고가 무뎌지고, "
         f"직전 판정을 잘못 고르고 있다는 뜻이다: {flags}")
+
+
+# --- ST3: 엔진 의미 버전 — 판정 코드의 뜻이 바뀐 경계를 남긴다 (명세 §2) ------
+#
+# `rules_changed`(위)와 완전히 대칭이지만 원인이 다르다: `rules_changed`는
+# 조건(theses.json)이 바뀐 것이고, `engine_changed`는 조건은 그대로인데
+# 판정을 만드는 **엔진 코드의 뜻**이 바뀐 것이다. `rules_fingerprint`는
+# statement·conditions만 보므로 이 변화를 못 잡는다 — 2026-08-12
+# detail.latest_at/streak 도입이 실제로 그렇게 흔적 없이 지나갔다(명세 §Problem).
+
+def test_engine_semantics_registry_documents_the_current_version():
+    """ENGINE_SEMANTICS에 현재 ENGINE_VERSION 키가 없으면 실패한다(§2 "이
+    해법이 약속하지 않는 것" (b): 사람이 버전을 올렸는데 레지스트리에 뜻을
+    안 남기는 것을 잡는 마지막 방어선)."""
+    assert thesis_mod.ENGINE_VERSION in thesis_mod.ENGINE_SEMANTICS
+    assert thesis_mod.ENGINE_SEMANTICS[thesis_mod.ENGINE_VERSION]  # 빈 문자열도 금지
+
+
+def test_engine_version_change_is_flagged_once_not_forever(settings):
+    """`test_moving_the_goalpost_is_flagged_once_not_forever`(위)의 엔진판.
+    ENGINE_VERSION은 모듈 상수라 한 프로세스 안의 `review()` 호출만으로는
+    버전을 못 바꾸므로, 옛 버전의 첫 행은 실제 운영 원장의 과거 값("2b.1")을
+    직접 기록해 재현한다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_dgs10(conn, settings.raw_dir, 4.75)
+    thesis = _fin_thesis(4.5)  # 조건은 세 판정 내내 그대로 — rules_changed는 0이어야 한다
+
+    old_row = dict(thesis_mod.review(
+        conn, [thesis], _cutoff("2026-08-10T12:00:00+00:00"), "morning", "2026-08-10")[0])
+    old_row["engine_version"], old_row["engine_changed"] = "2b.1", 0  # 실제 운영 원장의 옛 값
+    store_mod.record_reviews(conn, [old_row])
+
+    def run(day):
+        rows = thesis_mod.review(conn, [thesis], _cutoff(f"2026-08-{day}T12:00:00+00:00"),
+                                 "morning", f"2026-08-{day}")
+        store_mod.record_reviews(conn, rows)
+        return rows[0]
+
+    first_at_new_version = run("11")
+    assert first_at_new_version["engine_version"] == thesis_mod.ENGINE_VERSION
+    assert first_at_new_version["engine_changed"] == 1, "엔진 버전이 바뀐 뒤 첫 판정은 잡혀야 한다"
+    assert first_at_new_version["rules_changed"] == 0, "조건은 안 바뀌었다 — rules_changed와 섞이면 안 된다"
+
+    again = run("12")
+    assert again["engine_changed"] == 0, "한 번만 표시된다 — 계속 뜨면 경고가 무뎌진다"
+
+
+def test_stored_engine_changed_column_matches_what_review_computed(settings):
+    """`test_the_version_that_produced_each_verdict_is_recorded`(rules_sha256
+    쪽)의 engine판. `thesis.review()`가 만든 dict의 값을 확인하는 것만으로는
+    `store.record_reviews`가 그 값을 실제로 DB에 박는지 증명하지 못한다 —
+    두 단계가 분리돼 있어서, record_reviews가 값을 흘려도 review()의 반환
+    dict는 여전히 옳게 보인다. 원장(`thesis_reviews`)을 직접 읽어야 한다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_dgs10(conn, settings.raw_dir, 4.75)
+    thesis = _fin_thesis(4.5)
+
+    old_row = dict(thesis_mod.review(
+        conn, [thesis], _cutoff("2026-08-10T12:00:00+00:00"), "morning", "2026-08-10")[0])
+    old_row["engine_version"], old_row["engine_changed"] = "2b.1", 0
+    store_mod.record_reviews(conn, [old_row])
+
+    rows = thesis_mod.review(conn, [thesis], _cutoff("2026-08-11T12:00:00+00:00"), "morning", "2026-08-11")
+    store_mod.record_reviews(conn, rows)
+
+    stamped = [(r["engine_version"], r["engine_changed"]) for r in conn.execute(
+        "SELECT engine_version, engine_changed FROM thesis_reviews WHERE thesis_id='fin_1' ORDER BY rowid")]
+    assert stamped == [("2b.1", 0), (thesis_mod.ENGINE_VERSION, 1)], stamped

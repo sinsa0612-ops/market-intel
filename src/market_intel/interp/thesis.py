@@ -20,7 +20,18 @@ from datetime import datetime, timedelta
 
 from .. import db as db_mod
 
-ENGINE_VERSION = "2b.1"
+ENGINE_VERSION = "2b.3"
+
+# 사람이 읽는 "무엇이 언제 바뀌었는가" 기록 (명세 §2 "지문/엔진버전 함정의 해법").
+# `"2b.2"` 항목은 **소급 표시가 아니다** — 그 구간의 행에는 실제로 `"2b.1"`이
+# 찍혀 있다(2026-08-12 이전엔 `store.record_reviews`가 이 모듈이 아니라
+# `store.ENGINE_VERSION`을 찍었고, 그 값도 계속 `"2b.1"`이었다). 이 레지스트리는
+# 그 판정 코드가 실제로 무엇을 뜻했는지의 인간용 각주다.
+ENGINE_SEMANTICS = {
+    "2b.1": "판정 5종. 근거 날짜·지속 표시 없음 (~2026-08-11).",
+    "2b.2": "근거 날짜(latest_at)와 연속 관측 수(streak)를 detail에 기록 (2026-08-12~).",
+    "2b.3": "상태 전이 파생 뷰 도입. '강화 N회' 대신 진입일·지속·신규관측 표시 (transition_rules_v1).",
+}
 
 THEMES = {"ai_semi", "power_energy", "fin_credit", "consumer_cycle", "policy_geo"}
 
@@ -538,6 +549,14 @@ def review(conn, theses: list[dict], cutoff, report_type: str, report_date: str)
         prev_rules = store_mod.last_rules_sha256(conn, th["thesis_id"])
         rules_changed = 1 if (prev_rules and rules_sha256 and prev_rules != rules_sha256) else 0
 
+        # `rules_changed`와 완전히 대칭: 조건이 아니라 **엔진 코드의 뜻**이 바뀐
+        # 경계를 잡는다(명세 §2 "지문/엔진버전 함정의 해법"). `rules_fingerprint`는
+        # statement·conditions만 보므로 판정 의미를 코드에서 바꿔도 지문은 안
+        # 바뀐다 — 2026-08-12 detail.latest_at/streak 도입이 그렇게 흔적 없이
+        # 지나갔다. 첫 판정(prev_engine=None)은 0.
+        prev_engine = store_mod.last_engine_version(conn, th["thesis_id"])
+        engine_changed = 1 if (prev_engine and prev_engine != ENGINE_VERSION) else 0
+
         evaluable = sum(1 for e in all_ev if e["status"] != "UNKNOWN")
         atoms_payload = {
             "falsify": [{"id": e["atom"].get("id"), "status": e["status"], "detail": e["detail"]} for e in falsify_ev],
@@ -556,6 +575,7 @@ def review(conn, theses: list[dict], cutoff, report_type: str, report_date: str)
                 "report_type": report_type, "report_date": report_date, "cutoff_utc": cutoff_str,
                 "verdict": verdict, "prev_verdict": prev_verdict, "changed": changed,
                 "rules_sha256": rules_sha256, "rules_changed": rules_changed,
+                "engine_version": ENGINE_VERSION, "engine_changed": engine_changed,
                 "atoms": atoms_payload, "atoms_json": json.dumps(atoms_payload, ensure_ascii=False),
                 "evidence_json": json.dumps(evidence_payload, ensure_ascii=False),
                 "total_atoms": len(all_ev), "evaluable_atoms": evaluable,

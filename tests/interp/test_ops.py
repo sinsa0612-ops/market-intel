@@ -315,3 +315,19 @@ def test_thesis_changes_ignores_old_flips(conn):
         "changed": 1, "atoms_json": "{}", "evidence_json": "[]",
     }])
     assert ops_mod.thesis_changes(conn, now=now) == []
+
+
+def test_thesis_changes_also_returns_engine_semantics_boundaries(conn):
+    """ST3: `engine_changed=1`도 판정이 뒤집힌 것만큼 중요한 사건이다(명세
+    §2) — verdict은 그대로여도(`changed=0`) 실려야 한다. `rules_changed=1`의
+    기존 계약과 완전히 대칭."""
+    now = datetime(2026, 8, 3, 9, 0, tzinfo=KST)
+    store_mod.record_reviews(conn, [{
+        "thesis_id": "ai_semi_1", "report_type": "morning", "report_date": "2026-08-01",
+        "cutoff_utc": db_mod.iso_utc(now), "verdict": "강화", "prev_verdict": "강화",
+        "changed": 0, "atoms_json": "{}", "evidence_json": "[]",
+        "engine_version": "2b.3", "engine_changed": 1,
+    }])
+    changes = ops_mod.thesis_changes(conn, now=now)
+    assert len(changes) == 1
+    assert changes[0]["engine_changed"] == 1

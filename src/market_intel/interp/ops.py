@@ -394,11 +394,13 @@ def thesis_changes(conn, *, now: datetime | None = None,
     # `rules_changed=1`도 함께 싣는다: 기준을 바꾼 것은 판정이 뒤집힌 것만큼
     # 중요한 사건이다. 오히려 조용히 지나가면 안 되는 쪽이다 — 그 이후 판정은
     # 그 전 판정과 비교할 수 없기 때문이다(CEO 2026-08-04 "목표치 재설정").
+    # `engine_changed=1`도 같은 이유로 싣는다 — 조건이 아니라 판정 엔진의
+    # 뜻이 바뀐 경계이고, 그 전후 판정도 서로 비교할 수 없다(명세 §2).
     rows = conn.execute(
         "SELECT r.thesis_id, r.verdict, r.prev_verdict, r.report_type, r.report_date, "
-        "r.cutoff_utc, r.rules_changed, t.statement FROM thesis_reviews r "
+        "r.cutoff_utc, r.rules_changed, r.engine_changed, t.statement FROM thesis_reviews r "
         "LEFT JOIN theses t ON t.thesis_id = r.thesis_id "
-        "WHERE (r.changed=1 OR r.rules_changed=1) AND r.cutoff_utc >= ? "
+        "WHERE (r.changed=1 OR r.rules_changed=1 OR r.engine_changed=1) AND r.cutoff_utc >= ? "
         "ORDER BY r.cutoff_utc DESC, r.rowid DESC",
         (since,),
     ).fetchall()
