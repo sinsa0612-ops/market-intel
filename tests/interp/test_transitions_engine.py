@@ -230,6 +230,85 @@ def test_rowid_breaks_ties_on_equal_cutoff_utc(conn):
     assert timeline[0].status == "TRUE"  # inserted second => higher rowid => wins R1's tie-break
 
 
+# --- ST4 item 3 / spec Risk R-1: pending merge ------------------------------
+#
+# Not part of R0-R12 (those govern the ledger; `pending` is about a caller
+# that hasn't written to the ledger yet). `ops.interpret_report` records the
+# review before it asks for the derived view, so by the time it calls in,
+# `store.reviews_for_thesis` already has today's row and it passes
+# `pending=None`. `market-intel interpret` (`cli_interpret._thesis_summary`)
+# computes the identical review but never persists it — without this merge
+# its "지속"/"새 관측" numbers would read one representative day behind the
+# pipeline's for the exact same report, which is the "하루 어긋난 숫자" R-1
+# calls the single highest-impact risk in this milestone.
+
+def test_pending_row_fills_in_todays_unrecorded_representative_day(conn):
+    thesis_id = "t_pending"
+    _seed(conn, thesis_id=thesis_id, report_date="2026-07-01", cutoff_utc="2026-07-01T00:00:00+00:00",
+          atoms_json=_atoms_json("a1", "TRUE", latest_at="2026-06-01"))
+
+    without_pending = tr.atom_runs(conn, thesis_id, "a1")
+    assert without_pending[0].duration_days == 1
+
+    pending = tr.pending_row_from_review({
+        "report_date": "2026-07-02", "verdict": "강화",
+        "atoms": json.loads(_atoms_json("a1", "TRUE", latest_at="2026-06-01")),
+        "rules_changed": 0, "engine_version": "2b.3", "engine_changed": 0,
+    })
+    with_pending = tr.atom_runs(conn, thesis_id, "a1", pending=pending)
+    assert with_pending[0].duration_days == 2, "pending 미병합 — 두 경로가 하루 어긋난다"
+
+    # Calling twice with the same pending (a caller may rebuild it per
+    # request) must not double-count the day.
+    twice = tr.atom_runs(conn, thesis_id, "a1", pending=pending)
+    assert twice[0].duration_days == 2
+
+
+def test_pending_yields_to_an_already_recorded_row_for_the_same_date(conn):
+    """If the pending row's date is already in the ledger (a rerun after the
+    pipeline already recorded it), the recorded row wins — pending only
+    fills a gap, it never shadows the ledger."""
+    thesis_id = "t_pending_recorded_already"
+    _seed(conn, thesis_id=thesis_id, report_date="2026-07-01", cutoff_utc="2026-07-01T00:00:00+00:00",
+          atoms_json=_atoms_json("a1", "TRUE", latest_at="2026-06-01"))
+    _seed(conn, thesis_id=thesis_id, report_date="2026-07-02", cutoff_utc="2026-07-02T00:00:00+00:00",
+          atoms_json=_atoms_json("a1", "FALSE"))
+
+    # A stale pending guess for 07-02 that disagrees with what was recorded.
+    pending = tr.pending_row_from_review({
+        "report_date": "2026-07-02", "verdict": "강화",
+        "atoms": json.loads(_atoms_json("a1", "TRUE", latest_at="2026-06-01")),
+        "rules_changed": 0, "engine_version": "2b.3", "engine_changed": 0,
+    })
+    runs = tr.atom_runs(conn, thesis_id, "a1", pending=pending)
+    assert [r.status for r in runs] == ["TRUE", "FALSE"], "기록된 행이 있는데 pending이 덮어썼다"
+
+
+def test_pending_row_from_review_degrades_to_none_on_an_unrecognized_shape():
+    """A caller (e.g. a test double standing in for a thesis module ST4
+    doesn't own) may hand back a review row missing `report_date`/`atoms` —
+    this must degrade to None (pending=None: today's state simply isn't
+    shown yet) rather than raise, so a stand-in module doesn't crash the
+    whole render."""
+    assert tr.pending_row_from_review({"thesis_id": "x", "verdict": "유지"}) is None
+
+
+def test_thesis_view_accepts_pending_too(conn):
+    """`thesis_view` (the one-call bundle display layers actually use)
+    threads `pending` down to all three of its parts."""
+    thesis_id = "t_pending_thesis_view"
+    _seed(conn, thesis_id=thesis_id, report_date="2026-07-01", cutoff_utc="2026-07-01T00:00:00+00:00",
+          atoms_json=_atoms_json("a1", "TRUE", latest_at="2026-06-01"))
+    pending = tr.pending_row_from_review({
+        "report_date": "2026-07-02", "verdict": "강화",
+        "atoms": json.loads(_atoms_json("a1", "TRUE", latest_at="2026-06-01")),
+        "rules_changed": 0, "engine_version": "2b.3", "engine_changed": 0,
+    })
+    view = tr.thesis_view(conn, thesis_id, pending=pending)
+    assert view["atoms"]["a1"][0].duration_days == 2
+    assert view["verdict"][0].duration_days == 2
+
+
 # --- R4/R1: representative days must be date-ordered, not recording-order --
 
 def test_backfilled_earlier_report_date_does_not_reverse_the_timeline(conn):

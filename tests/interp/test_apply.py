@@ -13,6 +13,7 @@ import pytest
 from market_intel import interp as interp_pkg
 from market_intel.interp import apply as apply_mod
 from market_intel.interp import llm as llm_mod
+from market_intel.interp import thesis as thesis_mod
 
 from conftest import macro_fc, make_fact_row, make_report, seed_fact
 
@@ -220,14 +221,23 @@ def test_use_llm_false_is_disabled_status(conn):
 
 
 def test_thesis_impact_alone_fills_field_and_generated_by(conn):
+    """final-review F6: the byline must carry the *judgment* engine's own
+    version (thesis/2b.3), not the LLM engine's (2b.2). A bare
+    `startswith("규칙 판정")` — and worse, calling `fill()` without even
+    passing `thesis_engine_version` — let a reversion to the wrong engine's
+    version through 991-green; both are pinned down here."""
     report = make_report()
     report, result = apply_mod.fill(
         report, conn, cutoff=_cutoff(report), use_llm=False,
         thesis_impact="가설 1건 판정 — 강화 0 · 유지 1 · 약화 0 · 무효 0 · 판정 불가 0.",
         next_check_suffix="확인 일정: 가설 재점검 2026-11-01",
+        thesis_engine_version=thesis_mod.ENGINE_VERSION,
     )
     assert report.interpretation.thesis_impact != ""
-    assert report.interpretation.generated_by.startswith("규칙 판정")
+    assert thesis_mod.ENGINE_VERSION != llm_mod.ENGINE_VERSION, (
+        "두 상수가 우연히 같아지면 아래 단언이 무의미해진다"
+    )
+    assert report.interpretation.generated_by == f"규칙 판정 · thesis/{thesis_mod.ENGINE_VERSION}"
     assert result["fields"]["thesis_impact"] == "rules"
 
 

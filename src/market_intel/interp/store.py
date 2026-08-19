@@ -144,7 +144,10 @@ def engine_introduced_on(conn: sqlite3.Connection, engine_version: str) -> str |
     행 중 가장 이른 `created_at`을 KST 날짜로 변환한 값. `report_date`가 아니라
     `created_at`을 쓰는 이유: 캐치업이 과거 `report_date`로 리포트를 만들 수
     있어, `report_date`를 쓰면 도입일이 실제보다 앞당겨진다. 그 엔진 버전이
-    원장에 아직 없으면(첫 실행) None — 호출자가 `report_date`로 대체한다."""
+    원장에 아직 없으면(첫 실행) None. 예전에는 호출자가 `report_date`로
+    대체했지만 그 대체는 final-review F4로 제거됐다 — 값을 지어내지 않는
+    게 원칙이므로, 없으면 없는 대로 두고 그 None을 어떻게 다룰지는 호출자
+    (`ops.thesis_display_introduced_on`)의 몫이다."""
     row = conn.execute(
         "SELECT MIN(created_at) m FROM thesis_reviews WHERE engine_version=?",
         (engine_version,),

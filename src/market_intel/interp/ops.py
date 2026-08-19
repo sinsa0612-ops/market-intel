@@ -35,6 +35,7 @@ from ..reporting.model import Report
 from . import apply as apply_mod
 from . import store as store_mod
 from . import thesis as thesis_mod
+from . import transitions as transitions_mod
 
 INTERP_BUDGET_ENV = "MI_INTERP_MAX_PER_RUN"
 DEFAULT_INTERP_BUDGET = 3
@@ -121,6 +122,64 @@ def _record_reviews_idempotently(conn, reviews: list[dict]) -> int:
     return recorded
 
 
+def thesis_display_introduced_on(conn, pending_engine_version: str | None = None,
+                                 report_date: str | None = None) -> str:
+    """ST4 / 명세 §2 구현 4: 표시 도입일은 상수가 아니라 원장에서 뽑는다 — 현재
+    엔진 버전 행 중 가장 이른 `created_at`(KST 날짜).
+
+    원장에 그 버전 행이 아직 없으면(첫 실행 당일) `report_date`로 대체하지
+    않는다는 원칙(final-review F4)은 그대로다 — 그런데 그 원칙을 지키는
+    방식이 두 호출 경로를 실측으로 갈랐다: `ops.interpret_report`는 이번
+    판정을 먼저 기록한 *뒤에* 묻기 때문에 원장에 방금 넣은 행이 바로 잡히지만,
+    `market-intel interpret` CLI는 절대 기록하지 않으므로(그 리뷰는 자기
+    docstring이 밝히듯 `record_reviews`를 부르지 않는다) 같은 배포 첫날 —
+    하필 범례가 가장 필요한 그날 — CLI 산출물에만 범례가 빠졌다(final-review
+    F4, CEO 결정 (가): 두 경로가 같은 산출물을 내야 한다).
+
+    `pending_engine_version`: CLI 경로가 `transitions.pending_row_from_review`로
+    이미 만들어 둔 오늘 판정의 `engine_version`(한 프로세스의 모든 가설이
+    같은 `thesis.ENGINE_VERSION`을 찍으므로 하나만 넘기면 된다). 원장 조회가
+    비어 있고 이 값이 현재 엔진 버전과 같으면 — 즉 오늘이 정말 그 버전의 첫
+    실사용일이면 — "지금"을 KST 날짜로 돌린다. 이건 없는 값을 지어내는 게
+    아니다: `ops` 경로가 기록 직후 읽어오는 실제 `created_at`도 결국 기록
+    시점의 "지금"이므로, 이 폴백은 ops 경로가 실제로 얻을 값을 CLI 경로도
+    미리 계산할 뿐이다. `report_date`는 여전히 쓰지 않는다 — CLI도 `--date`로
+    과거 리포트를 다시 돌릴 수 있어(ops의 캐치업과 같은 함정) report_date를
+    쓰면 도입일이 실제보다 앞당겨진다(위 경고가 여기서도 그대로 유효하다).
+
+    `pending_engine_version`이 없거나 현재 엔진 버전과 다르면(가설이 없어
+    `reviews`가 빈 경우 등) 빈 문자열 — 값이 없으면 지어내지 말고 호출자가
+    범례를 생략하게 한다(`render_impact`/`site.py` 둘 다 빈 문자열이면
+    범례 줄을 뺀다).
+
+    `report_date`(F-A 수리, SA-10; **4차 검수 F-A 잔여분 수리**): 도입일
+    *값*을 만드는 데는 여전히 안 쓴다(위 문단의 이유가 그대로 유효하다 —
+    `report_date`를 값으로 쓰면 캐치업 때 도입일이 실제보다 앞당겨진다).
+    계산된 `introduced`가 이 `report_date`보다 **뒤**면 빈 문자열을 돌려
+    범례의 도입일 조각을 생략시킨다 — 그 리포트의 차단선에서는 아직 오지
+    않은 날짜를 "도입됐다"고 쓸 수 없다(R8/R9 경고문 자체는 이 반환값과
+    무관하게 `render_impact`가 항상 붙인다 — CEO 결정 (가), `_LEGEND_R89`).
+
+    이전 구현은 원장에 `report_date`보다 뒤 날짜의 판정 행이 이미 "존재하는지"로
+    캐치업 여부를 추정했다(`_has_later_recorded_report`, 시간순 역전 검사).
+    그 방식은 **캐치업이 오래된 리포트부터 처리하는 동안**(`jobs.py`
+    `paths[-budget:]`, oldest-first) 한 번도 걸리지 않는다 — 처리 중인 리포트가
+    항상 그 시점 원장의 최신이라, "이 report_date보다 뒤 날짜가 원장에 있는가"가
+    매번 거짓으로 나온다(실측: 2026-08-03 배치가 07-30·07-31 두 건에서
+    "도입 2026-08-03"이라는 미래 도입일을 그대로 발행했다). `introduced` 값과
+    `report_date`를 직접 비교하면 이 우회가 사라진다: 캐치업이든 정상 당일
+    처리든, 방금 계산된 도입일이 지금 렌더링 중인 리포트의 날짜보다 뒤이기만
+    하면 무조건 걸린다. `report_date`가 없으면(옛 호출부) 이 비교를 건너뛴다."""
+    introduced = store_mod.engine_introduced_on(conn, thesis_mod.ENGINE_VERSION)
+    if not introduced and pending_engine_version == thesis_mod.ENGINE_VERSION:
+        introduced = datetime.fromisoformat(db_mod.iso_utc()).astimezone(KST).strftime("%Y-%m-%d")
+    if not introduced:
+        return ""
+    if report_date and introduced > report_date:
+        return ""
+    return introduced
+
+
 def interpret_report(conn, path, *, model: str | None = None, use_llm: bool = True) -> dict:
     """리포트 JSON 하나를 **그 리포트의 차단선으로** 해석해 제자리에 다시 쓴다.
 
@@ -138,12 +197,25 @@ def interpret_report(conn, path, *, model: str | None = None, use_llm: bool = Tr
         reviews = thesis_mod.review(conn, theses, cutoff, report.report_type, report.report_date)
         _record_reviews_idempotently(conn, reviews)
 
-    thesis_impact = thesis_mod.render_impact(reviews, report.report_date) if reviews else ""
+    thesis_impact = ""
+    if reviews:
+        # 이 시점에는 위 `_record_reviews_idempotently`가 이미 오늘 행을
+        # 기록했으므로 `pending`은 필요 없다 — 파생 뷰가 원장에서 바로 읽는다
+        # (ST4 명세 §5 What #3, Risk R-1: `market-intel interpret`은 기록하지
+        # 않으므로 그쪽만 `pending`이 필요하다).
+        states = {
+            r["thesis_id"]: transitions_mod.thesis_view(conn, r["thesis_id"], as_of=report.report_date)
+            for r in reviews
+        }
+        introduced_on = thesis_display_introduced_on(conn, report_date=report.report_date)
+        thesis_impact = thesis_mod.render_impact(
+            reviews, report.report_date, states=states, introduced_on=introduced_on)
     next_check_suffix = thesis_mod.render_next_check_suffix(reviews, report) if reviews else ""
 
     report, result = apply_mod.fill(
         report, conn, cutoff=cutoff,
-        thesis_impact=thesis_impact, next_check_suffix=next_check_suffix,
+        thesis_impact=thesis_impact, thesis_engine_version=thesis_mod.ENGINE_VERSION,
+        next_check_suffix=next_check_suffix,
         model=model, use_llm=use_llm,
     )
     if reviews:
@@ -358,6 +430,19 @@ def _last_review(conn, thesis_id: str) -> dict | None:
     return dict(row) if row else None
 
 
+def _thesis_state_line(conn, thesis_id: str, review: dict | None) -> str:
+    """ST4 / 명세 §3.2 — 사이트 가설 페이지의 "상태:" 줄. 판정을 만든 조건의
+    파생 뷰(`transitions.thesis_view`)를 `thesis.state_fragment`에 넘긴다.
+    `review["atoms_json"]`은 원장에 실제로 저장된 모양(`{id, status, detail}`
+    평면 — `evals_by_group`의 중첩 `atom.id`가 아니다)이라 `row["atoms"]`로
+    넘긴다 — `thesis._fired_atom_ids`가 두 모양을 모두 받는다."""
+    if review is None:
+        return ""
+    row = {"verdict": review["verdict"], "atoms": json.loads(review["atoms_json"])}
+    state = transitions_mod.thesis_view(conn, thesis_id)
+    return thesis_mod.state_fragment(row, state)
+
+
 def thesis_overview(conn) -> list[dict]:
     """5테마 × 슬롯 — 각 가설의 현재 판정과 그 사유. 가설이 없는 테마도
     빠지지 않는다(빈 테마는 화면에서 '가설 없음'으로 읽힌다)."""
@@ -372,6 +457,7 @@ def thesis_overview(conn) -> list[dict]:
             "next_check_date": t["next_check_date"],
             "verdict": review["verdict"] if review else "",
             "reason": _review_reason(review["atoms_json"], review["verdict"]) if review else "",
+            "state_line": _thesis_state_line(conn, t["thesis_id"], review),
             "reviewed_at": review["report_date"] if review else "",
         })
     return [

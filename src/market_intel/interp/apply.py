@@ -118,6 +118,7 @@ def fill(
     *,
     cutoff: datetime,
     thesis_impact: str = "",
+    thesis_engine_version: str = "",
     next_check_suffix: str = "",
     model: str | None = None,
     use_llm: bool = True,
@@ -126,7 +127,14 @@ def fill(
     `db.facts_as_of` call at `cutoff` — SA-10) — `fill` performs no DB
     writes; the `interpretations` mirror table (SA-2) is the caller's job,
     same as `report.missing`'s matching `data_gaps` row (ST2 does not own
-    `interp/store.py`)."""
+    `interp/store.py`).
+
+    `thesis_engine_version` (final-review F6): the judgment engine's own
+    version string, for the "규칙 판정 · thesis/X" byline below. Passed in as
+    a plain string, same as `thesis_impact` — this file stays ST2's and must
+    not import ST1's ledger/judgment modules (worktree independence,
+    enforced by a dedicated boundary test), so the caller supplies the
+    value instead of this module reaching for it itself."""
     model = model or llm_mod.DEFAULT_MODEL
     # This stage owns exactly the `interp:*` gaps and re-derives all of them
     # below, so drop the previous run's before doing anything else. ST3's job
@@ -278,7 +286,13 @@ def fill(
     if llm_alive:
         generated_by = f"ai:{model_used} · {PROMPT_VERSION}"
     elif thesis_status == "rules":
-        generated_by = f"규칙 판정 · thesis/{llm_mod.ENGINE_VERSION}"
+        # final-review F6: 문구는 "thesis/"인데 예전 값은 `llm_mod.ENGINE_VERSION`
+        # (해석 LLM 엔진 버전, 2b.2)이었다 — 원장 행은 판정 엔진 버전(2b.3)을
+        # 쓰는데 리포트가 엉뚱한 버전을 가리키는 결함이었다. 호출자가 실제
+        # 판정 엔진 버전을 안 넘겼으면(옛 호출부/테스트) 없는 값을 지어내지
+        # 않고 버전 조각 자체를 뺀다.
+        generated_by = (f"규칙 판정 · thesis/{thesis_engine_version}"
+                        if thesis_engine_version else "규칙 판정")
     else:
         generated_by = ""
     interpretation.generated_by = generated_by

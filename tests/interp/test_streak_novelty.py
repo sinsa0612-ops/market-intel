@@ -14,6 +14,16 @@ CEO는 매일 "강화 6건"을 읽지만 그중 **새로 알게 된 것은 0건*
 바꾸면 과거 판정과의 비교도 끊긴다. 대신 그 옆에 지속 횟수를 적어 독자가 news와
 state를 구별하게 한다. (사외 고문의 처방이 여기서 갈렸다 — GPT는 판정 강등,
 fable은 메타데이터. 정보를 버리지 않는 쪽을 골랐다.)
+
+**2026-08-19에 표시가 전이 뷰로 교체됨** (spec §5, `theses/transition_rules_v1.md`) —
+"N회째 지속"은 "진입일 · 지속 · 새 관측"으로 바뀌었다. 이 파일이 지키는 계약은
+**"지속을 신규성으로 읽히게 하지 않는다"**이지 특정 문구가 아니다: 아래 네 테스트
+(`test_persisting_state_says_how_long` / `test_new_crossing_says_so_plainly` /
+`test_capped_streak_is_marked` / `test_the_most_recent_crossing_wins_when_several_fire`)는
+그 새 표기로 같은 의도를 지키게 다시 썼다 — `thesis_mod._streak`가 만드는 옛
+`detail.streak`가 아니라 `transitions.Run`(파생 뷰)을 직접 구성해 `render_impact`의
+`states=` 인자로 넘긴다. 아래 두 테스트(판정 불변·성능 계약)는 신규성 층의 축이
+아니라 판정 엔진 자체의 계약이라 그대로 둔다.
 """
 from __future__ import annotations
 
@@ -23,6 +33,7 @@ import pytest
 
 from market_intel import db as db_mod
 from market_intel.interp import thesis as thesis_mod
+from market_intel.interp import transitions as tr_mod
 from market_intel.models import FactCandidate
 
 
@@ -56,54 +67,89 @@ def test_false_condition_has_no_streak():
     assert thesis_mod._streak(_LEVEL_ATOM, _obs(4.1, 4.0), _cutoff()) == {}
 
 
-def _row(verdict: str, group: str, streak: dict | None, latest_at: str = "2026-08-10T00:00:00+00:00"):
+def _row(verdict: str, group: str, atom_id: str = "a", latest_at: str = "2026-08-10T00:00:00+00:00"):
     detail = {"message": "DGS10 최신값 4.72", "latest_at": latest_at}
-    if streak:
-        detail["streak"] = streak
-    ev = [{"atom": {"id": "a"}, "status": "TRUE", "detail": detail}]
+    ev = [{"atom": {"id": atom_id}, "status": "TRUE", "detail": detail}]
     return {"thesis_id": "t1", "theme": "fin_credit", "slot": 1, "verdict": verdict,
             "evals_by_group": {group: ev}, "all_evals": ev,
             "evaluable_atoms": 1, "total_atoms": 1}
 
 
+def _run(**overrides) -> tr_mod.Run:
+    """`transitions.Run`(파생 뷰) 값을 손으로 구성한다 — 이 파일은 `_streak`의
+    옛 `detail.streak`가 아니라 이 값을 `render_impact`의 `states=`로 넘긴다."""
+    fields = dict(
+        thesis_id="t1", atom_id="a", status="TRUE", entry_date="2026-08-01",
+        left_censored=False, last_report_date="2026-08-12", duration_days=1,
+        new_observation_count=1, last_new_observation_date="2026-08-01",
+        unknown_observation_days=0, has_data_gap=False, restart_reason=None,
+        streak_since=None,
+    )
+    fields.update(overrides)
+    return tr_mod.Run(**fields)
+
+
+def _states(ledger_start: str, **atom_runs: tr_mod.Run) -> dict:
+    return {"t1": {"ledger_start": ledger_start,
+                   "atoms": {atom_id: [run] for atom_id, run in atom_runs.items()},
+                   "verdict": []}}
+
+
 def test_persisting_state_says_how_long():
-    out = thesis_mod.render_impact(
-        [_row("강화", "strengthen", {"periods": 212, "since": "2025-09-25", "capped": False})],
-        "2026-08-12")
-    assert "212회째 지속" in out and "2025-09-25부터" in out
+    """옛 "212회째 지속, 2025-09-25부터"가 지키던 의도 — **지속 기간과 새 관측
+    건수가 함께 보인다** — 를 새 표기(R6/R9)로 지킨다."""
+    run = _run(entry_date="2025-09-25", duration_days=212, new_observation_count=1,
+               last_new_observation_date="2026-08-01")
+    out = thesis_mod.render_impact([_row("강화", "strengthen")], "2026-08-12",
+                                   states=_states("2025-09-25", a=run))
+    assert "진입 2025-09-25" in out and "지속 212판정일" in out
+    assert "회째" not in out, "옛 문구가 남아 있다"
+    assert "새 관측" in out, "R9: 지속일 옆에 항상 새 관측 건수가 있어야 한다"
 
 
 def test_new_crossing_says_so_plainly():
-    out = thesis_mod.render_impact(
-        [_row("강화", "strengthen", {"periods": 1, "since": "2026-08-12", "capped": False})],
-        "2026-08-12")
+    run = _run(entry_date="2026-08-12", duration_days=1, new_observation_count=1,
+               last_new_observation_date="2026-08-12")
+    out = thesis_mod.render_impact([_row("강화", "strengthen")], "2026-08-12",
+                                   states=_states("2025-09-25", a=run))
     assert "오늘 새로 충족" in out
-    assert "회째" not in out
+    assert "회째" not in out and "판정일" not in out
 
 
 def test_capped_streak_is_marked():
-    """되짚기 상한에 걸리면 "505회"가 아니라 "505+회"다 — 실제로는 더 길 수 있고,
-    그걸 정확한 숫자처럼 쓰면 없는 정밀도를 주장하는 것이다."""
-    out = thesis_mod.render_impact(
-        [_row("강화", "strengthen", {"periods": 505, "since": "2024-08-01", "capped": True})],
-        "2026-08-12")
-    assert "505+회째" in out
+    """옛 "505+회째"(되짚기 상한, 정밀도 없음)가 지키던 의도 — **정확한 진입일을
+    모르면 정밀한 척하지 않는다** — 는 이제 R11 좌측 절단으로 표현된다: 원장
+    시작일 이전부터라고만 말하고, 가짜 진입일이나 가짜 지속 횟수를 만들지 않는다."""
+    run = _run(entry_date=None, left_censored=True, duration_days=505,
+               new_observation_count=1, last_new_observation_date="2026-08-01")
+    out = thesis_mod.render_impact([_row("강화", "strengthen")], "2026-08-12",
+                                   states=_states("2024-08-01", a=run))
+    assert "기록 시작 2024-08-01 이전부터" in out
+    assert "505+회째" not in out and "회째" not in out
+    assert "진입 " not in out, "좌측 절단인데 없는 진입일을 지어냈다"
 
 
 def test_the_most_recent_crossing_wins_when_several_fire():
     """여럿이 발화하면 **가장 최근에 넘은 것**을 말한다 — 판정을 바꾼 사건이
-    그것이고, 나머지는 이미 참이던 상태다."""
-    detail_old = {"message": "old", "latest_at": "2026-08-10T00:00:00+00:00",
-                  "streak": {"periods": 400, "since": "2024-10-01", "capped": False}}
-    detail_new = {"message": "new", "latest_at": "2026-08-10T00:00:00+00:00",
-                  "streak": {"periods": 3, "since": "2026-08-08", "capped": False}}
-    ev = [{"atom": {"id": "a"}, "status": "TRUE", "detail": detail_old},
-          {"atom": {"id": "b"}, "status": "TRUE", "detail": detail_new}]
+    그것이고, 나머지는 이미 참이던 상태다. (새 엔진에서는 "가장 최근에 넘은
+    것" = 지속 판정일이 가장 짧은 구간.)"""
+    ev = [
+        {"atom": {"id": "a"}, "status": "TRUE",
+         "detail": {"message": "old", "latest_at": "2026-08-10T00:00:00+00:00"}},
+        {"atom": {"id": "b"}, "status": "TRUE",
+         "detail": {"message": "new", "latest_at": "2026-08-10T00:00:00+00:00"}},
+    ]
     row = {"thesis_id": "t1", "theme": "fin_credit", "slot": 1, "verdict": "강화",
            "evals_by_group": {"strengthen": ev}, "all_evals": ev,
            "evaluable_atoms": 2, "total_atoms": 2}
-    out = thesis_mod.render_impact([row], "2026-08-12")
-    assert "3회째 지속" in out and "400" not in out
+    old_run = _run(atom_id="a", entry_date="2024-10-01", duration_days=400,
+                   new_observation_count=1, last_new_observation_date="2024-10-01")
+    new_run = _run(atom_id="b", entry_date="2026-08-08", duration_days=3,
+                   new_observation_count=1, last_new_observation_date="2026-08-08")
+    states = {"t1": {"ledger_start": "2020-01-01",
+                     "atoms": {"a": [old_run], "b": [new_run]}, "verdict": []}}
+    out = thesis_mod.render_impact([row], "2026-08-12", states=states)
+    assert "지속 3판정일" in out and "400" not in out
 
 
 def test_verdict_is_untouched_by_the_novelty_layer(settings):

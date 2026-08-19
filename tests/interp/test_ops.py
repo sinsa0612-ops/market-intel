@@ -23,6 +23,7 @@ from market_intel import db as db_mod
 from market_intel.interp import llm as llm_mod
 from market_intel.interp import ops as ops_mod
 from market_intel.interp import store as store_mod
+from market_intel.interp import thesis as thesis_mod
 from market_intel.reporting.cutoff import KST
 
 from conftest import make_report
@@ -331,3 +332,40 @@ def test_thesis_changes_also_returns_engine_semantics_boundaries(conn):
     changes = ops_mod.thesis_changes(conn, now=now)
     assert len(changes) == 1
     assert changes[0]["engine_changed"] == 1
+
+
+# --- 4차 검수 F-A 잔여분: thesis_display_introduced_on의 날짜 상한 -----------
+
+def test_thesis_display_introduced_on_omits_a_date_after_the_report(conn, monkeypatch):
+    """4차 검수 F-A 잔여분 수리: 원장에 기록된 도입일(`created_at` 기반)이
+    지금 렌더링 중인 리포트의 `report_date`보다 **뒤**면 빈 문자열을 돌려야
+    한다 — 캐치업이 오래된 리포트부터 처리하는 동안(`jobs.py` `paths[-budget:]`,
+    oldest-first) 처리 중인 리포트는 항상 그 순간 원장의 최신이므로, 예전
+    "원장에 report_date보다 뒤 날짜 행이 있는가"(`_has_later_recorded_report`)
+    검사는 이 상황에서 한 번도 걸리지 않았다(실측: 2026-08-03 배치가 07-30·
+    07-31 두 건에서 미래 도입일을 그대로 발행). `introduced` 값과 `report_date`를
+    직접 비교하면 캐치업이든 정상 처리든 똑같이 걸린다.
+
+    이 가드(`ops.thesis_display_introduced_on`의
+    `if report_date and introduced > report_date: return ""`)를 지우면 이
+    테스트가 RED가 된다."""
+    # `thesis_reviews`는 append-only(db.py 트리거)라 UPDATE로 created_at을
+    # 못박을 수 없다 — `record_reviews`가 부르는 `db_mod.iso_utc()`를
+    # 원장에 실제로 기록되는 시각으로 monkeypatch한다(캐치업이 07-30을
+    # 처리하는 시점에 원장의 created_at이 "지금"인 것과 같은 모양).
+    monkeypatch.setattr(db_mod, "iso_utc", lambda *a, **k: "2026-08-19T00:00:00+00:00")
+    store_mod.record_reviews(conn, [{
+        "thesis_id": "t1", "report_type": "morning", "report_date": "2026-08-01",
+        "cutoff_utc": "2026-08-01T22:00:00+00:00", "verdict": "강화", "prev_verdict": None,
+        "changed": 0, "atoms_json": "{}", "evidence_json": "[]",
+        "engine_version": thesis_mod.ENGINE_VERSION,
+    }])
+    assert store_mod.engine_introduced_on(conn, thesis_mod.ENGINE_VERSION) == "2026-08-19"
+
+    assert ops_mod.thesis_display_introduced_on(conn, report_date="2026-07-30") == "", (
+        "도입일(2026-08-19)이 report_date(2026-07-30)보다 뒤인데도 그대로 돌려줬다"
+    )
+    # 도입일과 report_date가 같으면(정상 당일 처리) 여전히 보여야 한다.
+    assert ops_mod.thesis_display_introduced_on(conn, report_date="2026-08-19") == "2026-08-19"
+    # report_date가 도입일보다 뒤여도(도입 이후 정상 처리) 여전히 보여야 한다.
+    assert ops_mod.thesis_display_introduced_on(conn, report_date="2026-08-20") == "2026-08-19"

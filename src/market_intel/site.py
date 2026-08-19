@@ -583,13 +583,31 @@ def _status_page(state: dict) -> str:
 def _theses_page(conn, now: datetime) -> str:
     overview = ops_mod.thesis_overview(conn)
     changes = ops_mod.thesis_changes(conn, now=now)
+    introduced_on = ops_mod.thesis_display_introduced_on(conn)
+
+    # final-review F4: 도입일을 원장에서 못 뽑으면(아직 그 엔진 버전 행이
+    # 없으면) 문장 자체를 생략한다 — 벽시계 날짜로 대체하면 없는 도입일을
+    # 지어내는 것이다. 지속일이 독립 증거가 아니라는 일반 안내는 도입일과
+    # 무관하므로 그대로 남긴다.
+    meta = (
+        '가설 문장은 사람이 쓴 것이고, 판정은 코드가 규칙으로 매긴 것입니다. '
+        "판정 불가는 오류가 아니라 아직 판단할 관측이 모이지 않았다는 뜻입니다. "
+        "<strong>기준 변경</strong> 표시는 그 시점에 가설의 판정 기준 자체가 바뀌었다는 뜻이며, "
+        "그 앞뒤 판정은 서로 비교할 수 없습니다. "
+    )
+    if introduced_on:
+        meta += (
+            f"진입일·지속·새 관측 표시는 {_esc(introduced_on)} 도입되었습니다 — 그 이전 판정의 "
+            "'강화'는 다른 뜻입니다(매일 재충족을 포함). "
+        )
+    meta += (
+        "지속일은 독립 증거의 수가 아닙니다 — "
+        "월간·분기 지표는 다음 발표 전까지 증거 1개입니다."
+    )
 
     parts = [
         "<h1>가설</h1>",
-        '<p class="meta">가설 문장은 사람이 쓴 것이고, 판정은 코드가 규칙으로 매긴 것입니다. '
-        "판정 불가는 오류가 아니라 아직 판단할 관측이 모이지 않았다는 뜻입니다. "
-        "<strong>기준 변경</strong> 표시는 그 시점에 가설의 판정 기준 자체가 바뀌었다는 뜻이며, "
-        "그 앞뒤 판정은 서로 비교할 수 없습니다.</p>",
+        f'<p class="meta">{meta}</p>',
         f"<h2>가설 변화 (최근 {ops_mod.THESIS_CHANGE_WINDOW_DAYS}일)</h2>",
     ]
     if changes:
@@ -598,6 +616,7 @@ def _theses_page(conn, now: datetime) -> str:
             f"<td>{_esc(c['report_date'])}</td><td>{_esc(c['thesis_id'])}</td>"
             f"<td>{_esc(c['prev_verdict'] or '(없음)')} → {_esc(c['verdict'])}"
             + ('<span class="badge-late">기준 변경</span>' if c.get("rules_changed") else "")
+            + ('<span class="badge-late">표시 기준 변경</span>' if c.get("engine_changed") else "")
             + "</td>"
             f"<td class=\"detail\">{_esc(c['statement'] or '-')}</td>"
             "</tr>"
@@ -617,12 +636,15 @@ def _theses_page(conn, now: datetime) -> str:
             verdict = t["verdict"] or "판정 없음"
             cls = "state-ok" if verdict == "유지" or verdict == "강화" else "state-warn"
             indicators = ", ".join(t["leading_indicators"]) if t["leading_indicators"] else "-"
+            state_line = (f'<p class="detail">상태: {_esc(t["state_line"])}</p>'
+                         if t.get("state_line") else "")
             parts.append(
                 f'<p><strong>{_esc(t["thesis_id"])}</strong> '
                 f'<span class="{cls}">{_esc(verdict)}</span></p>'
                 f"<p>{_esc(t['statement'])}</p>"
                 f'<p class="detail">근거: {_esc(t["reason"] or "-")} · 선행 지표: {_esc(indicators)} '
                 f'· 다음 점검일: {_esc(t["next_check_date"])}</p>'
+                f"{state_line}"
             )
     return _page("market-intel — 가설", "".join(parts), depth=0)
 

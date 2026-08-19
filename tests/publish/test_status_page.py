@@ -11,11 +11,14 @@ safe_detail` is external-HTTP-derived text and lands on a public page.
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta
 
 from market_intel import db as db_mod
 from market_intel import site as site_mod
+from market_intel.interp import ops as ops_mod
 from market_intel.interp import store as store_mod
+from market_intel.interp import thesis as thesis_mod
 from market_intel.jobs import JOBS
 from market_intel.reporting.cutoff import KST
 
@@ -211,6 +214,27 @@ def test_theses_page_publishes_verdict_changes(reports_root, docs_root, conn):
     assert "ai_semi_1" in html
 
 
+def test_theses_page_marks_an_engine_change_with_its_own_badge(reports_root, docs_root, conn):
+    """final-review N1 — F5와 정확히 같은 종류의 결함(표시 경로에 테스트 0건)을
+    수리하며 새로 넣은 배지였다: `표시 기준 변경` span을 통째로 지워도 publish
+    161개 전부 초록이었다. `engine_changed=1` 행이 `기준 변경`(rules_changed)과
+    구별되는 자기만의 배지로 렌더되는지 끝까지(진짜 `build_site`로) 확인한다."""
+    seed_thesis(conn)
+    store_mod.record_reviews(conn, [{
+        "thesis_id": "ai_semi_1", "report_type": "morning", "report_date": "2026-08-14",
+        "cutoff_utc": db_mod.iso_utc(NOW), "verdict": "유지", "prev_verdict": "유지",
+        "changed": 0, "atoms_json": '{"falsify": []}', "evidence_json": "[]",
+        "engine_changed": 1,
+    }])
+    build(conn, reports_root, docs_root)
+    html = (docs_root / "theses.html").read_text(encoding="utf-8")
+    assert '<span class="badge-late">표시 기준 변경</span>' in html
+    assert '<span class="badge-late">기준 변경</span>' not in html, (
+        "rules_changed는 세우지 않았는데 그 배지(기준 변경)가 떴다 — "
+        "engine_changed 배지(표시 기준 변경)와 뒤섞였다"
+    )
+
+
 def test_theses_page_escapes_the_statement(reports_root, docs_root, conn):
     store_mod.replace_theses(conn, [{
         "thesis_id": "ai_semi_1", "theme": "ai_semi", "slot": 1,
@@ -222,6 +246,91 @@ def test_theses_page_escapes_the_statement(reports_root, docs_root, conn):
     html = (docs_root / "theses.html").read_text(encoding="utf-8")
     assert "&lt;script&gt;" in html
     assert "<script>" not in html
+
+
+# --- ST4: 상태 줄 / 범례 (final-review F5 — 이 표시 경로에 테스트가 0건이었다) --
+#
+# 다섯 자리 각각 지운 변이가 초록으로 남는 것이 확인됐던 결함이다: site.py의
+# "상태:" 출력 블록, `ops.thesis_overview`의 `state_line` 필드, site.py의
+# 범례 문장, R10 "기록 공백 포함" 표기, R7 "미상" 분기. 아래 테스트는 실제
+# 판정 원장(`thesis_reviews`)을 채우고 `site.build_site`까지 끝까지 돌려
+# 다섯 자리를 각각 검사한다 — mock 없이 진짜 렌더 경로.
+
+def seed_review(conn, *, thesis_id, report_date, atoms_json, verdict="강화",
+                cutoff_utc=None, engine_version=None, rules_changed=0, engine_changed=0):
+    store_mod.record_reviews(conn, [{
+        "thesis_id": thesis_id, "report_type": "morning", "report_date": report_date,
+        "cutoff_utc": cutoff_utc or f"{report_date}T22:00:00+00:00",
+        "verdict": verdict, "prev_verdict": None, "changed": 0,
+        "atoms_json": json.dumps(atoms_json, ensure_ascii=False), "evidence_json": "[]",
+        "engine_version": engine_version or thesis_mod.ENGINE_VERSION,
+        "rules_changed": rules_changed, "engine_changed": engine_changed,
+    }])
+
+
+def test_theses_page_shows_the_state_line_and_legend(reports_root, docs_root, conn):
+    """mutant 1 (site.py 상태 줄 삭제), mutant 2 (ops.thesis_overview의
+    state_line 필드 삭제), mutant 3 (site.py 범례 문장 삭제)을 함께 잡는다."""
+    seed_thesis(conn, thesis_id="ai_semi_1")
+    seed_review(conn, thesis_id="ai_semi_1", report_date="2026-08-01", atoms_json={
+        "falsify": [], "weaken": [],
+        "strengthen": [{"id": "nvda_2d_up", "status": "TRUE",
+                        "detail": {"latest_at": "2026-08-01T00:00:00+00:00"}}],
+    })
+
+    # mutant 2: the field must survive on the ops-layer dict, not just happen
+    # to show up on the page some other way.
+    overview = ops_mod.thesis_overview(conn)
+    row = next(t for theme in overview for t in theme["theses"] if t["thesis_id"] == "ai_semi_1")
+    assert row["state_line"], "ops.thesis_overview()의 state_line이 비었다"
+    assert "새 관측" in row["state_line"]
+
+    build(conn, reports_root, docs_root)
+    html = (docs_root / "theses.html").read_text(encoding="utf-8")
+
+    # mutant 1: the computed fragment must actually reach the page, not just
+    # a hardcoded "상태:" label.
+    assert "상태:" in html
+    assert row["state_line"] in html
+
+    # mutant 3: the legend sentence.
+    assert "도입되었습니다" in html
+    assert "지속일은 독립 증거의 수가 아닙니다" in html
+
+
+def test_theses_page_state_line_marks_a_data_gap(reports_root, docs_root, conn):
+    """R10 — mutant 4 (`· 기록 공백 포함` 표기 제거). 같은 원자가 TRUE로 이어지는
+    구간 안에서 대표일 간격이 5일(>=4)이면 공백 표기가 붙어야 한다."""
+    seed_thesis(conn, thesis_id="fin_credit_1", theme="fin_credit")
+    atom = lambda d: {  # noqa: E731
+        "falsify": [], "weaken": [],
+        "strengthen": [{"id": "dgs10_high", "status": "TRUE", "detail": {"latest_at": d}}],
+    }
+    seed_review(conn, thesis_id="fin_credit_1", report_date="2026-07-10",
+               atoms_json=atom("2026-07-10T00:00:00+00:00"))
+    seed_review(conn, thesis_id="fin_credit_1", report_date="2026-07-16",
+               atoms_json=atom("2026-07-16T00:00:00+00:00"))
+
+    build(conn, reports_root, docs_root)
+    html = (docs_root / "theses.html").read_text(encoding="utf-8")
+    assert "기록 공백 포함" in html
+
+
+def test_theses_page_state_line_shows_unknown_new_observation(reports_root, docs_root, conn):
+    """R7 — mutant 5 (미상 분기 제거). `detail.latest_at`이 양쪽 다 없는
+    대표일이 이어지면 새 관측을 셀 수 없으니 "미상"이라고 말해야 한다 — 조용히
+    "0건"으로 뭉개면 안 된다."""
+    seed_thesis(conn, thesis_id="consumer_cycle_1", theme="consumer_cycle")
+    atom_no_latest = {
+        "falsify": [], "weaken": [],
+        "strengthen": [{"id": "retail_1y_up", "status": "TRUE", "detail": {}}],
+    }
+    seed_review(conn, thesis_id="consumer_cycle_1", report_date="2026-07-01", atoms_json=atom_no_latest)
+    seed_review(conn, thesis_id="consumer_cycle_1", report_date="2026-07-02", atoms_json=atom_no_latest)
+
+    build(conn, reports_root, docs_root)
+    html = (docs_root / "theses.html").read_text(encoding="utf-8")
+    assert "새 관측 미상" in html
 
 
 # --- index banner -----------------------------------------------------------

@@ -625,12 +625,122 @@ def _first_reason(row: dict) -> str:
     return "근거 없음"
 
 
-def _evidence_note(row: dict, report_date: str = "") -> str:
-    """판정을 만든 근거가 **언제 것인지** 한 마디로. 없으면 빈 문자열.
+def _fired_atom_ids(row: dict, group: str) -> list[str]:
+    """That group's TRUE atom ids, from whichever shape `row` carries them in
+    — the in-memory `evals_by_group` shape `thesis.review()` returns
+    (`{"atom": {"id": ...}, "status": ..., "detail": ...}`, used by
+    `render_impact`'s callers straight off `review()`) or the persisted
+    `atoms_json` shape `store.reviews_for_thesis`/`transitions.py` use
+    (`{"id": ..., "status": ..., "detail": ...}`, flat — no nested `atom`
+    key). `ops.thesis_overview` reads the persisted shape back off the
+    ledger, so both must work here."""
+    items = (row.get("evals_by_group") or {}).get(group)
+    if items is not None:
+        return [(e.get("atom") or {}).get("id") for e in items if e.get("status") == "TRUE" and (e.get("atom") or {}).get("id")]
+    atoms = (row.get("atoms") or {}).get(group, [])
+    return [a.get("id") for a in atoms if a.get("status") == "TRUE" and a.get("id")]
 
-    발화한 원자들의 `latest_at` 중 **가장 오래된 것**을 쓴다: 조건이 여럿이면
-    판정은 그 전부가 참이어야 서므로, 가장 묵은 근거가 이 판정의 나이다.
-    최신 것을 쓰면 오래된 근거가 새 근거 뒤에 숨는다.
+
+_RESTART_LABELS = {
+    "기준 변경": "기준 변경 후 재시작",
+    "의미 변경": "의미 변경 후 재시작",
+}
+
+
+def _run_fragment(run, ledger_start: str | None) -> str:
+    """R6/R7/R9/R10/R11의 표시 형태 하나. `run`은 `transitions.Run`(또는
+    같은 필드를 가진 값)이다 — 이 함수는 그 타입을 import하지 않고 덕타이핑만
+    한다(엔진↔렌더러 분리, transitions.py를 새 의존으로 끌어오지 않는다)."""
+    if run.left_censored:
+        entry = f"기록 시작 {ledger_start} 이전부터" if ledger_start else "기록 시작 이전부터"
+    else:
+        entry = f"진입 {run.entry_date}"
+        if run.restart_reason:
+            reasons = " · ".join(
+                _RESTART_LABELS.get(r, r) for r in run.restart_reason.split(" · "))
+            entry += f"({reasons})"
+
+    # R9: n=1이면 "지속 1판정일"이 아니라 "오늘 새로 충족" — 지속 조각이
+    # 새 관측 조각과 나란히 있어야 한다는 규칙 자체는 여전히 지킨다(아래에서
+    # new_obs 조각을 이어 붙인다).
+    #
+    # final-review F1/F2: duration_days<=1은 "오늘 조건이 새로 충족됐다"를
+    # 뜻하지 않는다 — R5.2/R5.3(rules_changed/engine_changed)이 조건이 그대로여도
+    # 구간을 강제 종료시키고, R11 좌측 절단도 구간을 1일짜리로 시작할 수 있다.
+    # "오늘 새로 충족"은 원장 안에서 실제로 관측된 상태 전이(거짓/미지/없음 →
+    # 참, R4)일 때만 쓴다 — 재시작이나 좌측 절단으로 열린 구간은 "지속
+    # 1판정일"로 적고, entry 조각의 재시작 사유 표기가 이유를 말한다.
+    is_real_transition = not run.left_censored and run.restart_reason is None
+    duration = ("오늘 새로 충족" if run.duration_days <= 1 and is_real_transition
+                else f"지속 {run.duration_days}판정일")
+
+    # R7/R9: 지속일 옆에는 항상 새 관측 건수를 함께 적는다. 화면 문구는
+    # "새 관측"이다 — "독립 증거"라고 쓰지 않는다(R8, 코드가 독립성을 판별할
+    # 수 없다).
+    #
+    # final-review F3: `unknown_observation_days>0`이면서 `new_observation_count
+    # ==0`이면 알려진 새 관측이 하나도 없다는 뜻이므로 R7이 요구하는 "미상"을
+    # 그대로 낸다 — 건수 0을 "0건 이상"으로 감싸 아무 말도 안 하는 문장을
+    # 만들지 않는다. 일부만 미상이면(새 관측이 이미 몇 건 확인됐으면) 그 건수를
+    # 그대로 적고 "일부 판정일 미상"이라고만 말한다 — 왜 미상인지(원장에 그
+    # 필드가 없던 시기인지, 그날 원자 자체가 없었는지)는 확인한 적이 없으므로
+    # 특정 원인을 주장하지 않는다.
+    if run.unknown_observation_days > 0 and run.new_observation_count == 0:
+        new_obs = "새 관측 미상"
+    elif run.unknown_observation_days > 0:
+        new_obs = f"새 관측 {run.new_observation_count}건 이상(그 외 일부 판정일 미상)"
+    elif run.new_observation_count == 0:
+        new_obs = "새 관측 없음(이 구간)"
+    else:
+        last = f", 마지막 {run.last_new_observation_date}" if run.last_new_observation_date else ""
+        new_obs = f"새 관측 {run.new_observation_count}건{last}"
+
+    frag = f"{entry} · {duration} · {new_obs}"
+    if run.has_data_gap:  # R10
+        frag += " · 기록 공백 포함"
+    return frag
+
+
+def state_fragment(row: dict, state: dict | None) -> str:
+    """그 판정을 만든 원자들 중 파생 뷰가 있는 것을 골라 진입·지속·새 관측
+    조각을 만든다(R6/R7/R9/R11). `state`는 `transitions.thesis_view()`의
+    반환값(또는 None — 파생 뷰가 없으면 빈 문자열, 없는 정보를 지어내지 않는다).
+
+    여러 원자가 발화했으면 **가장 최근에 넘은 것**을 고른다(지속 판정일이
+    가장 짧은 구간) — 옛 `_streak` 기반 로직의 "여럿이 발화하면 가장 최근에
+    넘은 것을 말한다"와 같은 선택 규칙이다. 판정을 바꾼 사건이 그것이고,
+    나머지는 이미 참이던 상태이기 때문이다."""
+    if state is None:
+        return ""
+    group = _VERDICT_GROUP.get(row.get("verdict"))
+    if not group:
+        return ""
+    atoms = state.get("atoms") or {}
+    candidates = []
+    for atom_id in _fired_atom_ids(row, group):
+        runs = atoms.get(atom_id)
+        if not runs:
+            continue
+        current = runs[-1]
+        if current.status == "TRUE":
+            candidates.append(current)
+    if not candidates:
+        return ""
+    run = min(candidates, key=lambda r: (r.duration_days, r.atom_id))
+    return _run_fragment(run, state.get("ledger_start"))
+
+
+def _evidence_note(row: dict, report_date: str = "", state: dict | None = None) -> str:
+    """판정을 만든 근거가 **언제 것인지**, 그리고(있으면) **얼마나 새 소식인지**
+    한 마디로. 없으면 빈 문자열.
+
+    `state`가 없으면(예: 옛 호출부, 파생 뷰를 못 만드는 상황) 상태 조각
+    자체를 생략한다 — 없는 정보를 지어내지 않는다(ST4 성공 기준). `근거
+    {date}` 조각은 `state`와 무관하게 그대로 유지한다.
+
+    근거 날짜는 발화한 원자들의 `latest_at` 중 **가장 오래된 것**을 쓴다:
+    조건이 여럿이면 판정은 그 전부가 참이어야 서므로, 가장 묵은 근거가 이
+    판정의 나이다. 최신 것을 쓰면 오래된 근거가 새 근거 뒤에 숨는다.
     """
     group = _VERDICT_GROUP.get(row["verdict"])
     if not group:
@@ -645,19 +755,9 @@ def _evidence_note(row: dict, report_date: str = "") -> str:
     parts = []
     # **새 소식인가, 이어지는 상태인가.** 이것이 앞에 온다 — 독자가 먼저 알아야 할
     # 것은 "오늘 뭐가 달라졌나"이지 근거의 날짜가 아니다.
-    streaks = [(e["detail"]["streak"]) for e in fired
-               if (e.get("detail") or {}).get("streak")]
-    if streaks:
-        # 여럿이 발화했으면 **가장 최근에 넘은 것**을 말한다 — 판정을 바꾼 사건이
-        # 그것이기 때문이다(나머지는 이미 참이던 상태다).
-        newest = min(streaks, key=lambda s: s.get("periods", 0))
-        n = newest.get("periods", 0)
-        if n <= 1:
-            parts.append("오늘 새로 충족")
-        else:
-            since = newest.get("since") or ""
-            tail = "+" if newest.get("capped") else ""
-            parts.append(f"{n}{tail}회째 지속" + (f", {since}부터" if since else ""))
+    frag = state_fragment(row, state)
+    if frag:
+        parts.append(frag)
 
     dates = sorted(
         str(e["detail"]["latest_at"])[:10]
@@ -881,9 +981,40 @@ def audit_conditions(conn, theses: list[dict], cutoff) -> list[dict]:
     return rows
 
 
-def render_impact(reviews: list[dict], report_date: str = "") -> str:
+# R9의 집행 형태 — 화면에 항상 붙는 범례(명세 §3.1). "지속을 새 관측 없이 읽지
+# 마라"는 요구사항 7을, "그 이상을 약속하지 않는다"는 R8을 문장으로 고정한다.
+#
+# 4차 검수 F-A 잔여분 수리(CEO 결정 (가)): 이 줄은 사실 두 조각이다. (a) 도입일
+# 조각은 그 리포트 시점에 아직 없던 표시를 "도입됐다"고 주장하므로 캐치업이면
+# 생략해야 한다(`ops.thesis_display_introduced_on`이 `introduced_on`을 빈
+# 문자열로 돌려 이 조각을 뺀다) — 그런데 예전 구현은 (a)가 빠질 때 (b)까지
+# 통째로 사라졌다. (b) R8/R9 경고문은 도입일과 무관한 일반 안내이므로 항상
+# 붙는다(site.py `_theses_page`의 meta 문단이 이미 같은 분할을 쓰고 있다 —
+# 이 함수도 그 패턴을 따른다).
+_LEGEND_INTRODUCED = (
+    "진입일·지속·새 관측 표시는 {introduced_on} 도입. 그 이전 판정의 '강화'는 "
+    "다른 뜻이다(매일 재충족을 포함). "
+)
+_LEGEND_R89 = (
+    "지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다."
+)
+
+
+def render_impact(reviews: list[dict], report_date: str = "",
+                  states: dict | None = None, introduced_on: str = "") -> str:
     """`report_date`를 주면 근거가 그날 것인 판정은 "근거 오늘"로 적는다.
-    안 주면 날짜를 그대로 쓴다 — 옛 호출부가 깨지지 않게 기본값을 둔다."""
+    안 주면 날짜를 그대로 쓴다 — 옛 호출부가 깨지지 않게 기본값을 둔다.
+
+    `states`(ST4): `{thesis_id: transitions.thesis_view()의 반환값}`. 없거나
+    그 가설의 항목이 없으면 진입·지속·새 관측 조각을 생략한다(`_evidence_note`
+    참조) — "근거 {date}" 조각은 그와 무관하게 유지된다.
+
+    `introduced_on`(ST4, 명세 §2 구현 4): 있을 때만 맨 끝 범례 줄에 도입일
+    조각을 붙인다. 빈 문자열이면 그 조각만 뺀다 — 도입일을 모르는데
+    "도입됨"이라고 적는 것은 없는 사실을 지어내는 것이다. R8/R9 경고문
+    (`_LEGEND_R89`)은 도입일과 무관하므로 `reviews`가 있는 한 항상 붙는다
+    (4차 검수 F-A 잔여분 수리, CEO 결정 (가) — 이전에는 `introduced_on`이
+    비면 경고문까지 함께 사라졌다)."""
     if not reviews:
         return ""
     counts = {"강화": 0, "유지": 0, "약화": 0, "무효": 0, "판정 불가": 0}
@@ -903,9 +1034,12 @@ def render_impact(reviews: list[dict], report_date: str = "") -> str:
             reason = f"발화 조건 없음(평가 가능 {r['evaluable_atoms']}/{r['total_atoms']})"
         else:
             reason = _first_reason(r)
-        note = _evidence_note(r, report_date)
+        state = (states or {}).get(r["thesis_id"])
+        note = _evidence_note(r, report_date, state)
         suffix = f" ({note})" if note else ""
         lines.append(f"[{label} #{r['slot']}] {r['verdict']} — {reason}{suffix}.")
+    legend = _LEGEND_INTRODUCED.format(introduced_on=introduced_on) if introduced_on else ""
+    lines.append(f"※ {legend}{_LEGEND_R89}")
     return "\n".join(lines)
 
 

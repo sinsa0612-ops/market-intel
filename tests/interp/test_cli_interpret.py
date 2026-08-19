@@ -121,7 +121,15 @@ def test_thesis_module_present_prints_thesis_line_and_records_reviews(monkeypatc
         return [{"thesis_id": "ai_semi_1", "verdict": "유지", "changed": False}]
 
     fake.review = fake_review
-    fake.render_impact = lambda reviews: "가설 1건 판정 — 강화 0 · 유지 1 · 약화 0 · 무효 0 · 판정 불가 0."
+    # ST4: `_thesis_summary` now calls `render_impact` with `report_date` and
+    # the new `states=`/`introduced_on=` keywords (spec ST4 item 2 — the real
+    # `thesis.render_impact` accepts them as default kwargs precisely so this
+    # kind of stand-in module keeps working). The fake mirrors that surface;
+    # its canned return text is unchanged.
+    fake.render_impact = (
+        lambda reviews, report_date="", states=None, introduced_on="":
+        "가설 1건 판정 — 강화 0 · 유지 1 · 약화 0 · 무효 0 · 판정 불가 0."
+    )
     fake.render_next_check_suffix = lambda reviews, report: "가설 재점검 2026-11-01"
     monkeypatch.setitem(sys.modules, "market_intel.interp.thesis", fake)
 

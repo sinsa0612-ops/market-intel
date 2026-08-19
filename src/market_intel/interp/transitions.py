@@ -82,7 +82,32 @@ class Run:
     # never used as entry_date (it moves backward on backfills) and omitted from default display.
 
 
-def _representative_rows(conn: sqlite3.Connection, thesis_id: str) -> list[dict]:
+def _merge_pending(rows: list[dict], pending: dict | None) -> list[dict]:
+    """ST4 item 3 / spec Risk R-1: `ops.interpret_report` records this
+    cutoff's review *before* asking for the derived view, so by the time it
+    calls in, `store.reviews_for_thesis` already has the row and `pending`
+    is None. `market-intel interpret` (`cli_interpret._thesis_summary`)
+    computes the same review but never persists it — without this merge it
+    would show one representative day *less* than the pipeline path for the
+    exact same report, which is the "하루 어긋난 숫자" R-1 warns about.
+
+    `pending` must already be in the shape `store.reviews_for_thesis` rows
+    are (see `pending_row_from_review` below) — a raw `report_date` string
+    key, not a re-parse. If a row for that date is already in the ledger
+    (e.g. a rerun after the pipeline already recorded it), the recorded row
+    wins — R2 already defines "the representative row for a date" as
+    whichever `thesis_reviews` row is there; `pending` only fills a gap, it
+    never shadows the ledger."""
+    if pending is None:
+        return rows
+    if any(r["report_date"] == pending["report_date"] for r in rows):
+        return rows
+    return rows + [pending]
+
+
+def _representative_rows(conn: sqlite3.Connection, thesis_id: str,
+                         pending: dict | None = None,
+                         as_of: str | None = None) -> list[dict]:
     """R0 + R1 + R2: read only `thesis_reviews` (via `store.reviews_for_thesis`,
     SA-1's single accessor for the 2B tables), already in R1 order
     (`cutoff_utc` then `rowid`); collapse same-`report_date` rows to the last
@@ -99,12 +124,54 @@ def _representative_rows(conn: sqlite3.Connection, thesis_id: str) -> list[dict]
     have a *later* `cutoff_utc` than an already-recorded later date, and
     without this sort the earlier date would be appended after the later one
     — a same-thesis timeline whose entry dates go backwards. This final sort
-    is a display-order concern, not a change to R1's tie-break rule."""
+    is a display-order concern, not a change to R1's tie-break rule.
+
+    `pending` (ST4): an in-memory review row not yet in the ledger,
+    merged in via `_merge_pending` above.
+
+    `as_of` (F-A fix — information cutoff, SA-10): the ledger holds every
+    representative day ever recorded, including ones recorded *after* the
+    report this call is building the view for (catch-up backfills a report
+    for a past date while the ledger's head has since moved on). Without this
+    cap, a historical `market-intel interpret --file <past report>` cited
+    dates and streak counts from *after* its own cutoff — the exact thing
+    SA-10 forbids. `report_date` strings compare lexicographically as dates
+    (`YYYY-MM-DD`), so a plain string `<=` is enough. `pending`'s date always
+    equals the report's own `report_date` (the caller passes both from the
+    same report), so it is never dropped by this filter — that is how a
+    same-day report keeps seeing its own not-yet-recorded verdict."""
     rows = store_mod.reviews_for_thesis(conn, thesis_id)
+    rows = _merge_pending(rows, pending)
+    if as_of is not None:
+        rows = [r for r in rows if r["report_date"] <= as_of]
     by_date: dict[str, dict] = {}
     for row in rows:
         by_date[row["report_date"]] = row  # last row for a date wins (R2)
     return sorted(by_date.values(), key=lambda r: r["report_date"])
+
+
+def pending_row_from_review(review_row: dict) -> dict | None:
+    """Adapts one of `thesis.review()`'s in-memory output rows into the shape
+    `store.reviews_for_thesis` returns, for `pending=` above. `thesis.review()`
+    rows carry `atoms` (already a parsed dict — the same payload `atoms_json`
+    serializes) rather than a JSON string, so this is a field rename/select,
+    not a re-parse.
+
+    Returns None when the row doesn't carry what this needs (`report_date`/
+    `atoms`) — e.g. a stand-in review row from a test double for a thesis
+    module ST4 doesn't own — so callers can degrade to `pending=None`
+    (today's state simply isn't shown yet) instead of crashing on a shape
+    they don't control."""
+    if "report_date" not in review_row or "atoms" not in review_row:
+        return None
+    return {
+        "report_date": review_row["report_date"],
+        "atoms_json": review_row["atoms"],
+        "rules_changed": bool(review_row.get("rules_changed", 0)),
+        "engine_version": review_row.get("engine_version"),
+        "engine_changed": bool(review_row.get("engine_changed", 0)),
+        "verdict": review_row.get("verdict", ""),
+    }
 
 
 def _atom_ids(rep_rows: list[dict]) -> list[str]:
@@ -138,12 +205,14 @@ def _calendar_gap_days(d1: str, d2: str) -> int:
     return (date.fromisoformat(d2) - date.fromisoformat(d1)).days
 
 
-def atom_timeline(conn: sqlite3.Connection, thesis_id: str, atom_id: str) -> list[AtomDay]:
+def atom_timeline(conn: sqlite3.Connection, thesis_id: str, atom_id: str,
+                  pending: dict | None = None, as_of: str | None = None) -> list[AtomDay]:
     """Day-by-day reading for one atom across the thesis's whole ledger.
     `Run`s (below) are built by grouping this timeline; exposed separately
     because R7's "미상" is a per-day fact a caller may want without waiting
-    for run aggregation."""
-    rep_rows = _representative_rows(conn, thesis_id)
+    for run aggregation. `pending`: see `_merge_pending`. `as_of`: see
+    `_representative_rows`."""
+    rep_rows = _representative_rows(conn, thesis_id, pending, as_of)
     out: list[AtomDay] = []
     prev_latest_at: str | None = None
     for i, row in enumerate(rep_rows):
@@ -232,24 +301,32 @@ def _build_runs(thesis_id: str, atom_id: str, timeline: list[AtomDay]) -> list[R
     return runs
 
 
-def atom_runs(conn: sqlite3.Connection, thesis_id: str, atom_id: str) -> list[Run]:
-    """The full run history for one (thesis_id, atom_id), oldest first."""
-    return _build_runs(thesis_id, atom_id, atom_timeline(conn, thesis_id, atom_id))
+def atom_runs(conn: sqlite3.Connection, thesis_id: str, atom_id: str,
+              pending: dict | None = None, as_of: str | None = None) -> list[Run]:
+    """The full run history for one (thesis_id, atom_id), oldest first.
+    `pending`: see `_merge_pending`. `as_of`: see `_representative_rows`."""
+    return _build_runs(thesis_id, atom_id, atom_timeline(conn, thesis_id, atom_id, pending, as_of))
 
 
-def all_atom_runs(conn: sqlite3.Connection, thesis_id: str) -> dict[str, list[Run]]:
+def all_atom_runs(conn: sqlite3.Connection, thesis_id: str,
+                  pending: dict | None = None, as_of: str | None = None) -> dict[str, list[Run]]:
     """Run history for every atom this thesis has ever carried (R0-scoped:
-    reads only `thesis_reviews`)."""
-    rep_rows = _representative_rows(conn, thesis_id)
-    return {atom_id: atom_runs(conn, thesis_id, atom_id) for atom_id in _atom_ids(rep_rows)}
+    reads only `thesis_reviews`). `pending`: see `_merge_pending`. `as_of`:
+    see `_representative_rows`."""
+    rep_rows = _representative_rows(conn, thesis_id, pending, as_of)
+    return {atom_id: atom_runs(conn, thesis_id, atom_id, pending, as_of) for atom_id in _atom_ids(rep_rows)}
 
 
-def ledger_start(conn: sqlite3.Connection, thesis_id: str) -> str | None:
+def ledger_start(conn: sqlite3.Connection, thesis_id: str,
+                 pending: dict | None = None, as_of: str | None = None) -> str | None:
     """R11: the ledger's first representative day for this thesis — what a
     left-censored Run's display needs to build "기록 시작(YYYY-MM-DD)
     이전부터" without a second, separate query of the raw ledger. None only
-    when the thesis has no reviews at all."""
-    rep_rows = _representative_rows(conn, thesis_id)
+    when the thesis has no reviews at all. `pending`: see `_merge_pending`
+    (only matters here for a thesis with zero recorded rows yet — its first
+    review, still unrecorded, is then the ledger's start). `as_of`: see
+    `_representative_rows`."""
+    rep_rows = _representative_rows(conn, thesis_id, pending, as_of)
     return rep_rows[0]["report_date"] if rep_rows else None
 
 
@@ -266,11 +343,13 @@ class VerdictDay:
     engine_changed: bool  # R5.3, real column (same as AtomDay's) since ST3
 
 
-def verdict_timeline(conn: sqlite3.Connection, thesis_id: str) -> list[VerdictDay]:
+def verdict_timeline(conn: sqlite3.Connection, thesis_id: str,
+                     pending: dict | None = None, as_of: str | None = None) -> list[VerdictDay]:
     """Day-by-day verdict reading across the thesis's whole ledger — same
     representative-day rule (R0-R2) as `atom_timeline`, reading the row's own
-    `verdict` instead of one atom's status."""
-    rep_rows = _representative_rows(conn, thesis_id)
+    `verdict` instead of one atom's status. `pending`: see `_merge_pending`.
+    `as_of`: see `_representative_rows`."""
+    rep_rows = _representative_rows(conn, thesis_id, pending, as_of)
     out: list[VerdictDay] = []
     for row in rep_rows:
         out.append(
@@ -356,20 +435,36 @@ def _build_verdict_runs(thesis_id: str, timeline: list[VerdictDay]) -> list[Verd
     return runs
 
 
-def verdict_runs(conn: sqlite3.Connection, thesis_id: str) -> list[VerdictRun]:
+def verdict_runs(conn: sqlite3.Connection, thesis_id: str,
+                 pending: dict | None = None, as_of: str | None = None) -> list[VerdictRun]:
     """The full verdict-run history for one thesis, oldest first — the
     granularity the "강화" badge actually displays at (R4's "TRUE → TRUE는
-    전이가 아니다" applies the same way to "강화 → 강화")."""
-    return _build_verdict_runs(thesis_id, verdict_timeline(conn, thesis_id))
+    전이가 아니다" applies the same way to "강화 → 강화"). `pending`: see
+    `_merge_pending`. `as_of`: see `_representative_rows`."""
+    return _build_verdict_runs(thesis_id, verdict_timeline(conn, thesis_id, pending, as_of))
 
 
-def thesis_view(conn: sqlite3.Connection, thesis_id: str) -> dict:
+def thesis_view(conn: sqlite3.Connection, thesis_id: str, pending: dict | None = None,
+               as_of: str | None = None) -> dict:
     """Bundles the whole derived view for one thesis: R11's `ledger_start`,
     the atom-level run history (`all_atom_runs`), and the verdict-level run
     history (`verdict_runs`) — one call for what a display layer needs,
-    instead of three separate queries against the ledger."""
+    instead of three separate queries against the ledger.
+
+    `pending` (ST4 item 3 / Risk R-1): an in-memory review row for this
+    thesis that hasn't been written to `thesis_reviews` yet, in the shape
+    `pending_row_from_review` produces. `ops.interpret_report` records first
+    and passes None (the row is already the ledger's latest); the `market-intel
+    interpret` CLI path never records, so it passes the row it just computed
+    — otherwise its "지속"/"새 관측" counts would read one representative day
+    behind the pipeline's for the identical report.
+
+    `as_of` (F-A fix, SA-10): both call sites pass their own report's
+    `report_date` here — the display layer's only source of "how far this
+    report is allowed to see" is the report itself, never the wall clock or
+    the ledger's actual head. See `_representative_rows` for why."""
     return {
-        "ledger_start": ledger_start(conn, thesis_id),
-        "atoms": all_atom_runs(conn, thesis_id),
-        "verdict": verdict_runs(conn, thesis_id),
+        "ledger_start": ledger_start(conn, thesis_id, pending, as_of),
+        "atoms": all_atom_runs(conn, thesis_id, pending, as_of),
+        "verdict": verdict_runs(conn, thesis_id, pending, as_of),
     }
