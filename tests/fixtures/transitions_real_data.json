@@ -1,0 +1,444 @@
+{
+  "consumer_cycle_1": {
+    "atom_id": "retail_1y_up",
+    "rows": [
+      {
+        "report_date": "2026-08-04",
+        "cutoff_utc": "2026-08-04T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-05",
+        "cutoff_utc": "2026-08-04T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-05",
+        "cutoff_utc": "2026-08-05T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-06",
+        "cutoff_utc": "2026-08-05T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-06",
+        "cutoff_utc": "2026-08-06T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-07",
+        "cutoff_utc": "2026-08-06T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-07",
+        "cutoff_utc": "2026-08-07T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-08",
+        "cutoff_utc": "2026-08-07T23:30:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-10",
+        "cutoff_utc": "2026-08-09T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-10",
+        "cutoff_utc": "2026-08-10T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-11",
+        "cutoff_utc": "2026-08-10T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-11",
+        "cutoff_utc": "2026-08-11T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-12",
+        "cutoff_utc": "2026-08-11T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-12",
+        "cutoff_utc": "2026-08-12T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-06-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-13",
+        "cutoff_utc": "2026-08-12T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-06-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-13",
+        "cutoff_utc": "2026-08-13T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-06-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-14",
+        "cutoff_utc": "2026-08-13T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-06-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-14",
+        "cutoff_utc": "2026-08-14T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-06-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-15",
+        "cutoff_utc": "2026-08-14T23:30:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-07-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-17",
+        "cutoff_utc": "2026-08-16T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-07-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-17",
+        "cutoff_utc": "2026-08-17T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-07-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-18",
+        "cutoff_utc": "2026-08-17T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-07-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-18",
+        "cutoff_utc": "2026-08-18T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-07-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-19",
+        "cutoff_utc": "2026-08-18T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-07-01T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      }
+    ]
+  },
+  "fin_credit_1": {
+    "atom_id": "dgs10_high",
+    "rows": [
+      {
+        "report_date": "2026-07-30",
+        "cutoff_utc": "2026-07-30T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-07-31",
+        "cutoff_utc": "2026-07-31T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-01",
+        "cutoff_utc": "2026-08-02T03:00:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-03",
+        "cutoff_utc": "2026-08-02T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-03",
+        "cutoff_utc": "2026-08-03T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-04",
+        "cutoff_utc": "2026-08-03T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-04",
+        "cutoff_utc": "2026-08-04T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-05",
+        "cutoff_utc": "2026-08-04T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-05",
+        "cutoff_utc": "2026-08-05T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-06",
+        "cutoff_utc": "2026-08-05T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-06",
+        "cutoff_utc": "2026-08-06T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-07",
+        "cutoff_utc": "2026-08-06T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-07",
+        "cutoff_utc": "2026-08-07T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-08",
+        "cutoff_utc": "2026-08-07T23:30:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-10",
+        "cutoff_utc": "2026-08-09T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-10",
+        "cutoff_utc": "2026-08-10T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-11",
+        "cutoff_utc": "2026-08-10T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-11",
+        "cutoff_utc": "2026-08-11T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-12",
+        "cutoff_utc": "2026-08-11T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": null,
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-12",
+        "cutoff_utc": "2026-08-12T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-10T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-13",
+        "cutoff_utc": "2026-08-12T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-11T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-13",
+        "cutoff_utc": "2026-08-13T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-11T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-14",
+        "cutoff_utc": "2026-08-13T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-12T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-14",
+        "cutoff_utc": "2026-08-14T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-12T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-15",
+        "cutoff_utc": "2026-08-14T23:30:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-13T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-17",
+        "cutoff_utc": "2026-08-16T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-13T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-17",
+        "cutoff_utc": "2026-08-17T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-13T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-18",
+        "cutoff_utc": "2026-08-17T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-14T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-18",
+        "cutoff_utc": "2026-08-18T07:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-14T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      },
+      {
+        "report_date": "2026-08-19",
+        "cutoff_utc": "2026-08-18T22:15:00+00:00",
+        "status": "TRUE",
+        "latest_at": "2026-08-17T00:00:00+00:00",
+        "rules_changed": 0,
+        "engine_version": "2b.1"
+      }
+    ]
+  }
+}

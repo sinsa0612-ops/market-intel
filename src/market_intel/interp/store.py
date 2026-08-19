@@ -143,6 +143,32 @@ def record_reviews(conn: sqlite3.Connection, rows: list[dict]) -> int:
     return n
 
 
+def reviews_for_thesis(conn: sqlite3.Connection, thesis_id: str) -> list[dict]:
+    """Read path for the transition-rules derived view (`interp.transitions`,
+    rules-doc R0/R1): every `thesis_reviews` row for one thesis, in R1's
+    order — `cutoff_utc` ascending, `rowid` ascending as the tie-break.
+    `thesis_reviews` is append-only (db.py's triggers), so `rowid` is a
+    permanent record of insertion order, not just today's snapshot.
+
+    Read-only, and the only 2B accessor `transitions.py` uses — SA-1 keeps
+    every raw SQL statement against the 2B tables inside this file."""
+    rows = conn.execute(
+        "SELECT report_date, atoms_json, rules_changed, engine_version, verdict "
+        "FROM thesis_reviews WHERE thesis_id=? ORDER BY cutoff_utc ASC, rowid ASC",
+        (thesis_id,),
+    ).fetchall()
+    return [
+        {
+            "report_date": r["report_date"],
+            "atoms_json": json.loads(r["atoms_json"]),
+            "rules_changed": bool(r["rules_changed"]),
+            "engine_version": r["engine_version"],
+            "verdict": r["verdict"],
+        }
+        for r in rows
+    ]
+
+
 # --- interpretations (append-only mirror; written by ST2's cli_interpret) ---
 
 def record_interpretation(conn: sqlite3.Connection, row: dict) -> str:
