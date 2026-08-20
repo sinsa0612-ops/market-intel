@@ -449,11 +449,19 @@ def _market_blocks(report: Report) -> list[dict]:
         # CEO 지적(2026-08-03 "표로 보니 한눈에 안 들어온다")이 가리킨 자리다.
         *(_chart(c) for c in report.charts),
         _facts(report.market_reaction),
+        _flow_split(report),
         _subheading(SECTOR_INDEX_TITLE), _sector_index(report), _blindspot(report),
         # 옛 리포트 JSON에는 sector_summary가 없다 — 딸린 표가 없으면 제목도 안 낸다.
         _subheading(SECTOR_TITLE if report.sector_summary else ""),
         _sector(report),
     ]
+
+
+def _flow_split(report: Report) -> dict:
+    """자금 갈래 블록(CEO 지시 2026-08-20). 업종 지수 표 **바로 앞**에 온다 —
+    "오늘 돈이 갈렸다"가 요약이고 그 아래 표가 증거다. 유별나지 않은 날은
+    `is_notable=False`라 아무것도 안 낸다(빈 제목을 만들지 않는 §2-1의 태도)."""
+    return {"kind": "flow_split", "block": report.flow_split}
 
 
 def _blindspot(report: Report) -> dict:
@@ -958,6 +966,9 @@ def _block_md(block: dict) -> str:
         return _sector_index_table_md(block["groups"])
     if kind == "blindspot":
         return _blindspot_md(block)
+    if kind == "flow_split":
+        b = block["block"]
+        return f"> 💧 **자금 갈래 — {b.verdict}**\n>\n> {b.note}" if b.is_notable else ""
     if kind == "subheading":
         return f"### {block['text']}" if block["text"] else ""
     if kind == "calendar":

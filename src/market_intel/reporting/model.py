@@ -168,7 +168,8 @@ class UnusualDayBlock:
     top_movers: list[FactRow] = field(default_factory=list)
 
 
-from .blindspot import BlindSpotRow  # noqa: E402  (blindspot은 model을 읽지 않는다 — 순환 없음)
+from .blindspot import BlindSpotRow  # noqa: E402
+from .flow_split import FlowSplit  # noqa: E402  (blindspot은 model을 읽지 않는다 — 순환 없음)
 
 
 @dataclass
@@ -300,6 +301,9 @@ class Report:
     # 관측 기업은 조용했던 경우. 계산은 `blindspot.detect`가 끝내고 여기에는
     # 완성된 줄만 담긴다. 옛 리포트 JSON에는 이 키가 없다.
     blind_spots: list[BlindSpotRow] = field(default_factory=list)
+    # 자금 갈래(CEO 지시 2026-08-20) — 오늘 돈이 갈렸나, 갈렸다면 어디로 보이나.
+    # 유별나지 않은 날은 `is_notable=False`라 화면에 아무것도 안 낸다.
+    flow_split: FlowSplit = field(default_factory=FlowSplit)
     # 관측 기업이 아예 없는 업종의 이름들 — 그날의 사건이 아니라 상시 사실이라
     # 매일 같은 값이 들어간다(`blindspot.unwatched_sectors` 주석 참조).
     unwatched_sectors: list[str] = field(default_factory=list)
@@ -351,6 +355,18 @@ class Report:
             rows=[PriorClaimRow(**r) for r in raw_prior.get("rows", [])],
         )
         d["blind_spots"] = [BlindSpotRow(**r) for r in d.get("blind_spots", [])]
+        raw_flow = d.get("flow_split") or {}
+        d["flow_split"] = FlowSplit(
+            is_notable=raw_flow.get("is_notable", False),
+            dispersion=raw_flow.get("dispersion", 0.0),
+            rank_pct=raw_flow.get("rank_pct", 0.0),
+            market_pct=raw_flow.get("market_pct"),
+            rate_change_pp=raw_flow.get("rate_change_pp"),
+            verdict=raw_flow.get("verdict", ""),
+            up=[tuple(x) for x in raw_flow.get("up", [])],
+            down=[tuple(x) for x in raw_flow.get("down", [])],
+            note=raw_flow.get("note", ""),
+        )
         d["unwatched_sectors"] = d.get("unwatched_sectors", [])
         d["interpretation"] = Interpretation(**d["interpretation"])
         return cls(**d)

@@ -669,6 +669,12 @@ def _block_html(block: dict) -> str:
         return _sector_table_html(block["rows"])
     if kind == "sector_index":
         return _sector_index_table_html(block["groups"])
+    if kind == "flow_split":
+        b = block["block"]
+        if not b.is_notable:
+            return ""
+        return (f'<div class="callout"><p><strong>자금 갈래 — {_esc(b.verdict)}</strong></p>'
+                f'<p>{_esc(b.note)}</p></div>')
     if kind == "blindspot":
         items = [f'<li class="warn">{_esc(r.note)}</li>' for r in block["rows"]]
         if block["unwatched"]:

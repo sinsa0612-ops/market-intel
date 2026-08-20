@@ -75,6 +75,7 @@ from ..universe import (
 )
 from .cutoff import KST
 from . import blindspot as blindspot_mod
+from . import flow_split as flow_split_mod
 from .model import (
     CalendarRow,
     ChartBlock,
@@ -1681,6 +1682,9 @@ def build_report(
         return meta.get("name_ko") or meta.get("name") or symbol
 
     blind_spots = blindspot_mod.detect(price_map, _label_of)
+    # 자금 갈래(CEO 지시 2026-08-20). 사각지대와 같은 원칙 — 이미 차단선을 통과한
+    # `price_map`/`mmap`만 넘기고 DB를 다시 읽지 않는다.
+    flow_split = flow_split_mod.compute(price_map, mmap, _label_of)
     unwatched = blindspot_mod.unwatched_sectors(_label_of)
     # 지난 해석 대조(CEO 지시 2026-08-13) — 같은 종류의 직전 리포트와 견준다.
     prior = _prior_interpretation(conn, cutoff, report_type, report_date)
@@ -1768,6 +1772,7 @@ def build_report(
         charts=charts,
         prior=prior,
         blind_spots=blind_spots,
+        flow_split=flow_split,
         unwatched_sectors=unwatched,
         interpretation=Interpretation(),
         meta=meta,
