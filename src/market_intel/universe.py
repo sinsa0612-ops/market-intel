@@ -178,6 +178,29 @@ UNIVERSE: list[dict] = [
     _sym("449450.KS", "KR", "KR", "sector_index", "PLUS K-Defense", name_ko="방산"),
     _sym("466920.KS", "KR", "KR", "sector_index", "SOL Shipbuilding Top3 Plus", name_ko="조선"),
     _sym("487240.KS", "KR", "KR", "sector_index", "KODEX AI Power Core Facilities", name_ko="AI전력설비"),
+    # --- 2026-08-20 추가 (CEO 승인) ------------------------------------
+    #
+    # **한국 업종 커버리지를 메운다.** 미국은 SPDR 11개가 GICS 11개 섹터를 전부
+    # 덮어 섹터 수준에서 이미 100%인데, 한국은 테마 ETF 8개뿐이라 운수장비·건설·
+    # 은행·IT·2차전지·미디어가 통째로 비어 있었다. 그 업종이 아무리 크게
+    # 움직여도 이 시스템은 그 사실조차 말할 수 없었다.
+    #
+    # 공식 경로(KRX 오픈API `idx/kospi_dd_trd`, 코스피 업종지수 21개)는 실측 결과
+    # **401 Unauthorized**다 — 지금 KRX 키에 「주식」 권한만 있고 「지수」 권한이
+    # 없다(같은 키로 `sto/stk_bydd_trd`는 200·942행 정상). 지수 서비스를 추가
+    # 신청하면 이 ETF들을 지수로 갈아탈 수 있다.
+    #
+    # **거래대금으로 걸렀다.** 얇은 ETF는 거래가 없어 튄 가격이 「유별난 날」로
+    # 잡혀 사각지대 탐지기가 거짓 경보를 낸다. 기존 최저치(TIGER 헬스케어
+    # 일평균 9.4억)를 기준선으로 삼아 그 아래는 넣지 않았다 — 그래서 유통/소비
+    # 축은 여전히 빈다(TIGER 200 생활소비재 0.7억, 경기소비재 2.3억).
+    # 통신도 비운다(TIGER 방송통신은 관측이 1일뿐).
+    _sym("139260.KS", "KR", "KR", "sector_index", "TIGER 200 IT", name_ko="IT"),
+    _sym("091180.KS", "KR", "KR", "sector_index", "KODEX Autos", name_ko="자동차"),
+    _sym("091170.KS", "KR", "KR", "sector_index", "KODEX Banks", name_ko="은행"),
+    _sym("117700.KS", "KR", "KR", "sector_index", "KODEX Construction", name_ko="건설"),
+    _sym("228810.KS", "KR", "KR", "sector_index", "TIGER Media & Contents", name_ko="미디어"),
+    _sym("266370.KS", "KR", "KR", "sector_index", "KODEX Secondary Battery", name_ko="2차전지"),
 ]
 
 # 이름의 "16"은 역사다 — 2026-08-03에 EQIX·POSCO홀딩스가 들어와 **18개**다.
