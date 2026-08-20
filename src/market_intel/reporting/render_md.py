@@ -449,11 +449,22 @@ def _market_blocks(report: Report) -> list[dict]:
         # CEO 지적(2026-08-03 "표로 보니 한눈에 안 들어온다")이 가리킨 자리다.
         *(_chart(c) for c in report.charts),
         _facts(report.market_reaction),
-        _subheading(SECTOR_INDEX_TITLE), _sector_index(report),
+        _subheading(SECTOR_INDEX_TITLE), _sector_index(report), _blindspot(report),
         # 옛 리포트 JSON에는 sector_summary가 없다 — 딸린 표가 없으면 제목도 안 낸다.
         _subheading(SECTOR_TITLE if report.sector_summary else ""),
         _sector(report),
     ]
+
+
+def _blindspot(report: Report) -> dict:
+    """사각지대 신고 블록(CEO 지시 2026-08-20). 업종 지수 표 **바로 아래**에
+    붙는다 — 그 표가 "어느 업종이 움직였나"를 보여준 직후가 "그런데 그 움직임을
+    우리가 설명할 수 있나"가 가장 궁금한 자리다.
+
+    판단은 `blindspot.detect`가 끝냈고 여기서는 옮기기만 한다(`_unusual_day`·
+    `_chart`와 같은 원칙)."""
+    return {"kind": "blindspot", "rows": report.blind_spots,
+            "unwatched": report.unwatched_sectors}
 
 
 def _prior(report: Report) -> dict:
@@ -893,6 +904,22 @@ def _prior_md(p) -> str:
     return "\n\n".join([head, "\n".join(lines), *said])
 
 
+def _blindspot_md(block: dict) -> str:
+    """신고가 있으면 신고를, 없어도 **관측하지 않는 업종 목록은 항상** 싣는다.
+
+    그 목록이 매일 같은 값이라 지루해 보이지만, 빠지면 리포트가 자기 눈먼 자리를
+    말하지 않는 리포트가 된다 — 위 업종 지수 표에서 그 업종이 +8%인 것을 보고도
+    "우리는 이 업종을 안 본다"는 사실은 어디에도 안 적히게 된다."""
+    parts = []
+    for r in block["rows"]:
+        parts.append(f"- ⚠️ {r.note}")
+    if block["unwatched"]:
+        parts.append(
+            f"- 관측 기업이 없는 업종: {' · '.join(block['unwatched'])} — "
+            f"이 업종들이 움직인 이유는 이 리포트가 말할 수 없습니다.")
+    return "\n".join(parts)
+
+
 def _block_md(block: dict) -> str:
     kind = block["kind"]
     if kind == "prior":
@@ -927,6 +954,8 @@ def _block_md(block: dict) -> str:
         return _sector_table_md(block["rows"])
     if kind == "sector_index":
         return _sector_index_table_md(block["groups"])
+    if kind == "blindspot":
+        return _blindspot_md(block)
     if kind == "subheading":
         return f"### {block['text']}" if block["text"] else ""
     if kind == "calendar":

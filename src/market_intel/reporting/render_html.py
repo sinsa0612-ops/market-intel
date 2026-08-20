@@ -669,6 +669,14 @@ def _block_html(block: dict) -> str:
         return _sector_table_html(block["rows"])
     if kind == "sector_index":
         return _sector_index_table_html(block["groups"])
+    if kind == "blindspot":
+        items = [f'<li class="warn">{_esc(r.note)}</li>' for r in block["rows"]]
+        if block["unwatched"]:
+            items.append(
+                "<li>관측 기업이 없는 업종: "
+                + _esc(" · ".join(block["unwatched"]))
+                + " — 이 업종들이 움직인 이유는 이 리포트가 말할 수 없습니다.</li>")
+        return f'<ul class="blindspot">{"".join(items)}</ul>' if items else ""
     if kind == "subheading":
         return f"<h3>{_esc(block['text'])}</h3>" if block["text"] else ""
     if kind == "calendar":

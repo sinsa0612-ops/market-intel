@@ -74,6 +74,7 @@ from ..universe import (
     UNIVERSE,
 )
 from .cutoff import KST
+from . import blindspot as blindspot_mod
 from .model import (
     CalendarRow,
     ChartBlock,
@@ -1672,6 +1673,15 @@ def build_report(
     # 하나만 더 읽어 만든다 — 같은 cutoff를 다시 읽지 않으므로 차단선이 어긋날
     # 여지가 없다.
     charts = _charts(conn, cutoff, kr_breadth_by_date, price_map)
+    # 사각지대 신고(CEO 지시 2026-08-20) — 업종은 크게 움직였는데 그 업종의 우리
+    # 관측 기업은 조용했던 경우. `price_map`(이미 차단선을 통과한 값)만 넘기므로
+    # DB를 다시 읽지 않는다 = 차단선이 두 번 해석될 여지가 없다.
+    def _label_of(symbol: str) -> str:
+        meta = _UNIVERSE_BY_SYMBOL.get(symbol) or {}
+        return meta.get("name_ko") or meta.get("name") or symbol
+
+    blind_spots = blindspot_mod.detect(price_map, _label_of)
+    unwatched = blindspot_mod.unwatched_sectors(_label_of)
     # 지난 해석 대조(CEO 지시 2026-08-13) — 같은 종류의 직전 리포트와 견준다.
     prior = _prior_interpretation(conn, cutoff, report_type, report_date)
     win = _EVENTS_WINDOW_DAYS[report_type]
@@ -1757,6 +1767,8 @@ def build_report(
         unusual_day=unusual_day,
         charts=charts,
         prior=prior,
+        blind_spots=blind_spots,
+        unwatched_sectors=unwatched,
         interpretation=Interpretation(),
         meta=meta,
     )

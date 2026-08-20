@@ -168,6 +168,9 @@ class UnusualDayBlock:
     top_movers: list[FactRow] = field(default_factory=list)
 
 
+from .blindspot import BlindSpotRow  # noqa: E402  (blindspot은 model을 읽지 않는다 — 순환 없음)
+
+
 @dataclass
 class PriorClaimRow:
     """지난 해석이 이야기했던 사실 하나 — 그때 값과 지금 값을 나란히."""
@@ -293,6 +296,13 @@ class Report:
     charts: list[ChartBlock] = field(default_factory=list)
     # 지난 해석 대조(CEO 지시 2026-08-13). 옛 리포트 JSON에는 이 키가 없다.
     prior: PriorInterpretation = field(default_factory=PriorInterpretation)
+    # 사각지대 신고(CEO 지시 2026-08-20) — 업종은 크게 움직였는데 그 업종의 우리
+    # 관측 기업은 조용했던 경우. 계산은 `blindspot.detect`가 끝내고 여기에는
+    # 완성된 줄만 담긴다. 옛 리포트 JSON에는 이 키가 없다.
+    blind_spots: list[BlindSpotRow] = field(default_factory=list)
+    # 관측 기업이 아예 없는 업종의 이름들 — 그날의 사건이 아니라 상시 사실이라
+    # 매일 같은 값이 들어간다(`blindspot.unwatched_sectors` 주석 참조).
+    unwatched_sectors: list[str] = field(default_factory=list)
     interpretation: Interpretation = field(default_factory=Interpretation)
     meta: dict = field(default_factory=dict)
 
@@ -340,6 +350,8 @@ class Report:
             unavailable=raw_prior.get("unavailable", ""),
             rows=[PriorClaimRow(**r) for r in raw_prior.get("rows", [])],
         )
+        d["blind_spots"] = [BlindSpotRow(**r) for r in d.get("blind_spots", [])]
+        d["unwatched_sectors"] = d.get("unwatched_sectors", [])
         d["interpretation"] = Interpretation(**d["interpretation"])
         return cls(**d)
 
