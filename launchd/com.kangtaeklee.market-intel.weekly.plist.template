@@ -2,7 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   market-intel launchd job: weekly
-  토 08:30 — 주간 리뷰 (차단선 당일 08:30)
+  월 07:40 — 주간 리뷰 (차단선 당일 07:15)
+  2026-08-20: 토 08:30에서 옮겨 왔다. 월 07:40에 있던 `weekstart`
+  (`week_start` 리포트)를 이 리포트가 흡수했다 — 지난주 회고와 이번 주
+  일정이 한 장에 담긴다. `weekstart` plist는 삭제됐으니 설치본도 함께
+  bootout 해야 한다(README 참조).
 
   설치 전 <REPO_ROOT>를 실제 경로로 치환해야 한다 (launchd/README.md 참조).
   시각은 이 맥의 로컬 시간(KST) 기준이다.
@@ -24,9 +28,9 @@
   <key>StartCalendarInterval</key>
   <array>
     <dict>
-      <key>Weekday</key><integer>6</integer>
-      <key>Hour</key><integer>8</integer>
-      <key>Minute</key><integer>30</integer>
+      <key>Weekday</key><integer>1</integer>
+      <key>Hour</key><integer>7</integer>
+      <key>Minute</key><integer>40</integer>
     </dict>
   </array>
   <key>StandardOutPath</key>

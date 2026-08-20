@@ -213,6 +213,10 @@ def _accident_report_dict() -> dict:
             data_status="source_verified", known_at="2026-08-03T06:00:00+00:00",
             subject=subject, metric="price_close", delta_pct=delta_pct)
 
+    # `week_start`는 2026-08-20에 `weekly_review`로 합쳐져 더는 발행되지 않지만
+    # 여기서는 그대로 둔다 — 이 픽스처는 **실제로 발행된 사고 리포트**의 재현이고,
+    # 그 리포트의 종류가 `week_start`였다. 타입을 바꾸면 있지도 않았던 사고를
+    # 재현하는 테스트가 된다. 검증기는 report_type을 읽지 않는다.
     return dataclasses.asdict(model_mod.Report(
         report_type="week_start", report_date="2026-08-03",
         facts=[

@@ -1,6 +1,6 @@
 # launchd 자동 실행 (설치 절차)
 
-이 폴더의 `*.plist.template` 9개가 market-intel의 무인 실행 시간표다.
+이 폴더의 `*.plist.template` 8개가 market-intel의 무인 실행 시간표다.
 `<REPO_ROOT>` 자리를 실제 경로로 바꿔서 `~/Library/LaunchAgents/`에 넣으면 등록된다.
 
 **이 저장소의 어떤 자동화도 launchd에 스스로 등록하지 않는다.** 등록은 사람이 한다.
@@ -10,12 +10,11 @@
 | 시각 | 요일 | job | 하는 일 |
 |---|---|---|---|
 | 06:50 | 월~금 | `collect-am` | `morning` + `calendar` + `events` 수집 |
-| 07:40 | 월 | `weekstart` | `week_start` 리포트 (차단선 07:15) |
+| 07:40 | 월 | `weekly` | `weekly_review` 리포트 (차단선 07:15) |
 | 07:40 | 화~금 | `morning` | `morning` 리포트 (차단선 07:15) |
 | 15:50 | 월~금 | `collect-pm` | `close` 수집 |
 | 16:15 | 월~금 | `close` | `close_delta` 리포트 (차단선 16:15) |
 | 08:00 | 토 · 매월 1일 | `collect-full` | `all` 수집 |
-| 08:30 | 토 | `weekly` | `weekly_review` 리포트 |
 | 08:30 | 매월 1일 | `monthly` | `monthly` 리포트 |
 | 13:00 · 22:00 | 매일 | `eventwatch` | `events` 수집 (공시·실적 감시) |
 
@@ -41,7 +40,19 @@ done
 launchctl list | grep market-intel
 ```
 
-9줄이 나오면 성공이다.
+8줄이 나오면 성공이다.
+
+### 2026-08-20 이후 갱신할 때 — `weekstart`는 먼저 내려야 한다
+
+`weekstart` job은 없어졌다(`weekly`가 흡수). 위 설치 루프는 템플릿에 있는 것만
+덮어쓰므로, **이미 등록된 `weekstart`는 그대로 살아남아 월요일 07:40에 계속 돈다**
+— `JOBS`에서 사라진 이름이라 `run_job.sh`가 실패하고, 매주 실패 로그가 쌓인다.
+설치 루프를 돌리기 **전에** 한 번만:
+
+```bash
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.kangtaeklee.market-intel.weekstart.plist
+rm ~/Library/LaunchAgents/com.kangtaeklee.market-intel.weekstart.plist
+```
 
 ## 한 번 직접 돌려보기
 

@@ -306,8 +306,10 @@ def test_spec_header_orders_are_preserved(settings):
     assert daily[:4] == ["시장 한 줄", "핵심 사실", "시장 반응", "해석"]
 
     weekly = headers("weekly_review")
-    assert weekly[:5] == ["이번 주 시장의 지배 변수", "자산·섹터 성과",
-                          "다음 주에 뒤집힐 수 있는 변수", "내가 놓친 변수", "다음 주 검증할 가설"]
+    # 2026-08-20 병합으로 발행일이 토 -> 월로 옮겨지면서 주 기준이 한 칸 밀렸다.
+    # 이제 기준은 리포트 자신의 날짜다: 지난주 = 사실이 덮는 주, 이번 주 = 앞으로의 주.
+    assert weekly[:5] == ["지난주 시장의 지배 변수", "자산·섹터 성과",
+                          "이번 주에 뒤집힐 수 있는 변수", "내가 놓친 변수", "이번 주 검증할 가설"]
 
     event = headers("event", subject="NVDA")
     assert event[:4] == ["실제치·예상치·가이던스", "현금흐름과 투자",

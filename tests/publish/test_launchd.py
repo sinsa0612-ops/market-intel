@@ -19,12 +19,13 @@ LAUNCHD_DIR = Path(__file__).resolve().parents[2] / "launchd"
 # launchd Weekday: 0/7=Sun, 1=Mon … 6=Sat.
 EXPECTED = {
     "collect-am":   [{"Weekday": w, "Hour": 6, "Minute": 50} for w in (1, 2, 3, 4, 5)],
-    "weekstart":    [{"Weekday": 1, "Hour": 7, "Minute": 40}],
     "morning":      [{"Weekday": w, "Hour": 7, "Minute": 40} for w in (2, 3, 4, 5)],
     "collect-pm":   [{"Weekday": w, "Hour": 15, "Minute": 50} for w in (1, 2, 3, 4, 5)],
     "close":        [{"Weekday": w, "Hour": 16, "Minute": 15} for w in (1, 2, 3, 4, 5)],
     "collect-full": [{"Weekday": 6, "Hour": 8, "Minute": 0}, {"Day": 1, "Hour": 8, "Minute": 0}],
-    "weekly":       [{"Weekday": 6, "Hour": 8, "Minute": 30}],
+    # 2026-08-20: 토 08:30 -> 월 07:40. `weekly_review`가 `week_start`를 흡수해
+    # 월요일 아침 한 장이 됐다(`weekstart` job/plist는 삭제).
+    "weekly":       [{"Weekday": 1, "Hour": 7, "Minute": 40}],
     "monthly":      [{"Day": 1, "Hour": 8, "Minute": 30}],
     "eventwatch":   [{"Hour": 13, "Minute": 0}, {"Hour": 22, "Minute": 0}],
 }
@@ -89,8 +90,8 @@ def test_collection_precedes_every_blackout():
     feeding it must finish *before* that report's blackout."""
     from market_intel.reporting.cutoff import _FIXED_TIME
 
-    feeds = {"morning": "collect-am", "weekstart": "collect-am", "close": "collect-pm"}
-    report_type = {"morning": "morning", "weekstart": "week_start", "close": "close_delta"}
+    feeds = {"morning": "collect-am", "weekly": "collect-am", "close": "collect-pm"}
+    report_type = {"morning": "morning", "weekly": "weekly_review", "close": "close_delta"}
     for job, collector in feeds.items():
         blackout = _FIXED_TIME[report_type[job]]
         c = EXPECTED[collector][0]

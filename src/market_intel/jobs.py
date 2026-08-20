@@ -9,14 +9,21 @@ blackout they feed, and are separate launchd entries from the report
 jobs that consume them:
 
     06:50 Mon–Fri  collect-am    morning + calendar + events
-    07:40 Mon      weekstart     report week_start   (blackout 07:15)
-    07:40 Tue–Fri  morning       report morning      (blackout 07:15)
+    07:40 Mon      weekly        report weekly_review (blackout 07:15)
+    07:40 Tue–Fri  morning       report morning       (blackout 07:15)
     15:50 Mon–Fri  collect-pm    close
-    16:15 Mon–Fri  close         report close_delta  (blackout 16:15)
+    16:15 Mon–Fri  close         report close_delta   (blackout 16:15)
     08:00 Sat/1st  collect-full  all
-    08:30 Sat      weekly        report weekly_review
     08:30 1st      monthly       report monthly
     13:00 & 22:00  eventwatch    events (공시·실적 감시)
+
+`weekly_review` was two reports until 2026-08-20: a Saturday retrospective
+plus a Monday `week_start` briefing. The CEO merged them into the Monday
+slot — one report that looks back at last week and forward at this one.
+The merge also fixes a mismatch: `week_start` was a *daily*-family report
+(lookback=1, 전일대비), so a report titled "주간 시작" compared against
+Friday. As `weekly_review` it gets the 5-거래일 window its title claims.
+Saturday now runs `collect-full` only, which is what `monthly` needs.
 
 Two consequences worth stating plainly:
   * a report job does **not** collect (collecting at 07:40 would only write
@@ -63,12 +70,11 @@ MON_FRI = {0, 1, 2, 3, 4}
 JOBS: dict[str, dict] = {
     "collect-am": {"collect": ["morning", "calendar", "events"], "report": None,
                    "weekdays": MON_FRI},
-    "weekstart": {"collect": [], "report": "week_start", "weekdays": {0}},
     "morning": {"collect": [], "report": "morning", "weekdays": {1, 2, 3, 4}},
     "collect-pm": {"collect": ["close"], "report": None, "weekdays": MON_FRI},
     "close": {"collect": [], "report": "close_delta", "weekdays": MON_FRI},
     "collect-full": {"collect": ["all"], "report": None, "weekdays": {5}, "monthday": 1},
-    "weekly": {"collect": [], "report": "weekly_review", "weekdays": {5}},
+    "weekly": {"collect": [], "report": "weekly_review", "weekdays": {0}},
     "monthly": {"collect": [], "report": "monthly", "monthday": 1},
     "eventwatch": {"collect": ["events"], "report": None},
 }

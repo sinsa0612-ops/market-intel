@@ -80,13 +80,18 @@ def test_no_shell_flock_used():
 # --- catch-up -------------------------------------------------------------
 
 def test_slot_dates_respects_job_weekdays(job_env):
-    """`morning` runs Tue–Fri, `weekstart` only Mon — the catch-up must not
-    invent a Monday morning report the schedule never asked for."""
+    """`morning` runs Tue–Fri, `weekly` only Mon — the catch-up must not
+    invent a Monday morning report the schedule never asked for.
+
+    `weekly` was the Saturday slot until 2026-08-20; it moved to Monday when
+    it absorbed `week_start`. Its catch-up must move with it, or every run
+    would look for a Saturday `weekly_review` that is no longer scheduled."""
     today = date(2026, 8, 7)
     morning = jobs_mod.slot_dates("morning", today)
     assert all(d.weekday() in (1, 2, 3, 4) for d in morning), morning
-    weekstart = jobs_mod.slot_dates("weekstart", today)
-    assert all(d.weekday() == 0 for d in weekstart), weekstart
+    weekly = jobs_mod.slot_dates("weekly", today)
+    assert all(d.weekday() == 0 for d in weekly), weekly
+    assert weekly, "월요일 슬롯이 최근 7일 안에 하나는 있어야 한다"
     monthly = jobs_mod.slot_dates("monthly", date(2026, 8, 3))
     assert monthly == [date(2026, 8, 1)], monthly
 

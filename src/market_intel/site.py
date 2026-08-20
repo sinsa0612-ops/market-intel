@@ -43,6 +43,10 @@ CHANGES_WINDOW_DAYS = 7  # spec B8: 최근 7일 일정 변경
 RECENT_CARDS = 20  # spec B8: index = 최신 리포트 본문 + 최근 20건 카드
 BANNER_CHANGE_DAYS = 7  # index 배너에 띄우는 가설 변화의 기간(전체 목록은 가설 페이지)
 
+# `week_start` is retired (merged into `weekly_review`, 2026-08-20). The label
+# stays so the 4 archived reports keep their name instead of degrading to the
+# raw type string — they were timely reports when published, and the archive is
+# a record of what went out, not of what the schedule looks like today.
 TYPE_LABELS = {
     "morning": "모닝", "week_start": "주간 시작", "close_delta": "장마감 델타",
     "weekly_review": "주간 리뷰", "monthly": "월간", "quarterly": "분기",

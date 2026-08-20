@@ -124,8 +124,8 @@ _CLOSE_DELTA_MANDATORY = {"^KS11", "KRW=X"}  # spec B6 close_delta 선정 규칙
 SPARKLINE_POINTS = 6
 
 # spec 20260810-period-report §1① — 리포트 종류별 비교 창(거래일 기준).
-# "그 주기만" — 병기하지 않는다(CEO 확정). morning/close_delta/week_start/
-# event는 표에 없다 = 지금 그대로 직전 거래일(코드 기본값 lookback=1).
+# "그 주기만" — 병기하지 않는다(CEO 확정). morning/close_delta/event는 표에
+# 없다 = 지금 그대로 직전 거래일(코드 기본값 lookback=1).
 #
 # 가격(`_price_map`)은 이 숫자를 그대로 **몇 번째 관측 뒤**의 인덱스로 쓴다 —
 # "가격 fact는 심볼당 거래일 하나"라 인덱스 거리가 곧 거래일 거리다(모듈
@@ -201,12 +201,15 @@ KR_FLOW_GAP_REASON = (
 )
 
 TITLES = {
-    "morning": "모닝", "week_start": "주간 시작 브리핑", "close_delta": "장마감 델타",
+    "morning": "모닝", "close_delta": "장마감 델타",
     "weekly_review": "주간 리뷰", "monthly": "월간 거시 체제", "quarterly": "분기 실적 리뷰",
     "annual": "연간 리뷰", "event": "실적 이벤트",
 }
+# 앞으로 며칠치 일정을 싣나. `weekly_review`의 30일은 "이번 주 일정"을 여유 있게
+# 덮는다 — 2026-08-20 병합으로 이 리포트가 `week_start`의 한 주 브리핑 역할까지
+# 맡으면서 이 값이 그 역할의 근거가 됐다(14일이었던 `week_start`보다 넓다).
 _EVENTS_WINDOW_DAYS = {
-    "morning": 14, "week_start": 14, "close_delta": 14, "weekly_review": 30,
+    "morning": 14, "close_delta": 14, "weekly_review": 30,
     "monthly": 45, "quarterly": 90, "annual": 120, "event": 30,
 }
 
@@ -1640,8 +1643,8 @@ def build_report(
     Never raises for missing data — absence goes into `missing` +
     `data_gaps`, per the task's "어떤 소스가 죽어도 리포트는 나온다" intent."""
     # spec 20260810-period-report §1① — 리포트 종류별 비교 창(거래일 기준).
-    # morning/close_delta/week_start/event는 표에 없으므로 기본값 1(지금
-    # 그대로 직전 거래일)로 떨어진다.
+    # morning/close_delta/event는 표에 없으므로 기본값 1(지금 그대로 직전
+    # 거래일)로 떨어진다.
     lookback = _PERIOD_LOOKBACK.get(report_type, 1)
     price_map = _price_map(conn, cutoff, lookback=lookback)
     mmap = _macro_map(conn, cutoff, report_type=report_type)
@@ -1680,7 +1683,7 @@ def build_report(
         "no_facts_before_cutoff": False,
     }
 
-    if report_type in ("morning", "week_start"):
+    if report_type == "morning":
         facts = macro_facts + filing_facts + flow_facts
         market_reaction = market_reaction_all
     elif report_type == "close_delta":
@@ -1915,6 +1918,9 @@ def _restore_interpretation(conn, report: Report) -> None:
 def stem_for(report: Report, slug: str | None = None) -> str:
     """spec B6 file-stem table."""
     d = report.report_date
+    # `week_start` is retired (merged into `weekly_review`, 2026-08-20) but stays
+    # here, and in the renderers, because the 4 already-published `week_start`
+    # JSONs are re-read and re-rendered on every site build.
     if report.report_type in ("morning", "week_start", "close_delta", "weekly_review"):
         return d
     if report.report_type == "monthly":

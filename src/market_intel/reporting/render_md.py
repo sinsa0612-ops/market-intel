@@ -16,8 +16,11 @@ is structurally impossible.
 
 Per-type section choice (design freedom this subtask has — spec ST2 What
 #4 leaves the exact template mapping open beyond §4.2/§6.2/§7.2):
-  morning / week_start / close_delta -> §4.2 (일간 공통 포맷), the 7 headers
-      in the order the ST2 success criteria pin down word for word.
+  morning / close_delta -> §4.2 (일간 공통 포맷), the 7 headers in the
+      order the ST2 success criteria pin down word for word. `week_start`
+      is retired (merged into `weekly_review`, 2026-08-20) but still
+      renders here: its 4 published JSONs are re-rendered on every site
+      build and must keep looking exactly as they did when published.
   weekly_review                      -> §6.2's 5 headers verbatim, in order.
   monthly                            -> no template exists in the source doc
       (§6.3 only gives an indicator table + a regime label) — built here as
@@ -557,13 +560,26 @@ INTERPRETATION_HEADERS = (
 def _lead_sections(report: Report) -> list[tuple[str, list[dict]]]:
     """The type-specific head of the layout, before the universal tail."""
     rt = report.report_type
-    if rt == "weekly_review":  # §6.2, 5 headers in order
+    if rt == "weekly_review":  # §6.2's 5 headers, re-anchored 2026-08-20
+        # §6.2 wrote these headers for a **Saturday** report, where "이번 주" is
+        # the week that just ended and "다음 주" is the one starting Monday. The
+        # merge moved publication to Monday 07:40, which shifts both by a week:
+        # the retrospective content would have sat under "이번 주", and the
+        # forward-looking content under "다음 주" — pointing past the week whose
+        # calendar the report itself prints. Verified on a real 2026-08-17 build:
+        # every fact read "1주 전 관측 대비" (last week) while 다가오는 일정
+        # listed 08-18 onward (this week). The headers are re-anchored to the
+        # report's own date, which is printed at the top of every report:
+        #     지난주 = the week the facts cover · 이번 주 = the week ahead.
+        # Cost, stated plainly: the 3 archived Saturday reports (08-01/08/15) are
+        # re-rendered with these headers and read one week off. 3 archived pages
+        # versus every Monday from here on.
         return [
-            ("이번 주 시장의 지배 변수", [_text(report.headline), *fact_blocks(report.facts), _missing(report)]),
+            ("지난주 시장의 지배 변수", [_text(report.headline), *fact_blocks(report.facts), _missing(report)]),
             ("자산·섹터 성과", _market_blocks(report)),
-            ("다음 주에 뒤집힐 수 있는 변수", [_interp(report, "counter_reading")]),
+            ("이번 주에 뒤집힐 수 있는 변수", [_interp(report, "counter_reading")]),
             ("내가 놓친 변수", [_missing(report)]),
-            ("다음 주 검증할 가설", [_interp(report, "next_check")]),
+            ("이번 주 검증할 가설", [_interp(report, "next_check")]),
         ]
     if rt == "event":  # §7.2, 4 headers in order
         cashflow_rows = [r for r in report.facts if r.metric in _CASHFLOW_METRICS]
@@ -591,7 +607,7 @@ def _lead_sections(report: Report) -> list[tuple[str, list[dict]]]:
             ("핵심 사실", [*fact_blocks(report.facts), _missing(report)]),
             ("시장 반응", _market_blocks(report)),
         ]
-    # morning / week_start / close_delta — §4.2's first 3 headers.
+    # morning / close_delta (+ retired week_start) — §4.2's first 3 headers.
     return [
         ("시장 한 줄", [_text(report.headline)]),
         ("핵심 사실", [*fact_blocks(report.facts), _missing(report)]),
