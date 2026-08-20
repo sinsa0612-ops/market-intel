@@ -171,7 +171,7 @@ def test_success_sets_generated_by_and_interpretation(monkeypatch, conn):
     # 문자열을 손으로 박아 두는 이유: 프롬프트를 갈아끼우는 것은 발행물의 성격을
     # 바꾸는 결정이라 테스트가 한 번 막아 세워야 한다. v2 -> v3는 2026-08-12,
     # "F-번호를 빼도 말이 되게 쓸 것"(규칙 1-1)을 넣으면서 올렸다.
-    assert result["prompt_version"] == apply_mod.PROMPT_VERSION == "interpretation_v3"
+    assert result["prompt_version"] == apply_mod.PROMPT_VERSION == "interpretation_v4"
     assert result["prompt_sha256"]
 
 

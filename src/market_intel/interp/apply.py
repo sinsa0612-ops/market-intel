@@ -46,19 +46,23 @@ from . import validate as validate_mod
 #
 # v1·v2는 디스크에 그대로 둔다: SA-4는 이미 발행된 해석이 자기 `prompt_sha256`의 파일로
 # 재현되도록 프롬프트를 버전으로 고정한다 — 기존 파일을 고치면 그 재현성이 깨진다.
-PROMPT_VERSION = "interpretation_v3"
+PROMPT_VERSION = "interpretation_v4"
 _PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.txt"
 
 # Only 3 keys — `thesis_impact` is never LLM-authored (SA-8 design decision
 # 2: the hypothesis verdict is a deterministic judgment the rules engine
 # already knows exactly, and handing it to an LLM would only add a
 # hallucination surface with nothing to gain).
+# `checks`는 **선택 항목이다.** 모델이 조건을 못 내거나 빈 배열을 내도 해석 산문은
+# 지금과 똑같이 나간다 — 조건 생성 실패가 리포트 품질로 번지지 않게 하는 것이
+# 이 설계의 요점이다(성적표는 없어도 되지만 리포트는 매일 나가야 한다).
 _SCHEMA = {
     "type": "object",
     "properties": {
         "reading": {"type": "string"},
         "counter_reading": {"type": "string"},
         "next_check": {"type": "string"},
+        "checks": {"type": "array"},
     },
     "required": ["reading", "counter_reading", "next_check"],
 }
@@ -155,13 +159,16 @@ def fill(
     attempts = 0
     model_used = model
     started = time.monotonic()
+    # LLM을 안 쓰는 경로(`use_llm=False`)에서도 아래 검증 조건 추출이 이 이름을
+    # 읽으므로 **분기 밖에서** 초기화한다. 안에서만 선언하면 그 경로가
+    # UnboundLocalError로 죽는다(2026-08-20 회귀 17건이 그것이었다).
+    parsed: dict | None = None
 
     if not use_llm:
         transport_status = "disabled"
     else:
         system_prompt = _prompt_text()
         user_prompt = _user_prompt(digest_text)
-        parsed: dict | None = None
 
         attempts = 1
         try:
@@ -317,7 +324,15 @@ def fill(
         "next_check": field_status["next_check"],
     }
 
+    # 검증 조건(2026-08-20). **산문 검증기를 태우지 않는다** — 조건은 산문이
+    # 아니라 칸이고, `checks.register`가 `thesis._validate_atom`으로 따로 검사한다.
+    # 산문이 거부된 해석의 조건은 버린다: 그 해석이 화면에 안 나가는데 그 조건만
+    # 성적표에 쌓이면 무엇을 채점한 것인지 알 수 없다.
+    raw_checks = (parsed or {}).get("checks") or []
+    result_checks = raw_checks if (transport_status is None and llm_alive) else []
+
     result = {
+        "checks": result_checks,
         "engine_version": llm_mod.ENGINE_VERSION,
         "status": overall_status,
         "model": model_used if use_llm else None,

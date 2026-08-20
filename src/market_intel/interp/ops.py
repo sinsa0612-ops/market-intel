@@ -33,6 +33,7 @@ from .. import db as db_mod
 from ..reporting.cutoff import KST
 from ..reporting.model import Report
 from . import apply as apply_mod
+from . import checks as checks_mod
 from . import store as store_mod
 from . import thesis as thesis_mod
 from . import transitions as transitions_mod
@@ -84,6 +85,22 @@ def record_outcome(conn, report: Report, result: dict) -> str:
         "cutoff_utc": report.cutoff_utc,
     })
     interpretation_id = store_mod.record_interpretation(conn, row)
+
+    # 해석 성적표(CEO 지시 2026-08-20) — 이 해석이 등록한 조건을 원장에 남긴다.
+    # 만기가 지나면 규칙이 채점한다. **품질 미달 백엔드가 만든 조건은
+    # `checks.register`가 스스로 버린다**(실측 근거는 그 모듈 주석).
+    # 등록이 실패해도 해석 저장은 이미 끝났다 — 성적표가 리포트를 막지 않는다.
+    try:
+        checks_mod.register(
+            conn, interpretation_id=interpretation_id, report_type=report.report_type,
+            report_date=report.report_date, atoms=result.get("checks") or [],
+            model=result.get("model"),
+            # 리포트가 자기 차단선을 들고 있다 — 별도로 넘겨받지 않는다.
+            # 호출자가 다른 시각을 줄 수 있으면 그 자리가 차단선을 두 번
+            # 해석하는 구멍이 된다.
+            cutoff=datetime.fromisoformat(report.cutoff_utc))
+    except Exception as exc:  # noqa: BLE001
+        print(f"  checks.register 실패(무시): {type(exc).__name__}")
 
     for item in report.missing:
         if not (item.gap_id or "").startswith("interp:"):

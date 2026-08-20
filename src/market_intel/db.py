@@ -181,6 +181,38 @@ CREATE TABLE IF NOT EXISTS interpretations (
 CREATE INDEX IF NOT EXISTS idx_interpretations_report
     ON interpretations(report_type, report_date, cutoff_utc);
 
+-- 해석 성적표 (CEO 지시 2026-08-20). 해석이 "이게 맞으면 다음에 무엇이 어떻게"를
+-- **미리 등록**하고, 만기가 지나면 규칙이 채점한다.
+--
+-- **append-only다.** 등록된 조건은 수정하지 않는다 — 결과를 보고 조건을 고치면
+-- 골대 이동이고, 그게 이 프로젝트가 가설 조건을 해시로 잠근 이유와 같다.
+-- 채점 결과는 `scored_at`/`verdict`를 **한 번만** 채운다(UPDATE는 그 한 번뿐).
+--
+-- `basis_json`: 등록 시점의 값. 나중에 "그때 무엇을 보고 걸었나"를 되짚는 데 쓴다.
+-- `model`: 그 조건을 만든 백엔드. **품질 미달 백엔드(ollama)가 만든 조건은 애초에
+-- 등록하지 않지만**, 남겨 두면 나중에 성적을 백엔드별로 갈라 볼 수 있다.
+CREATE TABLE IF NOT EXISTS interpretation_checks (
+    check_id TEXT PRIMARY KEY,
+    interpretation_id TEXT NOT NULL REFERENCES interpretations(interpretation_id),
+    report_type TEXT NOT NULL,
+    report_date TEXT NOT NULL,
+    atom_id TEXT NOT NULL,
+    atom_json TEXT NOT NULL,
+    basis_json TEXT,
+    why TEXT,
+    due_date TEXT NOT NULL,
+    model TEXT,
+    registered_at TEXT NOT NULL,
+    scored_at TEXT,
+    verdict TEXT CHECK(verdict IS NULL OR verdict IN ('TRUE','FALSE','UNKNOWN')),
+    detail_json TEXT,
+    UNIQUE(interpretation_id, atom_id)
+);
+CREATE INDEX IF NOT EXISTS idx_checks_due
+    ON interpretation_checks(due_date, scored_at);
+CREATE INDEX IF NOT EXISTS idx_checks_subject
+    ON interpretation_checks(report_type, report_date);
+
 -- 2B: 운영 상태 (최종 검수 F3).
 CREATE TABLE IF NOT EXISTS job_runs (
     job_run_id TEXT PRIMARY KEY,

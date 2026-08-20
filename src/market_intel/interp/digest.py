@@ -56,6 +56,16 @@ def facts_fingerprint(report: Report) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def _subject_codes(report: Report) -> str:
+    """조건에 쓸 수 있는 (코드, 이름) 목록. 사실에 실제로 실린 것만 낸다 —
+    다이제스트에 없는 대상을 조건으로 걸면 채점할 수 없다."""
+    seen: dict[str, str] = {}
+    for row in list(report.facts) + list(report.market_reaction):
+        if row.subject and row.subject not in seen:
+            seen[row.subject] = (row.label or row.subject).split("(")[0].strip()
+    return " · ".join(f"{code}={name}" for code, name in list(seen.items())[:60])
+
+
 def build(report: Report) -> tuple[str, dict[str, FactRow]]:
     """spec SA-6: facts[] first, then market_reaction[] (continuous
     numbering), then [결측], then [다가오는 일정] (max 12), headed by report
@@ -78,6 +88,12 @@ def build(report: Report) -> tuple[str, dict[str, FactRow]]:
             # 요약에 넣는다. 안 넣으면 화면은 "종목 폭은 평범"인데 해석은
             # "시장이 5% 빠졌다"고 쓰는 모순이 생긴다(spec §3).
             f"시장 폭: {report.breadth}",
+            "",
+            # 검증 조건(2026-08-20)이 쓸 **종목 코드**. 아래 [사실] 줄은 사람이
+            # 읽는 이름만 싣기 때문에, 이 줄이 없으면 모델이 `^KS11`을 `KOSPI`로
+            # 써서 원장과 어긋난 조건을 낸다(실측). 등록 쪽에도 가드가 있지만
+            # 원인은 여기다.
+            f"[종목 코드] {_subject_codes(report)}",
             "",
             "[사실]",
         ]

@@ -244,6 +244,53 @@ def record_interpretation(conn: sqlite3.Connection, row: dict) -> str:
     return interpretation_id
 
 
+# --- 해석 성적표 (CEO 지시 2026-08-20) ---------------------------------------
+#
+# SQL이 여기에만 있는 이유: `interp/` 아래에서 원시 SQL을 쓸 수 있는 파일은
+# `store.py`(2B의 DB 접근 계층)와 `ops.py`뿐이다. 해석 경로가 DB에 닿는 두 번째
+# 길을 만들지 않기 위한 규칙이고, 시험이 소스 문자열로 지킨다
+# (`test_interp_never_touches_fact_revisions_or_raw_sql`).
+
+def insert_check(conn: sqlite3.Connection, row: dict) -> None:
+    """`INSERT OR IGNORE` — 같은 (해석, 조건 id)는 UNIQUE라 재실행해도 안 늘어난다."""
+    conn.execute(
+        "INSERT OR IGNORE INTO interpretation_checks(check_id, interpretation_id, "
+        "report_type, report_date, atom_id, atom_json, basis_json, why, due_date, "
+        "model, registered_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (row["check_id"], row["interpretation_id"], row["report_type"], row["report_date"],
+         row["atom_id"], row["atom_json"], row["basis_json"], row["why"], row["due_date"],
+         row["model"], row["registered_at"]))
+
+
+def due_checks(conn: sqlite3.Connection, as_of: str) -> list[dict]:
+    """만기가 지났는데 아직 채점 안 된 조건들."""
+    rows = conn.execute(
+        "SELECT * FROM interpretation_checks WHERE scored_at IS NULL AND due_date <= ? "
+        "ORDER BY due_date, registered_at", (as_of,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def mark_check_scored(conn: sqlite3.Connection, check_id: str, scored_at: str,
+                      verdict: str, detail_json: str) -> None:
+    """**`scored_at IS NULL`이 두 번째 잠금이다.** 1차 방어는 `due_checks`의 같은
+    필터라 이 조건은 기능적으로 도달할 수 없지만, 지우면 그쪽이 바뀌는 날 재채점이
+    조용히 뚫린다 — 재채점은 곧 골대 이동이다."""
+    conn.execute(
+        "UPDATE interpretation_checks SET scored_at=?, verdict=?, detail_json=? "
+        "WHERE check_id=? AND scored_at IS NULL",
+        (scored_at, verdict, detail_json, check_id))
+
+
+def scored_checks(conn: sqlite3.Connection, report_type: str | None = None) -> list[tuple]:
+    """(verdict, atom_json) 목록 — 채점이 끝난 것만."""
+    sql = "SELECT verdict, atom_json FROM interpretation_checks WHERE scored_at IS NOT NULL"
+    args: list = []
+    if report_type:
+        sql += " AND report_type=?"
+        args.append(report_type)
+    return list(conn.execute(sql, args))
+
+
 def reusable_interpretation(conn: sqlite3.Connection, report_type: str, report_date: str,
                             cutoff_utc: str, facts_sha256: str) -> dict | None:
     """같은 리포트(종류·날짜·차단선)에 대해 **같은 사실 위에서** 쓰인 해석 중

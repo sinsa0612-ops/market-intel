@@ -364,6 +364,11 @@ def test_no_new_tables():
     assert tables == {
         "raw_snapshots", "fact_revisions", "collect_runs", "provider_runs", "data_gaps", "label_revisions",
         "theses", "thesis_reviews", "interpretations", "job_runs",
+        # 해석 성적표(CEO 지시 2026-08-20). 해석이 미리 등록한 조건을 만기에
+        # 규칙이 채점한다 — 원장에 남겨야 "그때 무엇을 걸었나"가 사후에
+        # 바뀌지 않는다(append-only). 위 docstring이 말한 대로 기준선을
+        # **갱신**하는 것이지 가드를 푸는 것이 아니다.
+        "interpretation_checks",
     }
 
 
