@@ -153,6 +153,27 @@ UNIVERSE: list[dict] = [
     _sym("XLB", "US", "US", "sector_index", "Materials Select Sector SPDR", name_ko="소재"),
     _sym("XLRE", "US", "US", "sector_index", "Real Estate Select Sector SPDR", name_ko="부동산"),
     _sym("XLC", "US", "US", "sector_index", "Communication Services Select Sector SPDR", name_ko="커뮤니케이션"),
+    # --- 테마 축 (2026-08-20, CEO 지시) --------------------------------
+    #
+    # **`sector_index`가 아니라 `index`다 — 의도적이다.** 업종 지수 표는
+    # GICS 11개처럼 **겹치지 않고 시장을 빠짐없이 나누는** 분류만 실어야 한다.
+    # 테마는 서로 겹치므로(IBM은 양자·소프트웨어·IT에 동시에 들어간다) 그 표에
+    # 섞으면 같은 사건이 여러 줄로 신고된다. 여기서는 시장 반응 표에 실린다.
+    #
+    # 고른 기준은 **"이 축이 크게 움직인 날 중, 기존 축이 전부 조용했던 날의
+    # 비율"**이다(682거래일 실측). 상관계수보다 이쪽이 직접적이다 —
+    # 비교 기준은 이미 쓰는 SOX 26% · 러셀2000 19%.
+    #   IGV  42%  거래대금 425M$  반도체와 상관 0.50  <- 후보 중 최고
+    #   ITA  38%  거래대금  79M$  산업재와  상관 0.80
+    #   BOTZ 16%  거래대금  29M$  XLK와    상관 0.84  <- 로봇 ETF 4개가 전부
+    #        13~16%였다. 고르기의 문제가 아니라 로봇 축 자체가 기존 축과 겹친다.
+    #
+    # 넣지 않은 것: AIQ(XLK와 0.94, 거의 재탕) · QTUM(SOX와 0.88) ·
+    # ARKX·UFO(순수 우주지만 거래대금 1~2M$로 너무 얇다 — 거래가 없어 튄 가격이
+    # "유별난 날"로 잡힌다). **그래서 순수 우주 테마는 여전히 못 본다.**
+    _sym("IGV", "US", "US", "index", "iShares Expanded Tech-Software ETF", name_ko="소프트웨어·플랫폼"),
+    _sym("ITA", "US", "US", "index", "iShares U.S. Aerospace & Defense ETF", name_ko="항공우주·방산"),
+    _sym("BOTZ", "US", "US", "index", "Global X Robotics & AI ETF", name_ko="로보틱스·AI"),
     _sym("091160.KS", "KR", "KR", "sector_index", "KODEX Semiconductor", name_ko="KODEX 반도체"),
     _sym("227540.KS", "KR", "KR", "sector_index", "TIGER Health Care", name_ko="TIGER 헬스케어"),
     _sym("117460.KS", "KR", "KR", "sector_index", "KODEX Energy & Chemicals", name_ko="KODEX 에너지화학"),

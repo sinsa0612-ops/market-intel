@@ -147,7 +147,20 @@ def test_mapping_covers_every_sector_index_we_collect():
     조용히 빠진다. 개수를 박지 않고 **집합으로** 비교한다."""
     from market_intel.universe import SECTOR_INDEX_SYMBOLS
 
-    assert set(SECTOR_INDEX_SYMBOLS) == set(bs.SECTOR_WATCH)
+    assert set(SECTOR_INDEX_SYMBOLS) <= set(bs.SECTOR_WATCH), (
+        f"매핑이 없는 업종 지수: {sorted(set(SECTOR_INDEX_SYMBOLS) - set(bs.SECTOR_WATCH))}")
+
+
+def test_non_sector_axes_are_declared_not_smuggled():
+    """업종 지수가 **아닌** 축(규모 축 등)도 여기서 함께 본다. 다만 조용히
+    끼워 넣으면 안 된다 — 축이 하나 늘 때마다 다중비교가 늘어 문턱의 뜻이
+    바뀌기 때문이다(문턱을 2%로 조인 이유가 바로 그것이다)."""
+    from market_intel.universe import SECTOR_INDEX_SYMBOLS
+
+    extra = set(bs.SECTOR_WATCH) - set(SECTOR_INDEX_SYMBOLS)
+    assert extra == bs.NON_SECTOR_AXES, (
+        f"선언되지 않은 축: {sorted(extra - bs.NON_SECTOR_AXES)} / "
+        f"선언만 되고 없는 축: {sorted(bs.NON_SECTOR_AXES - extra)}")
 
 
 def test_caps_how_many_rows_one_report_can_carry():

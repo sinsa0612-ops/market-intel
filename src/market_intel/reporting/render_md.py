@@ -915,8 +915,10 @@ def _blindspot_md(block: dict) -> str:
         parts.append(f"- ⚠️ {r.note}")
     if block["unwatched"]:
         parts.append(
-            f"- 관측 기업이 없는 업종: {' · '.join(block['unwatched'])} — "
-            f"이 업종들이 움직인 이유는 이 리포트가 말할 수 없습니다.")
+            # "업종"이라 못박지 않는다 — 규모 축(러셀2000 소형주)처럼 업종이
+            # 아닌 것이 섞이기 때문이다.
+            f"- 우리가 보는 기업이 없는 곳: {' · '.join(block['unwatched'])} — "
+            f"여기가 움직인 이유는 이 리포트가 말할 수 없습니다.")
     return "\n".join(parts)
 
 
