@@ -666,14 +666,16 @@ def sections(report: Report) -> list[tuple[str, list[dict]]]:
     # 지난 해석 대조는 **해석 섹션 안에, 새 해석 뒤에** 붙는다(CEO 지시 2026-08-13).
     # 앞에 두면 오늘 읽을 것보다 어제 것이 먼저 오고, 별도 섹션으로 빼면 아무도
     # 안 본다 — 새 해석을 읽은 직후가 "지난번엔 뭐라 했더라"가 가장 궁금한 자리다.
-    interp_parts += [_subheading("지난 해석 대조"), _prior(report)]
-    # 성적표는 대조 **뒤**에 온다. 대조는 "지난번에 뭐라 했더라"이고 성적표는
-    # "그래서 우리가 얼마나 맞히고 있나"라서, 사례를 본 다음에 누계를 보는 순서다.
     #
     # 할 말이 없으면 **소제목도 내지 않는다.** `site build`는 이 필드가 생기기
-    # 전에 쓰인 리포트 JSON까지 전부 다시 렌더하는데(지금 20건 넘는다), 그쪽에는
-    # 성적도 사유도 없어서 빈 소제목만 남는다. 새 리포트는 성적이 없어도 `build`가
-    # **왜 없는지**를 채우므로(`_scorecard`) 항상 실린다.
+    # 전에 쓰인 리포트 JSON까지 전부 다시 렌더한다 — 지금 33건이고, 그쪽에는
+    # 대조도 사유도 없어서 빈 소제목만 남는다. 새 리포트는 대조가 없어도
+    # `build._prior_interpretation`이 **왜 없는지**를 채우므로 항상 실린다.
+    if report.prior.rows or report.prior.unavailable:
+        interp_parts += [_subheading("지난 해석 대조"), _prior(report)]
+    # 성적표는 대조 **뒤**에 온다. 대조는 "지난번에 뭐라 했더라"이고 성적표는
+    # "그래서 우리가 얼마나 맞히고 있나"라서, 사례를 본 다음에 누계를 보는 순서다.
+    # 빈 소제목을 안 내는 것은 바로 위와 같은 이유다(`_scorecard`가 사유를 채운다).
     if report.scorecard.rows or report.scorecard.unavailable:
         interp_parts += [_subheading("등록한 조건의 성적"), _scorecard(report)]
     out.append(("해석", interp_parts))

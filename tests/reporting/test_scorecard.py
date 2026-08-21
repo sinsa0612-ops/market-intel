@@ -186,7 +186,12 @@ def test_scorecard_is_inside_the_interpretation_section(settings):
     """성적표가 별도 섹션으로 빠지면 아무도 안 본다 — 지난 해석 대조와 같은 자리다."""
     from market_intel.reporting.model import Report
 
+    from market_intel.reporting.model import PriorInterpretation
+
     report = Report(report_type="morning", report_date="2026-03-10")
+    # 두 블록이 **다 실린** 판이라야 순서를 잴 수 있다. 대조가 비면 그쪽 소제목이
+    # 통째로 빠져서(빈 소제목 금지) 이 시험이 겨냥한 순서 규칙에 닿지 못한다.
+    report.prior = PriorInterpretation(unavailable="대조할 지난 해석이 아직 없습니다.")
     report.scorecard = InterpretationScorecard(
         rows=[ScorecardRow(label="KOSPI", subject="^KS11", scored=3, true=2, false=1)],
         scored=3, true=2, false=1)

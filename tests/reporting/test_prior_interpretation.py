@@ -249,3 +249,24 @@ def test_old_reports_without_prior_still_load():
     assert restored.prior.rows == [] and restored.prior.unavailable == ""
     render_md_mod.render_markdown(restored)
     render_html_mod.render_html(restored)
+
+
+def test_old_reports_do_not_grow_an_empty_subheading():
+    """`prior`가 생기기 전(2026-08-13 이전)에 쓰인 리포트 33건이 매 `site build`
+    마다 **아래가 빈 「지난 해석 대조」 소제목**을 달고 다시 발행되고 있었다.
+
+    새 리포트는 대조가 없어도 `_prior_interpretation`이 **왜 없는지**를 채우므로
+    (직전 해석 없음 / 새 관측 없음) 소제목이 사라지지 않는다 — 그 구별이 이
+    시험의 핵심이다. 사유까지 같이 숨기면 "대조를 안 하고 있다"가 화면에서
+    사라진다.
+    """
+    from market_intel.reporting import render_md as md
+
+    old = Report(report_type="morning", report_date="2026-08-01")
+    assert not old.prior.rows and not old.prior.unavailable
+    assert "지난 해석 대조" not in md.render_markdown(old)
+
+    fresh = Report(report_type="morning", report_date="2026-08-21")
+    fresh.prior = PriorInterpretation(unavailable="대조할 지난 해석이 아직 없습니다.")
+    text = md.render_markdown(fresh)
+    assert "지난 해석 대조" in text and "대조할 지난 해석이 아직 없습니다" in text
