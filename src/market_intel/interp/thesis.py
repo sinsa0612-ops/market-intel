@@ -1020,9 +1020,32 @@ def render_impact(reviews: list[dict], report_date: str = "",
     counts = {"강화": 0, "유지": 0, "약화": 0, "무효": 0, "판정 불가": 0}
     for r in reviews:
         counts[r["verdict"]] += 1
+
+    # **사건을 앞세우고 상태를 뒤로 내린다** (CEO 지적 2026-08-21).
+    #
+    # 2026-08-20에 상세 줄의 "매일 강화"를 진입일·지속·새 관측으로 바꿨는데,
+    # 요약 줄이 같은 결함을 그대로 반복하고 있었다 — 판정은 **상태**이지
+    # 오늘의 사건이 아닌데 "강화 7"을 맨 앞에 놓으면 매일 무언가 좋아진 것처럼
+    # 읽힌다. 실측: 판정 244건 중 상태가 바뀐 것은 **4건(1.6%)**이고, 나머지
+    # 98.4%는 안 바뀐 상태를 다시 읽은 것이다.
+    #
+    # "바뀐 것 없음"이 매일 나오는 것은 괜찮다 — 그것이 **사실**이기 때문이다.
+    # 문제는 아무 일도 없는 날에 "강화"라고 쓰는 것이었다.
+    #
+    # `changed`는 `review()`가 이미 계산해 원장에 남기는 값이다(직전 판정과
+    # 다를 때만 1). 새로 세지 않고 그대로 쓴다.
+    moved = [r for r in reviews if r.get("changed")]
+    if moved:
+        detail = " · ".join(
+            f"{THEME_LABELS.get(r['theme'], r['theme'])} #{r['slot']} "
+            f"{r['prev_verdict']} → {r['verdict']}" for r in moved)
+        event = f"**상태가 바뀐 가설 {len(moved)}건** — {detail}"
+    else:
+        event = "상태가 바뀐 가설 없음"
     header = (
-        f"가설 {len(reviews)}건 판정 — 강화 {counts['강화']} · 유지 {counts['유지']} · "
-        f"약화 {counts['약화']} · 무효 {counts['무효']} · 판정 불가 {counts['판정 불가']}."
+        f"가설 {len(reviews)}건 판정 — {event}. "
+        f"(현재 상태: 강화 {counts['강화']} · 유지 {counts['유지']} · "
+        f"약화 {counts['약화']} · 무효 {counts['무효']} · 판정 불가 {counts['판정 불가']})"
     )
     lines = [header]
     for r in reviews:

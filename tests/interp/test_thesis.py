@@ -578,6 +578,56 @@ def test_render_impact_empty_when_no_theses():
     assert thesis_mod.render_impact([]) == ""
 
 
+# --- 요약 줄: 사건이 앞, 상태가 뒤 (CEO 지적 2026-08-21) --------------------
+#
+# 2026-08-20에 상세 줄의 "매일 강화"를 진입일·지속·새 관측으로 바꿨는데 요약
+# 줄이 같은 결함을 반복하고 있었다 — 판정은 **상태**이지 오늘의 사건이 아닌데
+# "강화 7"을 맨 앞에 놓으면 매일 무언가 좋아진 것처럼 읽힌다. 실측: 판정
+# 244건 중 상태가 바뀐 것은 4건(1.6%)뿐이다.
+#
+# **이 결함이 살아 있었던 이유는 요약 줄 형식을 못박은 시험이 하나도 없었기
+# 때문이다.** 아래 셋이 그 계약이다.
+
+def _two_unchanged_reviews():
+    """직전 판정과 같은(= 오늘 바뀐 것 없는) 판정 두 건."""
+    return [
+        {"thesis_id": "t1", "theme": "ai_semi", "slot": 1, "verdict": "강화",
+         "prev_verdict": "강화", "changed": 0, "evaluable_atoms": 2, "total_atoms": 2,
+         "fired": [{"detail": {"message": "조건 충족"}}], "all_evals": []},
+        {"thesis_id": "t2", "theme": "fin_credit", "slot": 1, "verdict": "유지",
+         "prev_verdict": "유지", "changed": 0, "evaluable_atoms": 2, "total_atoms": 2,
+         "fired": [], "all_evals": []},
+    ]
+
+
+def test_summary_leads_with_what_changed_not_with_the_state():
+    """**아무 일도 없는 날에 "강화"로 시작하지 않는다.**"""
+    text = thesis_mod.render_impact(_two_unchanged_reviews())
+    head = text.split("\n")[0]
+    assert "상태가 바뀐 가설 없음" in head, head
+    # 상태 개수는 남되 **뒤로** 간다 — 지우는 것이 아니라 순서를 바꾸는 것이다.
+    assert "강화 1" in head
+    assert head.index("바뀐") < head.index("강화"), (
+        f"상태가 사건보다 앞에 있다 — 매일 좋아진 것처럼 읽힌다: {head}")
+
+
+def test_summary_names_the_change_when_one_actually_happens():
+    """바뀐 날에는 **무엇이 어떻게** 바뀌었는지 적는다 — 개수만으로는 어느
+    가설이 움직였는지 알 수 없다."""
+    reviews = _two_unchanged_reviews()
+    reviews[1].update({"verdict": "강화", "prev_verdict": "유지", "changed": 1})
+    head = thesis_mod.render_impact(reviews).split("\n")[0]
+    assert "상태가 바뀐 가설 1건" in head, head
+    assert "금융·신용 #1" in head and "유지" in head and "강화" in head, head
+
+
+def test_summary_still_carries_every_verdict_bucket():
+    """순서를 바꾸는 것이지 정보를 지우는 것이 아니다 — 다섯 칸이 다 남는다."""
+    head = thesis_mod.render_impact(_two_unchanged_reviews()).split("\n")[0]
+    for bucket in ("강화", "유지", "약화", "무효", "판정 불가"):
+        assert bucket in head, f"{bucket}이 요약에서 사라졌다: {head}"
+
+
 def test_render_next_check_suffix_includes_reviewed_theses_date():
     results = [{"thesis_id": "t1", "theme": "ai_semi", "slot": 1, "verdict": "유지", "next_check_date": "2026-11-01"}]
     text = thesis_mod.render_next_check_suffix(results, report=None)
