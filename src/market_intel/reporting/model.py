@@ -216,6 +216,45 @@ class PriorInterpretation:
 
 
 @dataclass
+class ScorecardRow:
+    """성적표 한 줄 — 한 대상(변수)의 누적 성적."""
+    label: str = ""       # 사람이 읽는 이름("KOSPI"). 표시용.
+    subject: str = ""     # 원장 코드("^KS11"). 이름이 바뀌어도 이쪽이 정본이다.
+    scored: int = 0       # 맞음+틀림. **채점 불가는 여기 안 든다.**
+    true: int = 0
+    false: int = 0
+    unknown: int = 0      # 채점 불가 — 실패가 아니라 "우리 관측으로 못 재는 주장"
+
+
+@dataclass
+class InterpretationScorecard:
+    """**해석이 미리 등록한 조건의 성적** (CEO 지시 2026-08-20, E 증분 3).
+
+    `PriorInterpretation`이 "판정하지 않는다"고 정한 것과 모순되지 않는다. 그쪽은
+    **산문**을 채점하지 않겠다는 것이고, 이쪽은 해석이 **쓸 때 스스로 등록한 숫자
+    조건**만 채점한다. 산문과 조건이 일치한다고 주장하지 않으므로 사후 재해석도
+    산문 파싱도 없다 — 설계 근거 전문은 `interp/checks.py` 모듈 주석에 있다.
+
+    화면이 절대 말하면 안 되는 것: **"이 해석이 맞았다"**. 말할 수 있는 것은
+    "이 해석이 등록한 조건 3개 중 2개가 맞았다"까지다.
+
+    `unknown`(채점 불가)을 적중률에서 빼고 따로 세는 이유: 그 비율 자체가
+    **"우리 관측으로 검증되는 주장을 쓰고 있나"**의 지표라서, 오답과 섞으면
+    지표가 사라진다.
+    """
+    rows: list[ScorecardRow] = field(default_factory=list)  # 변수별
+    scored: int = 0       # 전체 맞음+틀림
+    true: int = 0
+    false: int = 0
+    unknown: int = 0
+    pending: int = 0          # 등록됐지만 아직 만기 전
+    next_due: str = ""        # 그중 가장 이른 만기
+    # 채점된 것이 아직 없을 때의 사유. 채우면 렌더러가 그 문장만 낸다 —
+    # 비어 있는 성적표와 "등록 자체가 안 되고 있는 상태"를 화면이 구별해야 한다.
+    unavailable: str = ""
+
+
+@dataclass
 class ChartSeries:
     """차트 한 계열. `values`는 `dates`와 같은 길이이고, 값이 없는 칸은 None."""
     label: str = ""
@@ -307,6 +346,9 @@ class Report:
     # 관측 기업이 아예 없는 업종의 이름들 — 그날의 사건이 아니라 상시 사실이라
     # 매일 같은 값이 들어간다(`blindspot.unwatched_sectors` 주석 참조).
     unwatched_sectors: list[str] = field(default_factory=list)
+    # 해석 성적표(CEO 지시 2026-08-20, E 증분 3) — 해석이 미리 등록한 숫자
+    # 조건의 누적 성적. 옛 리포트 JSON에는 이 키가 없다.
+    scorecard: InterpretationScorecard = field(default_factory=InterpretationScorecard)
     interpretation: Interpretation = field(default_factory=Interpretation)
     meta: dict = field(default_factory=dict)
 
@@ -353,6 +395,14 @@ class Report:
             next_check=raw_prior.get("next_check", ""),
             unavailable=raw_prior.get("unavailable", ""),
             rows=[PriorClaimRow(**r) for r in raw_prior.get("rows", [])],
+        )
+        raw_card = d.get("scorecard") or {}
+        d["scorecard"] = InterpretationScorecard(
+            rows=[ScorecardRow(**r) for r in raw_card.get("rows", [])],
+            scored=raw_card.get("scored", 0), true=raw_card.get("true", 0),
+            false=raw_card.get("false", 0), unknown=raw_card.get("unknown", 0),
+            pending=raw_card.get("pending", 0), next_due=raw_card.get("next_due", ""),
+            unavailable=raw_card.get("unavailable", ""),
         )
         d["blind_spots"] = [BlindSpotRow(**r) for r in d.get("blind_spots", [])]
         raw_flow = d.get("flow_split") or {}

@@ -268,3 +268,50 @@ def test_module_never_reads_interpretation_prose():
     body = src.split('"""', 2)[-1]  # 모듈 docstring 제외
     for banned in ("reading", "counter_reading", "next_check", "text_json", "fields_json"):
         assert banned not in body, f"산문 필드를 건드린다: {banned!r}"
+
+
+# --- 등록 이후 새 관측이 없으면 채점하지 않는다 (2026-08-21 E2E가 잡은 결함) ---
+
+def test_the_very_value_the_threshold_came_from_is_not_a_verdict(conn):
+    """**실측 재현.** 모델은 문턱을 오늘 값에서 뽑는다(`^KS11 < 6471.17` ← F96이
+    6471.17). 새 관측 없이 그 값으로 채점하면 승패를 가르는 것이 시장이 아니라
+    부동소수점 표현 오차다 — 2026-08-21 실제 발행 조건 4건이 그렇게 갈렸다:
+
+        ^KS11 < 6471.17  ← 관측 6471.169921875   -> TRUE
+        ^SOX  > 11800.02 ← 관측 11800.0185546875 -> FALSE
+
+    같은 값인데 부호만 반대로 났다. 그런 판정이 쌓이면 틀린 믿음에 인증서가 붙는다.
+    """
+    _seed(conn, "DGS2", "value", "2026-03-02T00:00:00+00:00", 4.19)
+    assert _reg(conn, [{"id": "a1", "kind": "threshold", "subject": "DGS2",
+                        "metric": "value", "op": ">", "value": 4.19}]) == 1
+    checks.score_due(conn, "2026-03-20", CUTOFF)
+    row = conn.execute("SELECT verdict, detail_json FROM interpretation_checks").fetchone()
+    assert row["verdict"] == "UNKNOWN", "새 관측 없이 판정하면 안 된다"
+    assert "새 관측이 없다" in row["detail_json"]
+
+
+def test_a_new_observation_after_registration_is_scored_normally(conn):
+    """가드가 채점 자체를 막으면 안 된다 — **새 관측이 오면 정상 채점이다.**"""
+    _seed(conn, "DGS2", "value", "2026-03-02T00:00:00+00:00", 4.19)
+    _reg(conn, [{"id": "a1", "kind": "threshold", "subject": "DGS2",
+                 "metric": "value", "op": ">", "value": 4.19}])
+    _seed(conn, "DGS2", "value", "2026-03-15T00:00:00+00:00", 4.55)
+    checks.score_due(conn, "2026-03-20", CUTOFF)
+    assert conn.execute("SELECT verdict FROM interpretation_checks").fetchone()[0] == "TRUE"
+
+
+def test_stale_is_exempt_because_no_new_observation_is_its_whole_claim(conn):
+    """`stale`은 "N일째 갱신이 없다"가 주장 그 자체다. 여기에 새 관측을 요구하면
+    **뜻이 뒤집힌다** — 주장이 참인 바로 그 경우에만 채점 불가가 된다."""
+    _seed(conn, "DGS2", "value", "2026-03-01T00:00:00+00:00", 4.19)
+    assert _reg(conn, [{"id": "a1", "kind": "stale", "subject": "DGS2",
+                        "metric": "value", "days": 5}]) == 1
+    checks.score_due(conn, "2026-03-20", CUTOFF)
+    assert conn.execute("SELECT verdict FROM interpretation_checks").fetchone()[0] == "TRUE"
+
+
+def test_an_unknown_observation_date_falls_to_unscorable(conn):
+    """근거의 날짜를 모르는 채로 "맞았다"고 말할 수는 없다 — UNKNOWN 쪽으로 넘어진다."""
+    assert checks._require_new_observation(
+        {"kind": "threshold"}, "TRUE", {"message": "x"}, "2026-03-02")[0] == "UNKNOWN"

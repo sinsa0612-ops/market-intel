@@ -291,6 +291,18 @@ def scored_checks(conn: sqlite3.Connection, report_type: str | None = None) -> l
     return list(conn.execute(sql, args))
 
 
+def pending_checks(conn: sqlite3.Connection) -> tuple[int, str | None]:
+    """아직 채점 안 된 조건의 (개수, 가장 이른 만기).
+
+    성적표가 비어 있는 동안에도 **배관이 살아 있다**는 것을 화면이 말할 수 있게
+    한다 — 등록만 되고 만기가 아직 안 온 기간(첫 등록일 +7일)에 성적표가 그냥
+    비면, 등록이 안 되는 것과 화면상 구별되지 않는다."""
+    row = conn.execute(
+        "SELECT COUNT(*), MIN(due_date) FROM interpretation_checks "
+        "WHERE scored_at IS NULL").fetchone()
+    return (int(row[0]), row[1])
+
+
 def reusable_interpretation(conn: sqlite3.Connection, report_type: str, report_date: str,
                             cutoff_utc: str, facts_sha256: str) -> dict | None:
     """같은 리포트(종류·날짜·차단선)에 대해 **같은 사실 위에서** 쓰인 해석 중

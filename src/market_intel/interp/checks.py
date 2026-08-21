@@ -59,6 +59,10 @@ DEFAULT_HORIZON_DAYS = 7
 
 MAX_PER_INTERPRETATION = 4  # 한 해석이 등록할 수 있는 조건 수 상한
 
+# 「등록 이후 새 관측」을 요구하지 **않는** 조건 종류. `stale`은 "N일째 갱신이
+# 없다"가 주장 그 자체라, 새 관측을 요구하면 뜻이 뒤집힌다.
+FRESHNESS_EXEMPT_KINDS = ("stale",)
+
 
 @dataclass
 class Scorecard:
@@ -153,6 +157,37 @@ def due(conn, as_of: str) -> list[dict]:
     return store_mod.due_checks(conn, as_of)
 
 
+def _require_new_observation(atom: dict, status: str, detail: dict,
+                             report_date: str) -> tuple[str, dict]:
+    """**등록 이후 새 관측이 없으면 채점하지 않는다** — TRUE/FALSE가 아니라 UNKNOWN.
+
+    실측(2026-08-21 E2E, 실제 발행된 조건 4건): 모델은 문턱을 **오늘 값에서**
+    뽑는다(`^KS11 < 6471.17` ← F96이 6471.17). 그 값 그대로 채점하면 승패를
+    가르는 것은 시장이 아니라 부동소수점 표현 오차다 — 실제로 그렇게 났다:
+    ```
+    ^KS11 < 6471.17  ← 관측 6471.169921875  -> TRUE
+    ^SOX  > 11800.02 ← 관측 11800.0185546875 -> FALSE
+    ```
+    둘 다 같은 값인데 부호만 반대로 갈렸다. 이런 판정이 성적표에 쌓이면 **틀린
+    믿음에 인증서가 붙는다.**
+
+    이 규칙은 새로 만든 것이 아니다. 「지난 해석 대조」가 이미 같은 자리에서
+    같은 판단을 한다(`build._prior_interpretation`: *"그 뒤로 새 관측이 없다 —
+    대조할 것이 없다"*). 채점도 같아야 한다.
+
+    날짜를 알 수 없으면(`latest_at` 없음) **UNKNOWN 쪽으로 넘어진다** — 근거의
+    날짜를 모르는 채로 맞았다/틀렸다를 말할 수는 없다.
+    """
+    if status not in ("TRUE", "FALSE") or atom.get("kind") in FRESHNESS_EXEMPT_KINDS:
+        return status, detail
+    latest_at = str(detail.get("latest_at") or detail.get("latest_event_at") or "")
+    if latest_at[:10] > report_date:
+        return status, detail
+    return "UNKNOWN", {**detail, "message": (
+        f"등록({report_date}) 이후 새 관측이 없다 — 채점 불가"
+        f"{f' (최신 관측 {latest_at[:10]})' if latest_at else ''}")}
+
+
 def score_due(conn, as_of: str, cutoff) -> int:
     """만기 도래분을 채점한다. -> 채점한 개수.
 
@@ -165,6 +200,7 @@ def score_due(conn, as_of: str, cutoff) -> int:
         atom.setdefault("id", row["atom_id"])
         try:
             status, detail = thesis_mod.evaluate_atom(conn, atom, cutoff)
+            status, detail = _require_new_observation(atom, status, detail, row["report_date"])
         except Exception as exc:  # noqa: BLE001 — 조건 하나가 성적표를 막지 않는다
             status, detail = "UNKNOWN", {"message": f"채점 실패: {type(exc).__name__}"}
         store_mod.mark_check_scored(
@@ -190,3 +226,29 @@ def scorecard(conn, *, report_type: str | None = None, subject: str | None = Non
         else:
             card.unknown += 1
     return card
+
+
+def pending(conn) -> tuple[int, str | None]:
+    """아직 채점 안 된 조건의 (개수, 가장 이른 만기). `store`가 원장을 읽는다."""
+    return store_mod.pending_checks(conn)
+
+
+def scorecard_by_subject(conn, *, report_type: str | None = None) -> list[tuple[str, Scorecard]]:
+    """**변수별** 성적. CEO가 물은 "어떤 변수를 짚었을 때 맞았나"가 이것이다.
+
+    `scorecard()`를 대상마다 다시 부르지 않는다 — 그러면 원장을 대상 수만큼
+    훑는다. 한 번 훑으면서 대상별로 나눈다. 정렬은 **채점된 건수가 많은 것부터**
+    — 한 번 짚고 만 변수보다 열두 번 짚은 변수의 적중률이 먼저 읽혀야 한다.
+    """
+    cards: dict[str, Scorecard] = {}
+    for verdict, atom_json in store_mod.scored_checks(conn, report_type):
+        subject = json.loads(atom_json).get("subject") or ""
+        card = cards.setdefault(subject, Scorecard())
+        card.total += 1
+        if verdict == "TRUE":
+            card.true += 1
+        elif verdict == "FALSE":
+            card.false += 1
+        else:
+            card.unknown += 1
+    return sorted(cards.items(), key=lambda kv: (-kv[1].scored, -kv[1].total, kv[0]))

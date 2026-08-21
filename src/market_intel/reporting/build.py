@@ -82,10 +82,12 @@ from .model import (
     ChartSeries,
     FactRow,
     Interpretation,
+    InterpretationScorecard,
     MissingItem,
     PriorClaimRow,
     PriorInterpretation,
     Report,
+    ScorecardRow,
     SectorIndexRow,
     SectorSummary,
     UnusualDayBlock,
@@ -1688,6 +1690,10 @@ def build_report(
     unwatched = blindspot_mod.unwatched_sectors(_label_of)
     # 지난 해석 대조(CEO 지시 2026-08-13) — 같은 종류의 직전 리포트와 견준다.
     prior = _prior_interpretation(conn, cutoff, report_type, report_date)
+    # 해석 성적표(E 증분 3) — **채점과 표시를 한 자리에서 한다.** 채점을 해석
+    # 단계(`interp/ops.py`)에 두면 화면 값은 이미 build에서 확정된 뒤라 리포트가
+    # 하루 묵은 성적을 싣고 원장만 앞서간다.
+    scorecard = _scorecard(conn, cutoff, report_date)
     win = _EVENTS_WINDOW_DAYS[report_type]
     events = _events_rows(conn, cutoff, win)
     schedule_changes = _schedule_change_rows(conn, cutoff, win)
@@ -1771,6 +1777,7 @@ def build_report(
         unusual_day=unusual_day,
         charts=charts,
         prior=prior,
+        scorecard=scorecard,
         blind_spots=blind_spots,
         flow_split=flow_split,
         unwatched_sectors=unwatched,
@@ -1867,6 +1874,48 @@ def _prior_interpretation(conn, cutoff, report_type: str, report_date: date) -> 
         return out
     rows.sort(key=lambda x: -x[0])
     out.rows = [r for _k, r in rows[:_PRIOR_MAX_ROWS]]
+    return out
+
+
+def _scorecard(conn, cutoff, report_date: date) -> InterpretationScorecard:
+    """만기 도래분을 채점하고 누적 성적을 낸다 (CEO 지시 2026-08-20, E 증분 3).
+
+    **채점은 규칙이 한다** — LLM이 끼지 않고 산문도 읽지 않는다. 무엇을 채점하고
+    무엇을 채점하지 않는지의 근거 전문은 `interp/checks.py` 모듈 주석에 있다.
+
+    `as_of`는 **리포트 날짜**다(벽시계가 아니다). 지난주 리포트를 오늘 다시
+    만들어도 그때 만기가 안 된 조건은 채점되지 않는다 — 차단선과 같은 이유다.
+
+    `_prior_interpretation`과 같은 원칙으로 **리포트를 못 만들게 하지 않는다**:
+    성적표가 실패하면 성적표만 비고 리포트는 그대로 나간다.
+    """
+    from ..interp import checks as checks_mod  # 순환 import 회피(interp가 build를 읽는다)
+
+    out = InterpretationScorecard()
+    try:
+        checks_mod.score_due(conn, report_date.isoformat(), cutoff)
+        by_subject = checks_mod.scorecard_by_subject(conn)
+        out.pending, next_due = checks_mod.pending(conn)
+        out.next_due = next_due or ""
+    except Exception:  # noqa: BLE001 - 성적표가 리포트를 막지 않는다
+        return InterpretationScorecard(unavailable="성적표를 불러오지 못했습니다.")
+
+    for subject, card in by_subject:
+        out.rows.append(ScorecardRow(
+            label=_MACRO_LABELS.get(subject) or _subject_name(subject), subject=subject,
+            scored=card.scored, true=card.true, false=card.false, unknown=card.unknown))
+        out.scored += card.scored
+        out.true += card.true
+        out.false += card.false
+        out.unknown += card.unknown
+
+    if not out.rows:
+        # **비어 있는 이유를 말한다.** 등록은 되는데 만기가 아직 안 온 것과,
+        # 등록 자체가 안 되고 있는 것은 화면에서 구별돼야 한다 — 둘 다 빈
+        # 표로 보이면 배관이 끊긴 날을 아무도 모른다.
+        out.unavailable = (
+            f"아직 만기가 된 조건이 없습니다 (등록 {out.pending}건 · 첫 만기 {out.next_due})."
+            if out.pending else "해석이 등록한 조건이 아직 없습니다.")
     return out
 
 

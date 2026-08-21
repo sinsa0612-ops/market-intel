@@ -638,10 +638,41 @@ def _prior_html(p) -> str:
     )
 
 
+def _scorecard_html(c) -> str:
+    """`_scorecard_md`와 **같은 문장**을 HTML로. 문구는 `_scorecard_lines`가 한
+    자리에서 만든다(그쪽 주석 참조)."""
+    from .render_md import (SCORECARD_CAVEAT, scorecard_headline, scorecard_notes,
+                            scorecard_rate)
+
+    if c.unavailable:
+        return f'<p class="muted">{_esc(c.unavailable)}</p>'
+    if not c.rows:
+        return ""
+    rows = ""
+    for r in c.rows:
+        rows += (f"<tr><td>{_esc(r.label)}</td>"
+                 f'<td class="num">{r.scored}</td><td class="num">{r.true}</td>'
+                 f'<td class="num">{r.false}</td>'
+                 f'<td class="num">{_esc(scorecard_rate(r))}</td>'
+                 f'<td class="num">{r.unknown}</td></tr>')
+    notes = "".join(f"<p>{_esc(t)}</p>" for t in scorecard_notes(c))
+    return (
+        f"<p><strong>{_esc(scorecard_headline(c))}</strong></p>"
+        '<div class="scroll"><table><thead><tr><th>대상</th><th class="num">채점</th>'
+        '<th class="num">맞음</th><th class="num">틀림</th><th class="num">적중률</th>'
+        '<th class="num">채점 불가</th></tr></thead>'
+        f"<tbody>{rows}</tbody></table></div>{notes}"
+        # 굵게(`**`)는 마크다운 문법이라 HTML에는 그대로 나가면 안 된다.
+        f'<p class="muted">{_esc(SCORECARD_CAVEAT.replace("**", ""))}</p>'
+    )
+
+
 def _block_html(block: dict) -> str:
     kind = block["kind"]
     if kind == "prior":
         return _prior_html(block["prior"])
+    if kind == "scorecard":
+        return _scorecard_html(block["card"])
     if kind == "chart":
         return chart_svg(block["block"])
     if kind == "unusual_day":

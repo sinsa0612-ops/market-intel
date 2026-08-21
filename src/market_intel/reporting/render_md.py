@@ -480,6 +480,11 @@ def _prior(report: Report) -> dict:
     return {"kind": "prior", "prior": report.prior}
 
 
+def _scorecard(report: Report) -> dict:
+    """해석 성적표 블록. 판단은 `build.py`가 끝냈으므로 옮기기만 한다."""
+    return {"kind": "scorecard", "card": report.scorecard}
+
+
 def _chart(block) -> dict:
     """`ChartBlock` -> 렌더러 공용 블록. `_unusual_day`와 같은 원칙 — 판단은
     `build.py`가 끝냈고 여기서는 옮기기만 한다."""
@@ -662,6 +667,15 @@ def sections(report: Report) -> list[tuple[str, list[dict]]]:
     # 앞에 두면 오늘 읽을 것보다 어제 것이 먼저 오고, 별도 섹션으로 빼면 아무도
     # 안 본다 — 새 해석을 읽은 직후가 "지난번엔 뭐라 했더라"가 가장 궁금한 자리다.
     interp_parts += [_subheading("지난 해석 대조"), _prior(report)]
+    # 성적표는 대조 **뒤**에 온다. 대조는 "지난번에 뭐라 했더라"이고 성적표는
+    # "그래서 우리가 얼마나 맞히고 있나"라서, 사례를 본 다음에 누계를 보는 순서다.
+    #
+    # 할 말이 없으면 **소제목도 내지 않는다.** `site build`는 이 필드가 생기기
+    # 전에 쓰인 리포트 JSON까지 전부 다시 렌더하는데(지금 20건 넘는다), 그쪽에는
+    # 성적도 사유도 없어서 빈 소제목만 남는다. 새 리포트는 성적이 없어도 `build`가
+    # **왜 없는지**를 채우므로(`_scorecard`) 항상 실린다.
+    if report.scorecard.rows or report.scorecard.unavailable:
+        interp_parts += [_subheading("등록한 조건의 성적"), _scorecard(report)]
     out.append(("해석", interp_parts))
     out.append((
         "다가오는 일정",
@@ -912,6 +926,53 @@ def _prior_md(p) -> str:
     return "\n\n".join([head, "\n".join(lines), *said])
 
 
+SCORECARD_CAVEAT = (
+    "이 표는 **산문이 맞았는지를 말하지 않습니다.** 해석이 쓸 때 스스로 등록한 "
+    "숫자 조건만 만기에 규칙이 채점한 것입니다."
+)
+
+
+def scorecard_headline(c) -> str:
+    """누계 한 줄(굵은 글씨 없이). md/html이 각자 강조 문법을 입힌다."""
+    return (f"등록한 조건 채점 {c.scored}건 — 맞음 {c.true} · 틀림 {c.false}"
+            + (f" (적중률 {c.true / c.scored * 100:.0f}%)" if c.scored else ""))
+
+
+def scorecard_notes(c) -> list[str]:
+    """누계 아래 붙는 문장들. md/html이 **같은 문장**을 쓰도록 여기서 한 번만
+    만든다 — 두 렌더러가 따로 문구를 가지면 한쪽만 고쳐지는 날 화면이 어긋난다."""
+    notes = []
+    graded = c.scored + c.unknown
+    if graded:
+        notes.append(
+            f"채점 불가 {c.unknown}건 / 만기 도래 {graded}건 "
+            f"({c.unknown / graded * 100:.0f}%) — 우리 관측으로 검증되지 않는 주장을 "
+            f"그만큼 썼다는 뜻입니다.")
+    if c.pending:
+        notes.append(f"만기 대기 {c.pending}건 · 다음 만기 {c.next_due}.")
+    return notes
+
+
+def scorecard_rate(r) -> str:
+    """적중률 표기. 채점된 것이 없으면 0%가 아니라 "—"다 — 0%는 "다 틀렸다"는
+    뜻이고, 여기는 "잰 적이 없다"는 뜻이라 정반대다."""
+    return f"{r.true / r.scored * 100:.0f}%" if r.scored else "—"
+
+
+def _scorecard_md(c) -> str:
+    if c.unavailable:
+        return f"*{c.unavailable}*"
+    if not c.rows:
+        return ""
+    lines = ["| 대상 | 채점 | 맞음 | 틀림 | 적중률 | 채점 불가 |",
+             "|---|---:|---:|---:|---:|---:|"]
+    for r in c.rows:
+        lines.append(f"| {r.label} | {r.scored} | {r.true} | {r.false} | "
+                     f"{scorecard_rate(r)} | {r.unknown} |")
+    return "\n\n".join([f"**{scorecard_headline(c)}**", "\n".join(lines),
+                         *scorecard_notes(c), SCORECARD_CAVEAT])
+
+
 def _blindspot_md(block: dict) -> str:
     """신고가 있으면 신고를, 없어도 **관측하지 않는 업종 목록은 항상** 싣는다.
 
@@ -934,6 +995,8 @@ def _block_md(block: dict) -> str:
     kind = block["kind"]
     if kind == "prior":
         return _prior_md(block["prior"])
+    if kind == "scorecard":
+        return _scorecard_md(block["card"])
     if kind == "chart":
         return _chart_md(block["block"])
     if kind == "unusual_day":
