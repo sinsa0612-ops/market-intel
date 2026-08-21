@@ -13,7 +13,7 @@ import pytest
 from market_intel.interp import validate as validate_mod
 from market_intel.reporting.model import CalendarRow
 
-from conftest import make_fact_row, make_report
+from tests.interp.conftest import make_fact_row, make_report
 
 # name, text, expect_blocked (True=violation expected, False=must pass clean)
 ADVERSARIAL_CASES = [

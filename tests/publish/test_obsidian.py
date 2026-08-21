@@ -6,7 +6,7 @@ from pathlib import Path
 from market_intel import obsidian as obsidian_mod
 from market_intel.reporting.model import FactRow
 
-from conftest import make_report, write_report
+from tests.publish.conftest import make_report, write_report
 
 
 def test_path_convention(reports_root, tmp_path):

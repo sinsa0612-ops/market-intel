@@ -25,7 +25,7 @@ from market_intel.reporting import model as model_mod
 from market_intel.reporting import render_html as render_html_mod
 from market_intel.reporting import render_md as render_md_mod
 
-from conftest import seed_fact
+from tests.reporting.conftest import seed_fact
 
 REPORT_DATE = date(2026, 8, 1)
 # spec B6: morning 차단선 = 당일 07:15 KST = 전날 22:15 UTC.

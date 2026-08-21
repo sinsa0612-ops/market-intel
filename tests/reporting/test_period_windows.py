@@ -21,7 +21,7 @@ from market_intel.reporting import cutoff as cutoff_mod
 from market_intel.reporting import render_html as render_html_mod
 from market_intel.reporting import render_md as render_md_mod
 
-from conftest import price_fc, seed_fact
+from tests.reporting.conftest import price_fc, seed_fact
 
 REPORT_DATE = date(2026, 8, 9)
 KNOWN_BEFORE = "2026-08-08T22:00:00+00:00"  # weekly_review 차단선(08-09 08:30 KST) 이전

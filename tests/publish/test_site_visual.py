@@ -12,7 +12,7 @@ import re
 from market_intel import site as site_mod
 from market_intel.reporting.model import FactRow
 
-from conftest import make_report, write_report
+from tests.publish.conftest import make_report, write_report
 
 
 # --- CSS 파싱 도우미 --------------------------------------------------------

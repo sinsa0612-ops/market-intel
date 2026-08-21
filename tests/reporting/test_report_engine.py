@@ -21,7 +21,7 @@ from market_intel.reporting import model as model_mod
 from market_intel.reporting import render_html as render_html_mod
 from market_intel.reporting import render_md as render_md_mod
 
-from conftest import price_fc, seed_fact
+from tests.reporting.conftest import price_fc, seed_fact
 
 
 def test_cutoff_blackout(settings):

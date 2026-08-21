@@ -6,7 +6,7 @@ import dataclasses
 from market_intel.interp import digest as digest_mod
 from market_intel.reporting.model import CalendarRow, FactRow, MissingItem
 
-from conftest import make_fact_row, make_report, macro_fc, price_fc, seed_fact
+from tests.interp.conftest import make_fact_row, make_report, macro_fc, price_fc, seed_fact
 
 
 def test_build_header_includes_kr_market_breadth():

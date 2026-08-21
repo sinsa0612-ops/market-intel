@@ -19,7 +19,7 @@ from market_intel.reporting import model as model_mod
 from market_intel.reporting import render_html as render_html_mod
 from market_intel.reporting import render_md as render_md_mod
 
-from conftest import seed_fact
+from tests.reporting.conftest import seed_fact
 
 REPORT_DATE = date(2026, 8, 3)
 # close_delta 차단선은 그날 16:15 KST(=07:15Z) — krx 종가 데이터가 나오는

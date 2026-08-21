@@ -155,7 +155,7 @@ def test_the_most_recent_crossing_wins_when_several_fire():
 def test_verdict_is_untouched_by_the_novelty_layer(settings):
     """⚠️ 가장 중요한 계약. 신규성은 **표시**일 뿐 판정을 바꾸지 않는다 —
     바꾸면 "지금 긴축적이다"라는 참인 정보가 사라지고 과거 판정과 비교도 끊긴다."""
-    from conftest import seed_fact
+    from tests.interp.conftest import seed_fact
 
     db_mod.init_db(settings.db_path)
     conn = db_mod.connect(settings.db_path)
@@ -188,7 +188,7 @@ def test_streak_is_not_computed_for_false_atoms(settings, monkeypatch):
     통과시킨다(실제로 첫 판이 그랬다 — 변이 주입에서 초록이었다). 계약은
     "결과를 안 담는다"가 아니라 "일을 안 한다"이다.
     """
-    from conftest import seed_fact
+    from tests.interp.conftest import seed_fact
 
     db_mod.init_db(settings.db_path)
     conn = db_mod.connect(settings.db_path)

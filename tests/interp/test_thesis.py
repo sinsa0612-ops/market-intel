@@ -19,7 +19,7 @@ from market_intel import db as db_mod
 from market_intel.interp import store as store_mod
 from market_intel.interp import thesis as thesis_mod
 
-from conftest import fin_fc, macro_fc, price_fc, seed_fact
+from tests.interp.conftest import fin_fc, macro_fc, price_fc, seed_fact
 
 UTC = timezone.utc
 

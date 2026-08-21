@@ -62,7 +62,7 @@ def _record(conn, report_type: str, report_date: str, evidence, text: dict,
 
 def _seed_pair(conn, raw_dir):
     """8/11에 순매도, 8/12에 순매수로 전환 — 실측 그대로의 모양."""
-    from conftest import seed_fact
+    from tests.reporting.conftest import seed_fact
 
     seed_fact(conn, raw_dir, "kis", _flow("2026-08-11", -299_800_000_000.0),
               "2026-08-11T22:00:00+00:00")
@@ -118,7 +118,7 @@ def test_failed_interpretations_are_not_compared(settings):
 def test_no_new_observation_means_nothing_to_compare(settings):
     """그 뒤로 새 관측이 없으면 "그때 -> 지금"이 성립하지 않는다. 같은 값을 두 번
     쓰면 아무 일도 없었는데 대조한 것처럼 보인다."""
-    from conftest import seed_fact
+    from tests.reporting.conftest import seed_fact
 
     db_mod.init_db(settings.db_path)
     conn = db_mod.connect(settings.db_path)
@@ -167,7 +167,7 @@ def test_filing_events_are_skipped(settings):
 def test_row_count_is_capped(settings):
     """⚠️ 한 해석이 F-번호를 수십 개 인용한다. 전부 실으면 표가 다시 77행이 된다 —
     2026-08-03에 CEO가 "표로 보니 한눈에 안 들어온다"고 지적한 그 자리다."""
-    from conftest import seed_fact
+    from tests.reporting.conftest import seed_fact
 
     db_mod.init_db(settings.db_path)
     conn = db_mod.connect(settings.db_path)

@@ -18,7 +18,7 @@ from market_intel.interp import store as store_mod
 from market_intel.reporting import build as build_mod
 from market_intel.reporting import cutoff as cutoff_mod
 from market_intel.reporting.model import FactRow, Report
-from conftest import seed_fact
+from tests.reporting.conftest import seed_fact
 
 from market_intel.models import FactCandidate
 

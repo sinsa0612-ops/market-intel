@@ -17,7 +17,7 @@ from market_intel import site as site_mod
 from market_intel.engine import _fact_id
 from market_intel.models import FactCandidate, RawItem
 
-from conftest import make_report, write_report
+from tests.publish.conftest import make_report, write_report
 
 CUTOFF = "2026-08-05T00:00:00+00:00"
 

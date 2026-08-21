@@ -22,7 +22,7 @@ from market_intel.reporting import model as model_mod
 from market_intel.reporting import render_html as render_html_mod
 from market_intel.reporting import render_md as render_md_mod
 
-from conftest import price_fc, seed_fact
+from tests.reporting.conftest import price_fc, seed_fact
 
 REPORT_DATE = date(2026, 8, 6)
 KNOWN_BEFORE = "2026-08-06T06:30:00+00:00"  # close_delta 차단선(07:15Z) 이전

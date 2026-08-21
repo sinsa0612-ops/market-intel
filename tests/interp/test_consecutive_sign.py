@@ -46,7 +46,7 @@ def _atom(kind: str, periods: int, direction: str = "down") -> dict:
 
 
 def _seed(conn, raw_dir, series):
-    from conftest import seed_fact
+    from tests.interp.conftest import seed_fact
 
     for day, value in series:
         seed_fact(conn, raw_dir, "kis", _flow_fc(f"2026-08-{day}T06:30:00+00:00", value),

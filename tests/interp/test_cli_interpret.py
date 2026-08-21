@@ -14,7 +14,7 @@ from market_intel import cli as cli_mod
 from market_intel import cli_interpret as cli_interpret_mod
 from market_intel import db as db_mod
 
-from conftest import make_report
+from tests.interp.conftest import make_report
 
 
 def run_cli(monkeypatch, tmp_path, capsys, argv):

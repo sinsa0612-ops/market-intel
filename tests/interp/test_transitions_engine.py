@@ -512,7 +512,7 @@ def test_engine_module_never_references_fact_revisions():
     test's own docstring-stripping helper: the module docstring here
     *explains* the boundary in prose ("never re-reads fact_revisions"), and a
     promise not to do the thing must not itself read as doing the thing."""
-    from test_apply import _code_without_docstrings
+    from tests.interp.test_apply import _code_without_docstrings
 
     code = _code_without_docstrings(Path(tr.__file__))
     assert "fact_revisions" not in code

@@ -113,7 +113,7 @@ def test_audit_can_reach_the_new_kind():
 def test_audit_replays_relative_conditions_with_the_benchmark(settings):
     """감사의 소급이 기준 계열을 함께 되짚는지. 안 그러면 상대 조건은 언제나
     '발화 이력 없음'으로 나와 새로 넣은 감시자가 죽은 것처럼 보인다."""
-    from conftest import seed_fact
+    from tests.interp.conftest import seed_fact
 
     db_mod.init_db(settings.db_path)
     conn = db_mod.connect(settings.db_path)

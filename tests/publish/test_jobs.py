@@ -11,7 +11,7 @@ import pytest
 from market_intel import jobs as jobs_mod
 from market_intel.reporting.cutoff import KST
 
-from conftest import make_report, write_report
+from tests.publish.conftest import make_report, write_report
 
 
 @pytest.fixture

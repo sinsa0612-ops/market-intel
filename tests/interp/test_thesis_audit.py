@@ -45,7 +45,7 @@ _FLOW_ATOM = {"id": "a", "category": "flow", "subject": "000660.KS",
 
 def _seed_steady_selling(conn, raw_dir):
     """4거래일 내리 순매도 — 다만 **가속하지는 않는다**(실측 8/6~8/11 모양)."""
-    from conftest import seed_fact
+    from tests.interp.conftest import seed_fact
 
     for day, value in [("2026-08-06", -1_677_100_000_000.0),
                        ("2026-08-07", -66_700_000_000.0),
@@ -136,7 +136,7 @@ def test_every_supported_kind_is_reachable(kind, extra):
 def test_closest_approach_separates_live_sentinels_from_decoration(settings):
     """"발화한 적 없음"만으로는 판단이 안 된다 — 반증 조건은 가설이 맞으면
     안 울리는 게 정상이다. 문턱까지의 거리가 그것을 갈라 준다."""
-    from conftest import seed_fact
+    from tests.interp.conftest import seed_fact
 
     db_mod.init_db(settings.db_path)
     conn = db_mod.connect(settings.db_path)

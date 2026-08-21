@@ -29,7 +29,7 @@ from market_intel.interp import thesis as thesis_mod
 from market_intel.interp import transitions as tr_mod
 from market_intel.reporting.cutoff import KST
 
-from conftest import macro_fc, make_report, seed_fact
+from tests.interp.conftest import macro_fc, make_report, seed_fact
 
 # --- shared fixture: one real threshold thesis, one real macro series -------
 

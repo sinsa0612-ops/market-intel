@@ -34,7 +34,7 @@ import pytest
 from market_intel.interp import validate as validate_mod
 from market_intel.reporting.model import CalendarRow
 
-from conftest import make_fact_row, make_report
+from tests.interp.conftest import make_fact_row, make_report
 
 _EVENT_13F = CalendarRow(
     when="2026-08-14", name="13F 제출 마감", country="US", subject="",

@@ -26,7 +26,7 @@ from market_intel.interp import store as store_mod
 from market_intel.interp import thesis as thesis_mod
 from market_intel.reporting.cutoff import KST
 
-from conftest import make_report
+from tests.interp.conftest import make_report
 
 
 def write_report(tmp_path, report, name="report.json"):

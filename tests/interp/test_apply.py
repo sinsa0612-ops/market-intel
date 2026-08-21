@@ -15,7 +15,7 @@ from market_intel.interp import apply as apply_mod
 from market_intel.interp import llm as llm_mod
 from market_intel.interp import thesis as thesis_mod
 
-from conftest import macro_fc, make_fact_row, make_report, seed_fact
+from tests.interp.conftest import macro_fc, make_fact_row, make_report, seed_fact
 
 _OK_FIELDS = {
     "reading": "F1의 실업률은 4.20%로 안정적이다. 고용시장은 완만한 흐름을 보인다.",

@@ -16,7 +16,7 @@ from market_intel import site as site_mod
 from market_intel.reporting import render_md
 from market_intel.reporting.model import CalendarRow, FactRow
 
-from conftest import make_report, seed_calendar, write_report
+from tests.publish.conftest import make_report, seed_calendar, write_report
 
 
 def _html_files(docs_root: Path) -> list[Path]:

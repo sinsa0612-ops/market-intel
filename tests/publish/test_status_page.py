@@ -22,7 +22,7 @@ from market_intel.interp import thesis as thesis_mod
 from market_intel.jobs import JOBS
 from market_intel.reporting.cutoff import KST
 
-from conftest import make_report, write_report
+from tests.publish.conftest import make_report, write_report
 
 NOW = datetime(2026, 8, 14, 9, 0, tzinfo=KST)  # Friday
 

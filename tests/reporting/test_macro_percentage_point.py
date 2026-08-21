@@ -20,7 +20,7 @@ from market_intel.reporting import build as build_mod
 from market_intel.reporting import cutoff as cutoff_mod
 from market_intel.reporting import render_html as render_html_mod
 from market_intel.universe import UNIVERSE
-from conftest import seed_fact
+from tests.reporting.conftest import seed_fact
 
 from market_intel.models import FactCandidate
 
