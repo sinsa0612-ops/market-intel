@@ -32,6 +32,30 @@ def _pm(sector: str, sector_last: float, watched: dict[str, float] | None = None
     return out
 
 
+def _volatile_hist(n: int, last: float) -> list[float]:
+    """**변동이 큰** 종가 이력. 개별주를 흉내 낸다.
+
+    이게 없으면 비중 관련 시험이 겨냥한 코드에 **닿지 못한다**: `_pm`의 평온한
+    이력에서는 4% 하루가 무조건 자기 이력 상위 0%라, 기여도를 따지기 전에
+    `_is_unusual(관측기업)` 가드가 먼저 걸어 신고 자체가 사라진다.
+
+    현실이 정확히 이 모양이라서 중요하다 — LLY는 +4.46%가 자기 이력 상위 3.19%라
+    "평소 범위"로 판정됐다(문턱 2%). 개별주가 ETF보다 원래 크게 움직인다는
+    사실이 곧 오탐의 원인이었으므로, 시험 이력도 그래야 한다."""
+    closes = [100.0]
+    for i in range(n):
+        closes.append(closes[-1] * (1 + ((i % 21) - 10) * 0.8 / 100))
+    closes.append(closes[-1] * (1 + last / 100))
+    return closes
+
+
+def _pm_vol(sector: str, sector_last: float, watched: dict[str, float]) -> dict:
+    out = {sector: {"hist": _hist(300, last=sector_last), "delta_pct": sector_last}}
+    for sym, last in watched.items():
+        out[sym] = {"hist": _volatile_hist(300, last), "delta_pct": last}
+    return out
+
+
 _L = lambda s: s  # noqa: E731 - 라벨은 심볼 그대로
 
 
@@ -77,7 +101,74 @@ def test_reports_when_sector_is_unusual_but_our_companies_are_quiet():
     rows = bs.detect(_pm(SECTOR_WITH_WATCH, 30.0, {WATCHED: 0.1}), _L)
     assert [r.sector_symbol for r in rows] == [SECTOR_WITH_WATCH]
     assert WATCHED in rows[0].note
-    assert "관측하지 않는 종목" in rows[0].note, "무엇이 사각지대인지 문장이 말해야 한다"
+    assert "평소 범위" in rows[0].note
+    assert rows[0].explained_pp is None, "비중을 안 줬으면 계산했다고 하면 안 된다"
+
+
+# --- 단정 금지 (2026-08-21에 고친 오탐) --------------------------------------
+
+def test_never_claims_the_mover_was_something_we_do_not_watch():
+    """**이 시스템이 낸 유일한 사각지대 신고 1건이 이 문장 때문에 틀렸다.**
+
+    2026-08-20 발행: *"헬스케어 +3.51% — 우리가 보는 Eli Lilly은(는) 평소
+    범위였다. 움직인 것은 우리가 관측하지 않는 종목이다."*
+
+    실제로는 LLY가 +4.46%였고 XLV의 15.47%라 업종 움직임의 약 20%를 **그 종목이**
+    만들었다. 검출기는 각 종목을 자기 이력과만 견주는데(상대적 질문), 개별주는
+    ETF보다 원래 크게 움직여서 같은 문턱을 대면 거의 항상 "평소 범위"로 나온다 —
+    그 위에 저 단정을 얹으면 **구조적으로 틀린 문장**이 된다.
+
+    관측이 아니라 추론인 문장은 쓰지 않는다. 비중을 알면 숫자로, 모르면 침묵.
+    """
+    for weights in (None, {SECTOR_WITH_WATCH: {WATCHED: 20.0}}):
+        rows = bs.detect(_pm(SECTOR_WITH_WATCH, 30.0, {WATCHED: 0.1}), _L, weights)
+        for r in rows:
+            assert "관측하지 않는 종목이다" not in r.note, "근거 없는 단정이 돌아왔다"
+
+
+def test_says_it_cannot_tell_when_weights_are_unknown():
+    """한국 업종 ETF는 보유내역을 주지 않는다(실측: 14개 전부). **모른다를
+    없다로 승격하지 않는다** — 못 가린다고 말한다."""
+    rows = bs.detect(_pm(SECTOR_WITH_WATCH, 30.0, {WATCHED: 0.1}), _L, weights={})
+    assert "비중을 알 수 없어" in rows[0].note
+
+
+def test_splits_the_move_into_explained_and_unexplained():
+    """비중을 알면 단정 대신 **분해**한다."""
+    pm = _pm_vol(SECTOR_WITH_WATCH, 10.0, {WATCHED: 4.0})
+    assert not bs._is_unusual(pm[WATCHED]["hist"]), "픽스처가 기여도 코드에 닿아야 한다"
+    rows = bs.detect(pm, _L, weights={SECTOR_WITH_WATCH: {WATCHED: 25.0}})
+    assert rows, "설명된 몫이 10%면 여전히 사각지대다"
+    assert rows[0].explained_pp == pytest.approx(1.0)   # 0.25 * 4.0
+    assert "+1.00%p" in rows[0].note and "10%" in rows[0].note
+    assert "+9.00%p" in rows[0].note, "남은 몫도 숫자로 말해야 한다"
+
+
+def test_stays_silent_when_our_companies_explain_most_of_the_move():
+    """관측 기업이 절반 넘게 설명하면 그날의 이야기는 "우리가 못 보는 곳"이
+    아니다. 자기 이력 기준으로는 조용했더라도 마찬가지다 — 그 판정이 바로
+    오탐을 만든 상대적 질문이기 때문이다."""
+    pm = _pm_vol(SECTOR_WITH_WATCH, 10.0, {WATCHED: 6.0})
+    assert not bs._is_unusual(pm[WATCHED]["hist"]), "픽스처가 기여도 코드에 닿아야 한다"
+    assert bs.detect(pm, _L, weights={SECTOR_WITH_WATCH: {WATCHED: 90.0}}) == []  # 5.4%p = 54%
+
+
+def test_a_watched_company_moving_against_the_sector_does_not_count_as_explaining():
+    """부호가 반대면 설명한 것이 아니라 **거스른** 것이다. 절댓값으로 재면
+    업종을 끌어내린 종목이 업종 상승을 "설명"하게 된다."""
+    pm = _pm_vol(SECTOR_WITH_WATCH, 10.0, {WATCHED: -6.0})
+    assert not bs._is_unusual(pm[WATCHED]["hist"]), "픽스처가 기여도 코드에 닿아야 한다"
+    rows = bs.detect(pm, _L, weights={SECTOR_WITH_WATCH: {WATCHED: 90.0}})
+    assert rows, "반대로 움직인 기업이 신고를 지우면 안 된다"
+    assert rows[0].explained_pp == pytest.approx(-5.4)
+
+
+def test_unknown_weight_for_one_company_does_not_become_zero():
+    """비중을 모르는 기업은 계산에서 빠진다 — 0으로 치면 "설명 못 한 몫"이
+    부풀려지고, 그만큼 사각지대가 과장된다."""
+    pm = _pm(SECTOR_WITH_WATCH, 10.0, {WATCHED: 4.0})
+    assert bs.explained_pp(pm, {}, [WATCHED]) is None
+    assert bs.explained_pp(pm, {WATCHED: 25.0}, [WATCHED]) == pytest.approx(1.0)
 
 
 def test_stays_silent_when_our_companies_moved_too():
@@ -190,3 +281,29 @@ def test_old_report_json_without_the_new_keys_still_loads():
     d.pop("unwatched_sectors", None)
     r = Report.from_json(json.dumps(d))
     assert r.blind_spots == [] and r.unwatched_sectors == []
+
+
+def test_the_2026_08_20_false_alert_cannot_happen_again():
+    """**실제 사건 재현.** 이 시스템이 낸 유일한 사각지대 신고가 틀렸던 그 날이다.
+
+    원장 실측(2026-08-19 미국 종가):
+        XLV +3.51% -> 자기 이력 상위 0.21% -> 유별남 (문턱 2%)
+        LLY +4.46% -> 자기 이력 상위 3.19% -> 문턱 미달 = "평소 범위"
+        LLY 비중 15.47% -> 기여도 +0.69%p = 업종 +3.51%p의 20%
+
+    즉 **업종을 움직인 것의 5분의 1이 우리가 보는 그 종목이었다.** 그런데 발행된
+    문장은 "움직인 것은 우리가 관측하지 않는 종목이다"였다.
+
+    DB를 읽지 않는다(이 파일의 규칙) — 위 두 성질(업종은 유별남 · 관측 기업은
+    자기 기준 평소 범위)을 합성 이력으로 그대로 만든다.
+    """
+    pm = _pm_vol("XLV", 3.51, {"LLY": 4.46})
+    assert bs._is_unusual(pm["XLV"]["hist"]), "업종은 유별나야 한다"
+    assert not bs._is_unusual(pm["LLY"]["hist"]), "관측 기업은 자기 기준 평소 범위여야 한다"
+
+    rows = bs.detect(pm, _L, weights={"XLV": {"LLY": 15.472}})
+    assert len(rows) == 1
+    note = rows[0].note
+    assert "관측하지 않는 종목이다" not in note, "그 단정이 이 사건을 만들었다"
+    assert "+0.69%p" in note and "20%" in note, "우리 몫을 숫자로 말해야 한다"
+    assert "+2.82%p" in note, "남은 몫도 숫자로 말해야 한다"

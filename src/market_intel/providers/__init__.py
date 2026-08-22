@@ -13,10 +13,12 @@ from .policy_calendar import PolicyCalendarProvider
 from .sec_8k_events import Sec8kEventsProvider
 from .sec_edgar import SecEdgarProvider
 from .sec_edgar_13f import Sec13fProvider
+from .yfinance_holdings import YFinanceHoldingsProvider
 from .yfinance_prices import YFinanceProvider
 
 PROVIDERS: dict = {
     "yfinance": YFinanceProvider(),
+    "yfinance_holdings": YFinanceHoldingsProvider(),
     "sec_edgar": SecEdgarProvider(),
     "sec_edgar_13f": Sec13fProvider(),
     "fred": FredProvider(),

@@ -156,6 +156,10 @@ def test_full_workflow_run_never_leaks_fake_secrets(settings, caplog, tmp_path, 
     db_mod.init_db(settings.db_path)
     registry = {
         "yfinance": _BenignStandIn("yfinance"),
+        # 업종 ETF 보유비중(2026-08-21). 대역을 쓰는 이유는 `yfinance`와 같다 —
+        # 이 그물이 재는 것은 **비밀이 새는가**이지 yfinance가 도는가가 아니고,
+        # 진짜 공급자를 넣으면 시험이 네트워크에 매달린다.
+        "yfinance_holdings": _BenignStandIn("yfinance_holdings"),
         "sec_edgar": SecEdgarProvider(),
         "sec_edgar_13f": Sec13fProvider(),
         "fred": FredProvider(),

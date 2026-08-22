@@ -13,9 +13,12 @@ def test_workflow_composition_is_fixed():
     # spec B14 (2A/ST1) — calendar/events are new workflow entries; "all"
     # gains their 4 providers but morning/close stay byte-for-byte the same.
     assert WORKFLOWS["calendar"] == ["fred_calendar", "earnings_calendar", "policy_calendar"]
-    assert WORKFLOWS["events"] == ["sec_8k_events"]
+    # `yfinance_holdings`(2026-08-21) — 업종 ETF 상위 보유종목 비중. events에
+    # 붙인 이유는 이 시험이 지키려는 것이 **morning/close의 불변**이기 때문이다:
+    # 그 둘은 위에서 한 바이트도 안 바뀐 채 그대로다.
+    assert WORKFLOWS["events"] == ["sec_8k_events", "yfinance_holdings"]
     assert WORKFLOWS["all"] == [
-        "yfinance", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
+        "yfinance", "yfinance_holdings", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
         "fred_calendar", "earnings_calendar", "policy_calendar", "sec_8k_events", "kis", "krx",
     ]
     assert set(WORKFLOWS["all"]) == (

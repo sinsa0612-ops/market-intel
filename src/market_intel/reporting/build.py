@@ -1683,7 +1683,10 @@ def build_report(
         meta = _UNIVERSE_BY_SYMBOL.get(symbol) or {}
         return meta.get("name_ko") or meta.get("name") or symbol
 
-    blind_spots = blindspot_mod.detect(price_map, _label_of)
+    # 비중은 **원장에서** 온다(`yfinance_holdings`). 차단선을 통과한 관측만
+    # 쓰므로, 지난 리포트를 다시 만들면 그때 몰랐던 비중은 안 쓰인다 — 오늘 안
+    # 비중으로 지난주를 설명하지 않는다.
+    blind_spots = blindspot_mod.detect(price_map, _label_of, _sector_weights(conn, cutoff))
     # 자금 갈래(CEO 지시 2026-08-20). 사각지대와 같은 원칙 — 이미 차단선을 통과한
     # `price_map`/`mmap`만 넘기고 DB를 다시 읽지 않는다.
     flow_split = flow_split_mod.compute(price_map, mmap, _label_of)
@@ -1806,6 +1809,32 @@ def _parse_fact_id(fact_id: str) -> tuple[str, str] | None:
     if len(parts) < 4:
         return None
     return parts[1], parts[2]
+
+
+def _sector_weights(conn, cutoff) -> dict[str, dict[str, float]]:
+    """`{업종지수: {보유종목: 비중%}}` — 차단선 시점에 알 수 있던 최신 비중.
+
+    `yfinance_holdings`가 `subject="XLV/LLY"` 꼴로 쌓아 둔 것을 갈라 담는다
+    (13F 보유내역과 같은 복합 이름 수법). 실패해도 **리포트를 막지 않는다** —
+    비중이 없으면 사각지대 신고가 계산 없이 말할 수 있는 것만 말한다.
+    """
+    out: dict[str, dict[str, float]] = {}
+    try:
+        rows = db_mod.facts_as_of(conn, cutoff, metric="holding_weight")
+    except Exception:  # noqa: BLE001 - 비중 조회 실패가 리포트를 막지 않는다
+        return out
+    # ⚠️ `facts_as_of`는 **정렬하지 않고**, `fact_id`에 날짜가 들어가므로 같은
+    # (업종, 종목)의 날짜별 비중이 전부 돌아온다. 명시로 최신순 정렬한 뒤
+    # 처음 만난 것만 쓴다 — 안 하면 어느 날짜의 비중이 뽑힐지가 SQLite의
+    # 행 순서에 달린다(조용히 틀리는 종류다).
+    for row in sorted(rows, key=lambda r: (r["event_at"] or "", r["known_at"] or ""),
+                      reverse=True):
+        subject = row["subject"] or ""
+        etf, _, holding = subject.partition("/")
+        if not etf or not holding or row["value_num"] is None:
+            continue
+        out.setdefault(etf, {}).setdefault(holding, float(row["value_num"]))
+    return out
 
 
 def _prior_interpretation(conn, cutoff, report_type: str, report_date: date) -> PriorInterpretation:

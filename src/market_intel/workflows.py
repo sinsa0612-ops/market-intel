@@ -17,9 +17,14 @@ WORKFLOWS: dict[str, list[str]] = {
     # spec B14 (ST1 addition) — morning/close are untouched (1단계 테스트가
     # 내용을 검사한다); calendar/events are new entries, also added to "all".
     "calendar": ["fred_calendar", "earnings_calendar", "policy_calendar"],
-    "events": ["sec_8k_events"],
+    # `yfinance_holdings`가 여기 있는 이유: morning/close 목록은 시험이 내용을
+    # 못박고 있어 건드리지 않는다. events(13:00·22:00)는 매일 돌고, 22:00분은
+    # 미국 장 마감 뒤라 그날의 비중을 잡는다. 비중은 리밸런싱과 가격 변동으로
+    # 천천히 움직이므로 하루 한 번이면 충분하고, 같은 날 두 번 돌아도 fact_id가
+    # 같아 원장이 늘지 않는다.
+    "events": ["sec_8k_events", "yfinance_holdings"],
     "all": [
-        "yfinance", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
+        "yfinance", "yfinance_holdings", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
         "fred_calendar", "earnings_calendar", "policy_calendar", "sec_8k_events", "kis", "krx",
     ],
 }

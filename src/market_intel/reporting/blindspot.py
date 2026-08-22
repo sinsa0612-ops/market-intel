@@ -122,6 +122,11 @@ class BlindSpotRow:
     delta_pct: float = 0.0      # 그 업종의 오늘 등락률
     rank_pct: float = 0.0       # 자기 이력에서 오늘 |등락|의 백분위(상위 몇 %)
     watched_ko: str = ""        # 그 업종에서 우리가 보는 기업(없으면 빈 문자열)
+    # 관측 기업이 그 업종 움직임의 몇 %p를 만들었나 (비중 x 등락의 합).
+    # `None`이면 **비중을 모른다**는 뜻이지 0이라는 뜻이 아니다 — 한국 업종
+    # ETF는 보유내역을 주지 않아 늘 None이고, 그 둘을 섞으면 "모른다"가
+    # "없다"로 승격된다.
+    explained_pp: float | None = None
     note: str = ""              # 완성된 한 줄 설명
 
 
@@ -152,17 +157,51 @@ def top_rank_pct(hist_asc: list[float]) -> float | None:
     return bigger / len(past) * 100
 
 
+# 관측 기업이 업종 움직임의 이만큼을 설명하면 **사각지대라고 부르지 않는다.**
+# 절반을 고른 이유: 그 업종을 움직인 것이 주로 우리가 보는 기업이라면, 그날의
+# 이야기는 "우리가 못 보는 곳에서 무슨 일이 있었다"가 아니다. 절반 미만이면
+# 신고하되 **설명된 몫과 남은 몫을 숫자로 함께 낸다** — 단정하지 않는다.
+EXPLAINED_ENOUGH = 0.5
+
+
+def explained_pp(price_map: dict, weights: dict, watched: list[str]) -> float | None:
+    """관측 기업이 만든 업종 등락의 몫(%p). 비중을 하나도 모르면 `None`.
+
+    **이것이 2026-08-21에 고친 오탐의 핵심이다.** 검출기는 각 종목을 자기 이력과만
+    견주는데(상대적 질문), 개별주는 ETF보다 원래 크게 움직이므로 같은 문턱을 대면
+    **개별주는 거의 항상 "평소 범위"로 나온다.** 그 위에 "움직인 것은 우리가
+    관측하지 않는 종목이다"라고 쓰면 구조적으로 틀린 문장이 된다.
+
+    실측(2026-08-19): XLV +3.51%(상위 0.21% = 유별남) · LLY +4.46%(상위 3.19% =
+    평소 범위). 그런데 LLY는 XLV의 15.47%라 기여도가 +0.69%p — 업종 움직임의 약
+    20%를 **우리가 보는 그 종목**이 만들었다.
+    """
+    total = None
+    for symbol in watched:
+        weight = weights.get(symbol)
+        info = price_map.get(symbol) or {}
+        delta = info.get("delta_pct")
+        if weight is None or delta is None:
+            continue
+        total = (total or 0.0) + weight / 100.0 * delta
+    return total
+
+
 def _is_unusual(hist_asc: list[float]) -> bool:
     rank = top_rank_pct(hist_asc)
     return rank is not None and rank <= RANK_THRESHOLD
 
 
-def detect(price_map: dict, label_of) -> list[BlindSpotRow]:
+def detect(price_map: dict, label_of, weights: dict | None = None) -> list[BlindSpotRow]:
     """오늘 사각지대를 찾는다.
 
     `price_map`은 `build._price_map`의 결과(차단선을 이미 통과한 값들)이고,
     `label_of(symbol) -> str`는 사람이 읽는 이름을 주는 함수다. **이 함수는
     DB를 읽지 않는다** — 리포트의 정보 차단선을 두 번 해석할 여지를 없앤다.
+
+    `weights`는 `{업종지수심볼: {보유종목: 비중%}}`로, 관측 기업이 그 업종
+    움직임의 얼마를 설명하는지 계산하는 데 쓴다(`explained_pp`). 없으면 계산을
+    건너뛰고 **계산 없이 말할 수 있는 것만** 쓴다.
 
     등락률이 큰 업종부터 낸다."""
     rows: list[BlindSpotRow] = []
@@ -188,15 +227,39 @@ def detect(price_map: dict, label_of) -> list[BlindSpotRow]:
         rank = top_rank_pct(hist)
         label = label_of(sector)
         names = " · ".join(label_of(s) for s in present)
+        made = explained_pp(price_map, (weights or {}).get(sector) or {}, present)
+        if made is not None and delta and made / delta >= EXPLAINED_ENOUGH:
+            # 그 업종을 움직인 것이 주로 우리가 보는 기업이다 = 사각지대가 아니다.
+            continue
         rows.append(BlindSpotRow(
             sector_label=label, sector_symbol=sector, delta_pct=delta,
-            rank_pct=round(rank, 1), watched_ko=names,
-            note=(f"{label} {delta:+.2f}% (자기 이력 상위 {rank:.1f}%) — 이 업종에서 "
-                  f"우리가 보는 {names}은(는) 평소 범위였다. 움직인 것은 우리가 "
-                  f"관측하지 않는 종목이다."),
+            rank_pct=round(rank, 1), watched_ko=names, explained_pp=made,
+            note=_note(label, delta, rank, names, made),
         ))
     rows.sort(key=lambda r: -abs(r.delta_pct))
     return rows[:MAX_ROWS]
+
+
+def _note(label: str, delta: float, rank: float, names: str,
+          made: float | None) -> str:
+    """신고 한 줄. **단정하지 않는다.**
+
+    2026-08-20에 발행된 옛 문장은 *"움직인 것은 우리가 관측하지 않는 종목이다"*로
+    끝났다. 그것은 관측이 아니라 추론이고, 그날 실제로는 틀렸다(`explained_pp`
+    주석의 실측). 지금은 두 갈래로만 말한다:
+
+    - 비중을 안다  -> 얼마를 우리가 설명하고 얼마가 남는지 **숫자로**.
+    - 비중을 모른다 -> 우리 기업이 자기 기준으로 평소 범위였다는 사실까지만.
+      한국 업종 ETF가 여기 해당한다(보유내역을 주지 않는다).
+    """
+    head = (f"{label} {delta:+.2f}% (자기 이력 상위 {rank:.1f}%) — 이 업종에서 "
+            f"우리가 보는 {names}은(는) 자기 기준으로 평소 범위였다.")
+    if made is None:
+        return head + " 이 업종은 비중을 알 수 없어 누가 움직였는지 가릴 수 없다."
+    share = made / delta * 100 if delta else 0.0
+    return (f"{head} 비중으로 따지면 {names}이(가) {made:+.2f}%p"
+            f"({share:.0f}%)를 설명하고, 남은 {delta - made:+.2f}%p는 우리가 보지 "
+            f"않는 종목들이다.")
 
 
 def unwatched_sectors(label_of) -> list[str]:

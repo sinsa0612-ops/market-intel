@@ -16,7 +16,7 @@ from .universe import CORE16, UNIVERSE
 from .workflows import WORKFLOWS
 
 PROVIDER_ORDER = [
-    "yfinance", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
+    "yfinance", "yfinance_holdings", "sec_edgar", "sec_edgar_13f", "fred", "ecos", "dart",
     # spec B14 (ST1) — without these four, `db stats` reports the calendar
     # facts as if they did not exist.
     "fred_calendar", "earnings_calendar", "policy_calendar", "sec_8k_events",
