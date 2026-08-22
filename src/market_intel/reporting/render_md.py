@@ -167,6 +167,10 @@ def fmt_money(value: float | None, unit: str) -> str:
 # 표는 그 구조를 보여줄 수 없었다.
 FLOW_ACTORS: tuple[tuple[str, str], ...] = (
     ("individual", "개인"), ("institution", "기관"), ("foreign", "외국인"),
+    # 네 번째 주체(2026-08-22). 셋만 그리면 막대가 **좌우로 안 맞는다** — 순매수
+    # 합은 0이어야 하는데 셋의 합은 0이 아니기 때문이다. 대개 작지만 큰 날이
+    # 있고(SK하이닉스 2026-08-21 +1.13조), 바로 그날이 이 칸이 필요한 날이다.
+    ("etc", "기타"),
 )
 # 이 금액 아래는 "움직임 작음"으로 접는다. 막대를 그려도 픽셀이 안 나오고,
 # 매일 5종목 중 3종목이 이 구간이라 그리면 오히려 큰 것이 안 보인다.
@@ -204,7 +208,7 @@ def flow_groups(rows: list[FactRow]) -> list[dict]:
         entry["values"][actor] = float(row.raw_value)
         # 라벨은 "삼성전자(005930.KS) 개인 순매수(금액)" — 주체 부분을 떼면
         # 종목 이름이 남는다. build.py가 만든 그 라벨을 다시 만들지 않는다.
-        entry["name"] = re.sub(r"\s*(개인|기관|외국인)\s*순매수.*$", "", row.label).strip()
+        entry["name"] = re.sub(r"\s*(개인|기관|외국인|기타)\s*순매수.*$", "", row.label).strip()
 
     # 색의 진하기는 **금액의 절대 크기**다(CEO 요청 2026-08-04): 많이 샀으면
     # 진한 빨강, 조금 샀으면 옅은 빨강, 많이 팔았으면 진한 파랑, 조금 팔았으면

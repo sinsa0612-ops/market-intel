@@ -73,6 +73,7 @@ from ..universe import (
     SECTORS,
     UNIVERSE,
 )
+from ..providers import kis_flows as kis_flows_mod
 from .cutoff import KST
 from . import blindspot as blindspot_mod
 from . import flow_split as flow_split_mod
@@ -195,6 +196,14 @@ NO_FACTS_REASON = (
     "모두 비었다. 수집 job이 차단선보다 늦게 도는지(B10 시간표 vs B6 차단선) 확인이 필요하다. "
     "빈 리포트를 조용히 배포하지 않기 위해 결측으로 신고한다."
 )
+
+# 주체별 순매수의 합이 이만큼 넘게 0에서 벗어나면 신고한다. 원본이 백만원
+# 단위로 반올림해 주므로 잔차는 원래 조금 생긴다 — 실측(25종목)에서 가장 큰
+# 것이 0.5억이었다. 1억은 그 위이면서, 실제 결함(SK하이닉스에서 1조가 비었다)
+# 보다는 한참 아래다.
+FLOW_BALANCE_TOLERANCE_KRW = 1e8
+
+KR_FLOW_BALANCE_GAP_ID = "kr_flows:balance"
 
 KR_FLOW_GAP_ID = "kr_flows:net_buy"
 KR_FLOW_GAP_REASON = (
@@ -1409,6 +1418,11 @@ def _register_gap(conn, gap_id: str, subject: str, metric: str, reason: str) -> 
 
 # 투자자별 수급 항목명. 수량 라벨이 남아 있는 것은 DB와 상세 페이지가 여전히
 # 두 단위를 다 쓰기 때문이다 — 리포트 표에는 금액만 실린다(`_kr_flows` 참조).
+# 매수금·매도금은 **표에 제 줄로 싣지 않는다.** 종목당 6줄이 더 붙으면
+# 2026-08-03에 겨우 77행에서 줄인 핵심 사실이 다시 불어난다. 대신 표본 합계의
+# 순매수 줄 옆에 "매수 X · 매도 Y"로 붙인다 — 줄은 안 늘고 규모는 보인다.
+_GROSS_FLOW_METRICS = {m for pair in kis_flows_mod.GROSS_BY_ACTOR.values() for m in pair}
+
 _FLOW_LABELS = {
     "net_buy_foreign": "외국인 순매수(주)",
     "net_buy_institution": "기관 순매수(주)",
@@ -1416,6 +1430,8 @@ _FLOW_LABELS = {
     "net_buy_foreign_value": "외국인 순매수(금액)",
     "net_buy_institution_value": "기관 순매수(금액)",
     "net_buy_individual_value": "개인 순매수(금액)",
+    "net_buy_etc": "기타 순매수(주)",
+    "net_buy_etc_value": "기타 순매수(금액)",
 }
 
 
@@ -1426,6 +1442,58 @@ _FLOW_SAMPLE_SUBJECT = "KOSPI_TOP20"
 # 20종목 합으로 대신하는 것이고(`universe.KOSPI_FLOW_SAMPLE`), 시장이라고 쓰는
 # 순간 나중에 "코스피 수급"으로 읽고 판단하게 된다.
 _FLOW_SAMPLE_LABEL = f"코스피 상위 {len(KOSPI_FLOW_SAMPLE_SYMBOLS)}종목 합계(표본)"
+
+
+def _flow_balance_gap(conn, latest: dict) -> None:
+    """**모든 매수에는 매도가 있다** — 주체별 순매수의 합은 0이어야 한다.
+
+    이 검사가 없어서 결함이 조용히 발행됐다(CEO 지적 2026-08-21): 리포트가
+    개인·기관·외국인 셋만 실었고, SK하이닉스에서 셋의 합이 -1조1,299억이었다.
+    그 1조는 어디로도 가지 않았다 — 네 번째 주체(기타)가 사간 것이고, 우리
+    리포트만 그것을 못 봤다.
+
+    이제 네 주체를 다 받으므로 항등식이 닫혀야 하고, 안 닫히면 **그 자체가
+    소식이다**: 원본이 한 칸을 빠뜨렸거나, 주체 구분이 바뀌었거나, 우리가
+    필드를 잘못 읽고 있다는 뜻이다. 셋 다 조용히 지나가면 안 된다.
+
+    리포트를 막지 않는다 — `data_gaps`에 남겨 다음 사람이 보게 한다.
+    """
+    by_key: dict[tuple[str, str], float] = {}
+    for (subject, metric), row in latest.items():
+        if metric not in kis_flows_mod.NET_VALUE_METRICS:
+            continue
+        day = (row["event_at"] or "")[:10]
+        by_key[(subject, day)] = by_key.get((subject, day), 0.0) + (row["value_num"] or 0.0)
+    off = {k: v for k, v in by_key.items() if abs(v) > FLOW_BALANCE_TOLERANCE_KRW}
+    if not off:
+        return
+    worst = max(off.items(), key=lambda kv: abs(kv[1]))
+    _register_gap(
+        conn, KR_FLOW_BALANCE_GAP_ID, "kr_flows", "balance",
+        f"주체별 순매수의 합이 0이 아니다 — {len(off)}건, 가장 큰 것은 "
+        f"{worst[0][0]} {worst[0][1]} {worst[1] / 1e8:,.0f}억원. 모든 매수에는 "
+        f"매도가 있으므로 이 합은 0이어야 한다. 원본이 한 칸을 빠뜨렸거나 주체 "
+        f"구분이 바뀌었거나 우리가 필드를 잘못 읽고 있다.")
+
+
+def _gross_note(net_metric: str, total_of) -> str:
+    """순매수 줄 옆에 붙는 " · 매수 3.1조 · 매도 1.8조".
+
+    **순매수 하나로는 복원할 수 없는 것을 복원한다.** 실측(SK하이닉스
+    2026-08-21): 개인 순매수 -1.26조는 "1.26조를 팔았다"가 아니라 **3.10조를
+    팔면서 1.84조를 샀다**는 뜻이었다. 같은 -1.26조라도 이야기가 다르다.
+
+    총액이 없으면 **아무 말도 붙이지 않는다** — 0으로 채우면 "그날 아무도 안
+    샀다"가 되어 결측이 사실로 승격된다."""
+    actor = next((a for a in kis_flows_mod.GROSS_BY_ACTOR
+                  if net_metric == f"net_buy_{a}_value"), None)
+    if actor is None:
+        return ""
+    buy_metric, sell_metric = kis_flows_mod.GROSS_BY_ACTOR[actor]
+    buy, sell = total_of(buy_metric), total_of(sell_metric)
+    if buy is None or sell is None:
+        return ""
+    return f" · 매수 {fmt_money(buy, 'KRW')} · 매도 {fmt_money(sell, 'KRW')}"
 
 
 def _folded_into_sample_total(subject: str) -> bool:
@@ -1455,8 +1523,14 @@ def _kr_flow_sample_total(latest: dict) -> list[FactRow]:
     day = max((r["event_at"] or "")[:10]
               for rows in by_metric.values() for r in rows)
 
+    def _total(metric: str) -> float | None:
+        same = [r for r in by_metric.get(metric, []) if (r["event_at"] or "")[:10] == day]
+        return sum(r["value_num"] or 0.0 for r in same) if same else None
+
     out: list[FactRow] = []
     for metric, rows in by_metric.items():
+        if metric in _GROSS_FLOW_METRICS:
+            continue  # 제 줄을 만들지 않는다 — 아래에서 순매수 줄에 붙는다
         same_day = [r for r in rows if (r["event_at"] or "")[:10] == day]
         if not same_day:
             continue
@@ -1466,8 +1540,8 @@ def _kr_flow_sample_total(latest: dict) -> list[FactRow]:
         out.append(FactRow(
             label=f"{_FLOW_SAMPLE_LABEL} {who}",
             value=fmt_money(total, "KRW"),
-            comparison=f"{day} · {sample['publisher'] or ''} · {len(same_day)}종목 합"
-                       .strip(" ·"),
+            comparison=(f"{day} · {sample['publisher'] or ''} · {len(same_day)}종목 합"
+                        f"{_gross_note(metric, _total)}").strip(" ·"),
             source_url=sample["safe_source_url"] or "",
             data_status=sample["data_status"] or "source_verified",
             known_at=sample["known_at"], subject=_FLOW_SAMPLE_SUBJECT, metric=metric,
@@ -1527,6 +1601,12 @@ def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
                 group="flow" if (r["metric"] or "").endswith("_value") else "",
             )
             for r in latest.values()
+            # 매수금·매도금은 **제 줄을 갖지 않는다.** 종목당 6줄이 더 붙으면
+            # 2026-08-03에 겨우 77행에서 줄인 표가 다시 불어난다. 여기서만
+            # 빼는 이유는 `_kr_flow_sample_total`이 그 값으로 표본 합계 줄에
+            # "매수 X · 매도 Y"를 붙이기 때문이다 — 위에서 걸러 버리면 그쪽까지
+            # 굶는다(실측: 처음에 그렇게 짰다가 주석이 통째로 안 나왔다).
+            if (r["metric"] or "") not in _GROSS_FLOW_METRICS
             # **표본 전용 종목만** 개별 막대에서 뺀다 — 20개를 다 그리면 어제 겨우
             # 77행에서 줄인 핵심 사실이 다시 20줄이 된다. 그 종목들은 합계 막대와
             # 상세 페이지가 대신 보여준다.
@@ -1539,6 +1619,7 @@ def _kr_flows(conn, cutoff) -> tuple[list[FactRow], list[MissingItem]]:
             # 빼는 것은 "합계가 이미 보여주는 것"뿐이다.
             if not _folded_into_sample_total(r["subject"])
         ]
+        _flow_balance_gap(conn, latest)
         out = _kr_flow_sample_total(latest) + out
         out.sort(key=lambda x: (x.subject != _FLOW_SAMPLE_SUBJECT, x.subject, x.label))
         return out, []

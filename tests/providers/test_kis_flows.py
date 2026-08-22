@@ -33,6 +33,15 @@ SAMPLE_ROW = {
     "frgn_ntby_qty": "8359011", "prsn_ntby_qty": "-11681307", "orgn_ntby_qty": "3618959",
     "frgn_ntby_tr_pbmn": "2099936", "prsn_ntby_tr_pbmn": "-2958633",
     "orgn_ntby_tr_pbmn": "935049",
+    # 매수금·매도금(CEO 지시 2026-08-21). 순매수는 이 둘의 차다:
+    # 개인 1,845 - 4,804 = -2,959(백만원 단위, 반올림 차 1).
+    "frgn_shnu_tr_pbmn": "6532100", "frgn_seln_tr_pbmn": "4432164",
+    "prsn_shnu_tr_pbmn": "1845000", "prsn_seln_tr_pbmn": "4803633",
+    "orgn_shnu_tr_pbmn": "5210049", "orgn_seln_tr_pbmn": "4275000",
+    # 네 번째 주체. 나머지 셋의 합(-2,958,633 + 2,099,936 + 935,049 = 76,352)을
+    # 상쇄해 **합이 정확히 0**이 되게 둔다 — 실제 응답이 그런 모양이다.
+    "etc_ntby_qty": "-296663", "etc_ntby_tr_pbmn": "-76352",
+    "etc_shnu_tr_pbmn": "412000", "etc_seln_tr_pbmn": "488352",
 }
 
 
@@ -245,3 +254,49 @@ def test_flow_sample_symbols_are_collected_too(settings):
     assert not missing, f"표본에서 빠진 종목: {sorted(missing)}"
     # 관측 기업도 그대로 있어야 한다 — 표본이 관측을 대체하는 것이 아니다.
     assert "005930.KS" in collected
+
+
+# --- 매수금·매도금 (CEO 지시 2026-08-21) --------------------------------------
+
+def test_gross_buy_and_sell_become_facts(settings):
+    """**순매수만으로는 복원할 수 없는 것을 복원한다.** 실측(SK하이닉스
+    2026-08-21): 개인 순매수 -1.26조는 "1.26조를 팔았다"가 아니라 3.10조를
+    팔면서 1.84조를 샀다는 뜻이었다. 같은 -1.26조라도 이야기가 다르다."""
+    _result, by_metric = _facts(settings)
+    assert by_metric["buy_individual_value"].value_num == 1_845_000 * 1_000_000
+    assert by_metric["sell_individual_value"].value_num == 4_803_633 * 1_000_000
+    for m in ("buy_foreign_value", "sell_foreign_value", "buy_institution_value",
+              "sell_institution_value"):
+        assert by_metric[m].unit == "KRW", f"{m} 단위가 원이 아니다"
+        assert by_metric[m].category == "flow"
+
+
+def test_gross_amounts_are_also_in_millions(settings):
+    """`_pbmn` 계열은 전부 백만원이다 — 매수/매도만 원으로 읽으면 순매수와
+    자릿수가 어긋나 "매수 184만원, 순매수 -1.26조"가 된다."""
+    _result, by_metric = _facts(settings)
+    buy = by_metric["buy_individual_value"].value_num
+    sell = by_metric["sell_individual_value"].value_num
+    net = by_metric["net_buy_individual_value"].value_num
+    assert abs((buy - sell) - net) < 2 * 1_000_000, "매수-매도가 순매수와 맞지 않는다"
+
+
+def test_every_actor_has_a_gross_pair(settings):
+    """짝이 빠진 주체가 생기면 화면이 그 주체만 총액 없이 낸다 — 조용한 결측이다."""
+    from market_intel.providers.kis_flows import FIELD_MAP, GROSS_BY_ACTOR
+
+    mapped = {m for m, _u, _s in FIELD_MAP.values()}
+    for actor, (buy, sell) in GROSS_BY_ACTOR.items():
+        assert buy in mapped and sell in mapped, f"{actor}: 총액 짝이 FIELD_MAP에 없다"
+    assert set(GROSS_BY_ACTOR) == {"foreign", "individual", "institution", "etc"}
+
+
+def test_the_four_actors_are_the_whole_market(settings):
+    """**모든 매수에는 매도가 있다.** 순매수의 합이 0이 되려면 주체가 빠짐없이
+    있어야 하고, 셋만 받던 시절에는 그 합이 0이 아니었다(SK하이닉스 2026-08-21에
+    -1조1,299억이 남았다). 네 번째가 그 칸이다."""
+    from market_intel.providers.kis_flows import NET_VALUE_METRICS
+
+    _result, by_metric = _facts(settings)
+    total = sum(by_metric[m].value_num for m in NET_VALUE_METRICS)
+    assert abs(total) < 1e8, f"주체별 순매수 합이 0이 아니다: {total:,.0f}원"

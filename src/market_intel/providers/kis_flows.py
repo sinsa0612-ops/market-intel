@@ -62,6 +62,47 @@ FIELD_MAP: dict[str, tuple[str, str, int]] = {
     "frgn_ntby_tr_pbmn": ("net_buy_foreign_value", "KRW", 1_000_000),
     "prsn_ntby_tr_pbmn": ("net_buy_individual_value", "KRW", 1_000_000),
     "orgn_ntby_tr_pbmn": ("net_buy_institution_value", "KRW", 1_000_000),
+    # 매수금·매도금 (CEO 지시 2026-08-21). 순매수만 실으면 **거래 규모가 통째로
+    # 가려진다**: 실측(SK하이닉스 2026-08-21) 개인 순매수 -1.26조는 "1.26조를
+    # 팔았다"가 아니라 **3.10조를 팔면서 1.84조를 샀다**는 뜻이었다. 같은
+    # 순매수라도 이야기가 다르고, 그 차이는 순매수 하나로는 복원할 수 없다.
+    #
+    # 이미 받고 있는 같은 응답 안의 필드다 — 새 소스도, 새 호출도 아니다.
+    "frgn_shnu_tr_pbmn": ("buy_foreign_value", "KRW", 1_000_000),
+    "prsn_shnu_tr_pbmn": ("buy_individual_value", "KRW", 1_000_000),
+    "orgn_shnu_tr_pbmn": ("buy_institution_value", "KRW", 1_000_000),
+    "frgn_seln_tr_pbmn": ("sell_foreign_value", "KRW", 1_000_000),
+    "prsn_seln_tr_pbmn": ("sell_individual_value", "KRW", 1_000_000),
+    "orgn_seln_tr_pbmn": ("sell_institution_value", "KRW", 1_000_000),
+    # 네 번째 주체 "기타" (CEO 지시 2026-08-22). 셋만 실으면 **항등식이 깨진다**:
+    # 모든 매수에는 매도가 있으므로 주체별 순매수의 합은 0이어야 하는데,
+    # 실측(SK하이닉스 2026-08-21) 개인 -12,551 + 외국인 138 + 기관 1,114 =
+    # -11,299억이 남았다. 그 -11,299억이 정확히 이 칸이다.
+    #
+    # **`etc_corp`(기타법인)가 아니라 `etc`(기타)를 받는 이유**: 원본에는
+    # `etc_corp`·`etc_orgt`(기타금융기관)·`etc` 셋이 있고, 항등식을 닫는 것은
+    # 포괄 항목인 `etc`다. 관측된 25건에서는 `etc_orgt`가 전부 0이라 셋이 같은
+    # 값이었지만, 그 우연을 이름에 새기면 `etc_orgt`가 0이 아닌 날 "기타법인"이
+    # 기타법인이 아니게 된다. 증명된 것만 이름에 넣는다.
+    "etc_ntby_qty": ("net_buy_etc", "shares", 1),
+    "etc_ntby_tr_pbmn": ("net_buy_etc_value", "KRW", 1_000_000),
+    "etc_shnu_tr_pbmn": ("buy_etc_value", "KRW", 1_000_000),
+    "etc_seln_tr_pbmn": ("sell_etc_value", "KRW", 1_000_000),
+}
+
+# 주체별 순매수의 합은 **0이어야 한다** — 모든 매수에는 매도가 있다. 이 목록이
+# 그 항등식의 좌변이고, `reporting/build.py::_flow_balance_gap`이 검사한다.
+NET_VALUE_METRICS: tuple[str, ...] = (
+    "net_buy_individual_value", "net_buy_foreign_value",
+    "net_buy_institution_value", "net_buy_etc_value",
+)
+
+# 주체 -> (매수 지표, 매도 지표). 화면이 순매수 옆에 총액을 붙일 때 쓴다.
+GROSS_BY_ACTOR: dict[str, tuple[str, str]] = {
+    "foreign": ("buy_foreign_value", "sell_foreign_value"),
+    "individual": ("buy_individual_value", "sell_individual_value"),
+    "institution": ("buy_institution_value", "sell_institution_value"),
+    "etc": ("buy_etc_value", "sell_etc_value"),
 }
 
 
