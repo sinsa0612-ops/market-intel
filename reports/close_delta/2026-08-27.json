@@ -3396,14 +3396,105 @@
     "next_due": "2026-08-28",
     "unavailable": "아직 만기가 된 조건이 없습니다 (등록 32건 · 첫 만기 2026-08-28)."
   },
-  "thesis_board": [],
+  "thesis_board": [
+    {
+      "label": "AI·반도체 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 3,
+      "duration_at_least": false,
+      "basis_date": "2026-08-26",
+      "basis_age_days": 1
+    },
+    {
+      "label": "AI·반도체 #2",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "AI·반도체 #3",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "소비·경기 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 20,
+      "duration_at_least": true,
+      "basis_date": "2026-07-01",
+      "basis_age_days": 57
+    },
+    {
+      "label": "금융·신용 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 24,
+      "duration_at_least": true,
+      "basis_date": "2026-08-25",
+      "basis_age_days": 2
+    },
+    {
+      "label": "금융·신용 #2",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 13,
+      "duration_at_least": true,
+      "basis_date": "2026-08-25",
+      "basis_age_days": 2
+    },
+    {
+      "label": "정책·지정학 #1",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "전력·에너지 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 20,
+      "duration_at_least": true,
+      "basis_date": "2026-06-30",
+      "basis_age_days": 58
+    }
+  ],
   "interpretation": {
-    "reading": "",
-    "counter_reading": "",
-    "thesis_impact": "",
-    "next_check": "",
-    "generated_by": "",
-    "generated_at": ""
+    "reading": "코스피 상승은 개인 순매도에 맞선 기관·외국인 순매수의 수급 재배치로 읽을 수 있다(F1,F2,F4,F105). 미국 산업생산과 PCE가 올랐지만 비농업고용과 소매판매는 낮아졌고, 2년물과 정책금리 상단의 차이는 인상 쪽으로 표시되어 경기 개선과 금융 긴축 신호가 섞여 있다(F29,F32,F33,F36,F37,F38,F40).",
+    "counter_reading": "반대로 코스피 상승과 삼성전자 상승, 상위 20종목의 기관·외국인 순매수는 상위 종목 수요가 시장 상승을 반영했다는 해석을 가능하게 한다(F2,F4,F105,F109). 미국채 10년물과 2년물, 달러지수가 직전 관측보다 낮아진 점도 금리와 달러 부담이 완화되는 방향으로 읽힐 수 있다(F31,F32,F34).",
+    "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 4 · 약화 1 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -10.45% vs 기준 ^GSPC +1.00% -> 격차 -11.44%p (조건 <= -10%p 충족) (진입 2026-08-25 · 지속 3판정일 · 새 관측 3건, 마지막 2026-08-27 · 근거 2026-08-26).\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[AI·반도체 #3] 유지 — 발화 조건 없음(평가 가능 4/4).\n[소비·경기 #1] 강화 — RSAFS value 12구간 전 대비 4.93% (조건 >= 3% 충족) (기록 시작 2026-08-04 이전부터 · 지속 20판정일 · 새 관측 1건 이상(그 외 일부 판정일 미상) · 근거 2026-07-01).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.64 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 24판정일 · 새 관측 10건 이상(그 외 일부 판정일 미상) · 근거 2026-08-25).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.32 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 13판정일 · 새 관측 10건, 마지막 2026-08-27 · 근거 2026-08-25).\n[정책·지정학 #1] 유지 — 발화 조건 없음(평가 가능 3/3).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 20판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+    "next_check": "다가오는 한국은행 금융통화위원회 뒤에 F25의 한국 기준금리가 2.75 연%를 넘는지, 고용 자료 발표 뒤에 ^KS11 종가가 F105의 6,813.21을 넘는지 확인한다. 이어서 005930.KS 종가가 F109의 261,500.0원을 넘는지도 확인하면, 수급 재배치와 상위 종목 수요 중 어느 해석이 더 맞는지 가를 수 있다.\n\n확인 일정: 2026-08-27 한국은행 금융통화위원회(A) · 2026-09-04 Employment Situation(A) · 가설 재점검 2026-09-01",
+    "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+    "generated_at": "2026-08-27T10:53:41+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -3416,6 +3507,339 @@
       "schedule_changes": 2,
       "missing": 0,
       "sector_index": 25
+    },
+    "interpretation": {
+      "checks": [
+        {
+          "id": "c1",
+          "kind": "threshold",
+          "subject": "722Y001.0101000",
+          "metric": "value",
+          "op": ">",
+          "value": 2.75,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "F25의 한국 기준금리보다 높은지"
+        },
+        {
+          "id": "c2",
+          "kind": "threshold",
+          "subject": "^KS11",
+          "metric": "price_close",
+          "op": ">",
+          "value": 6813.21,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "F105의 KOSPI 종가보다 높은지"
+        },
+        {
+          "id": "c3",
+          "kind": "threshold",
+          "subject": "005930.KS",
+          "metric": "price_close",
+          "op": ">",
+          "value": 261500.0,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "F109의 삼성전자 종가보다 높은지"
+        }
+      ],
+      "engine_version": "2b.2",
+      "status": "ok",
+      "model": "gpt:gpt-5.6-luna",
+      "prompt_version": "interpretation_v4",
+      "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+      "generated_at": "2026-08-27T10:53:41+00:00",
+      "elapsed_ms": 146102,
+      "attempts": 1,
+      "fields": {
+        "reading": "ok",
+        "counter_reading": "ok",
+        "thesis_impact": "rules",
+        "next_check": "ok"
+      },
+      "violations": {},
+      "evidence": [
+        [
+          "F25",
+          "ecos:722Y001.0101000:value:20260630",
+          1
+        ],
+        [
+          "F29",
+          "fred:DFEDTARU:value:20260826",
+          1
+        ],
+        [
+          "F31",
+          "fred:DGS10:value:20260825",
+          1
+        ],
+        [
+          "F32",
+          "fred:DGS2:value:20260825",
+          1
+        ],
+        [
+          "F33",
+          "fred:DGS2:value:20260825",
+          1
+        ],
+        [
+          "F34",
+          "fred:DTWEXBGS:value:20260821",
+          1
+        ],
+        [
+          "F36",
+          "fred:INDPRO:value:20260701",
+          1
+        ],
+        [
+          "F37",
+          "fred:PAYEMS:value:20260701",
+          1
+        ],
+        [
+          "F38",
+          "fred:PCEPI:value:20260701",
+          1
+        ],
+        [
+          "F40",
+          "fred:RSAFS:value:20260701",
+          1
+        ],
+        [
+          "F105",
+          "yfinance:^KS11:price_close:20260825",
+          2
+        ],
+        [
+          "F105",
+          "yfinance:^KS11:price_close:20260826",
+          1
+        ],
+        [
+          "F109",
+          "yfinance:005930.KS:price_close:20260826",
+          2
+        ]
+      ],
+      "evidence_unresolved": [
+        "F1",
+        "F2",
+        "F4"
+      ],
+      "digest_truncated": false,
+      "facts_sha256": "9850a083fe9d99034426a4b350837ccafb8247b12967ec7d4fc93b16ce13a100",
+      "text": {
+        "reading": "코스피 상승은 개인 순매도에 맞선 기관·외국인 순매수의 수급 재배치로 읽을 수 있다(F1,F2,F4,F105). 미국 산업생산과 PCE가 올랐지만 비농업고용과 소매판매는 낮아졌고, 2년물과 정책금리 상단의 차이는 인상 쪽으로 표시되어 경기 개선과 금융 긴축 신호가 섞여 있다(F29,F32,F33,F36,F37,F38,F40).",
+        "counter_reading": "반대로 코스피 상승과 삼성전자 상승, 상위 20종목의 기관·외국인 순매수는 상위 종목 수요가 시장 상승을 반영했다는 해석을 가능하게 한다(F2,F4,F105,F109). 미국채 10년물과 2년물, 달러지수가 직전 관측보다 낮아진 점도 금리와 달러 부담이 완화되는 방향으로 읽힐 수 있다(F31,F32,F34).",
+        "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 4 · 약화 1 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -10.45% vs 기준 ^GSPC +1.00% -> 격차 -11.44%p (조건 <= -10%p 충족) (진입 2026-08-25 · 지속 3판정일 · 새 관측 3건, 마지막 2026-08-27 · 근거 2026-08-26).\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[AI·반도체 #3] 유지 — 발화 조건 없음(평가 가능 4/4).\n[소비·경기 #1] 강화 — RSAFS value 12구간 전 대비 4.93% (조건 >= 3% 충족) (기록 시작 2026-08-04 이전부터 · 지속 20판정일 · 새 관측 1건 이상(그 외 일부 판정일 미상) · 근거 2026-07-01).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.64 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 24판정일 · 새 관측 10건 이상(그 외 일부 판정일 미상) · 근거 2026-08-25).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.32 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 13판정일 · 새 관측 10건, 마지막 2026-08-27 · 근거 2026-08-25).\n[정책·지정학 #1] 유지 — 발화 조건 없음(평가 가능 3/3).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 20판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+        "next_check": "다가오는 한국은행 금융통화위원회 뒤에 F25의 한국 기준금리가 2.75 연%를 넘는지, 고용 자료 발표 뒤에 ^KS11 종가가 F105의 6,813.21을 넘는지 확인한다. 이어서 005930.KS 종가가 F109의 261,500.0원을 넘는지도 확인하면, 수급 재배치와 상위 종목 수요 중 어느 해석이 더 맞는지 가를 수 있다.\n\n확인 일정: 2026-08-27 한국은행 금융통화위원회(A) · 2026-09-04 Employment Situation(A) · 가설 재점검 2026-09-01",
+        "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+        "generated_at": "2026-08-27T10:53:41+00:00"
+      },
+      "restorable_meta": {
+        "checks": [
+          {
+            "id": "c1",
+            "kind": "threshold",
+            "subject": "722Y001.0101000",
+            "metric": "value",
+            "op": ">",
+            "value": 2.75,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "F25의 한국 기준금리보다 높은지"
+          },
+          {
+            "id": "c2",
+            "kind": "threshold",
+            "subject": "^KS11",
+            "metric": "price_close",
+            "op": ">",
+            "value": 6813.21,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "F105의 KOSPI 종가보다 높은지"
+          },
+          {
+            "id": "c3",
+            "kind": "threshold",
+            "subject": "005930.KS",
+            "metric": "price_close",
+            "op": ">",
+            "value": 261500.0,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "F109의 삼성전자 종가보다 높은지"
+          }
+        ],
+        "engine_version": "2b.2",
+        "status": "ok",
+        "model": "gpt:gpt-5.6-luna",
+        "prompt_version": "interpretation_v4",
+        "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+        "generated_at": "2026-08-27T10:53:41+00:00",
+        "elapsed_ms": 146102,
+        "attempts": 1,
+        "fields": {
+          "reading": "ok",
+          "counter_reading": "ok",
+          "thesis_impact": "rules",
+          "next_check": "ok"
+        },
+        "violations": {},
+        "evidence": [
+          [
+            "F25",
+            "ecos:722Y001.0101000:value:20260630",
+            1
+          ],
+          [
+            "F29",
+            "fred:DFEDTARU:value:20260826",
+            1
+          ],
+          [
+            "F31",
+            "fred:DGS10:value:20260825",
+            1
+          ],
+          [
+            "F32",
+            "fred:DGS2:value:20260825",
+            1
+          ],
+          [
+            "F33",
+            "fred:DGS2:value:20260825",
+            1
+          ],
+          [
+            "F34",
+            "fred:DTWEXBGS:value:20260821",
+            1
+          ],
+          [
+            "F36",
+            "fred:INDPRO:value:20260701",
+            1
+          ],
+          [
+            "F37",
+            "fred:PAYEMS:value:20260701",
+            1
+          ],
+          [
+            "F38",
+            "fred:PCEPI:value:20260701",
+            1
+          ],
+          [
+            "F40",
+            "fred:RSAFS:value:20260701",
+            1
+          ],
+          [
+            "F105",
+            "yfinance:^KS11:price_close:20260825",
+            2
+          ],
+          [
+            "F105",
+            "yfinance:^KS11:price_close:20260826",
+            1
+          ],
+          [
+            "F109",
+            "yfinance:005930.KS:price_close:20260826",
+            2
+          ]
+        ],
+        "evidence_unresolved": [
+          "F1",
+          "F2",
+          "F4"
+        ],
+        "digest_truncated": false,
+        "facts_sha256": "9850a083fe9d99034426a4b350837ccafb8247b12967ec7d4fc93b16ce13a100",
+        "text": {
+          "reading": "코스피 상승은 개인 순매도에 맞선 기관·외국인 순매수의 수급 재배치로 읽을 수 있다(F1,F2,F4,F105). 미국 산업생산과 PCE가 올랐지만 비농업고용과 소매판매는 낮아졌고, 2년물과 정책금리 상단의 차이는 인상 쪽으로 표시되어 경기 개선과 금융 긴축 신호가 섞여 있다(F29,F32,F33,F36,F37,F38,F40).",
+          "counter_reading": "반대로 코스피 상승과 삼성전자 상승, 상위 20종목의 기관·외국인 순매수는 상위 종목 수요가 시장 상승을 반영했다는 해석을 가능하게 한다(F2,F4,F105,F109). 미국채 10년물과 2년물, 달러지수가 직전 관측보다 낮아진 점도 금리와 달러 부담이 완화되는 방향으로 읽힐 수 있다(F31,F32,F34).",
+          "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 4 · 약화 1 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -10.45% vs 기준 ^GSPC +1.00% -> 격차 -11.44%p (조건 <= -10%p 충족) (진입 2026-08-25 · 지속 3판정일 · 새 관측 3건, 마지막 2026-08-27 · 근거 2026-08-26).\n[AI·반도체 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[AI·반도체 #3] 유지 — 발화 조건 없음(평가 가능 4/4).\n[소비·경기 #1] 강화 — RSAFS value 12구간 전 대비 4.93% (조건 >= 3% 충족) (기록 시작 2026-08-04 이전부터 · 지속 20판정일 · 새 관측 1건 이상(그 외 일부 판정일 미상) · 근거 2026-07-01).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.64 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 24판정일 · 새 관측 10건 이상(그 외 일부 판정일 미상) · 근거 2026-08-25).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.32 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 13판정일 · 새 관측 10건, 마지막 2026-08-27 · 근거 2026-08-25).\n[정책·지정학 #1] 유지 — 발화 조건 없음(평가 가능 3/3).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 20판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+          "next_check": "다가오는 한국은행 금융통화위원회 뒤에 F25의 한국 기준금리가 2.75 연%를 넘는지, 고용 자료 발표 뒤에 ^KS11 종가가 F105의 6,813.21을 넘는지 확인한다. 이어서 005930.KS 종가가 F109의 261,500.0원을 넘는지도 확인하면, 수급 재배치와 상위 종목 수요 중 어느 해석이 더 맞는지 가를 수 있다.\n\n확인 일정: 2026-08-27 한국은행 금융통화위원회(A) · 2026-09-04 Employment Situation(A) · 가설 재점검 2026-09-01",
+          "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+          "generated_at": "2026-08-27T10:53:41+00:00"
+        }
+      },
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_3",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "consumer_cycle_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_2",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "policy_geo_1",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "power_energy_1",
+          "verdict": "강화",
+          "changed": false
+        }
+      ]
     }
   }
 }
