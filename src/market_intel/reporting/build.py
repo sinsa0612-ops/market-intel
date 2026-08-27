@@ -1931,7 +1931,14 @@ def _prior_interpretation(conn, cutoff, report_type: str, report_date: date) -> 
     from ..interp import store as store_mod  # 순환 import 회피(interp가 build를 읽는다)
 
     try:
-        prev = store_mod.previous_interpretation(conn, report_type, report_date.isoformat())
+        # **같은 날 앞선 해석이 있으면 그것이 먼저다** (CEO 지적 2026-08-27).
+        # 오후 리포트가 어제 오후를 보는 동안 그날 아침 해석은 아무도 안 봤다.
+        # 아침 07:15 KST(장 열기 전) -> 오후 16:15 KST(장 닫힌 뒤)는 이 시스템이
+        # 가질 수 있는 가장 짧은 피드백 고리다.
+        prev = store_mod.earlier_interpretation_same_day(
+            conn, report_date.isoformat(), db_mod.iso_utc(cutoff))
+        if not prev:
+            prev = store_mod.previous_interpretation(conn, report_type, report_date.isoformat())
     except Exception:  # noqa: BLE001 - 원장 조회 실패가 리포트를 막지 않는다
         return PriorInterpretation(unavailable="지난 해석을 불러오지 못했습니다.")
     if not prev:
@@ -1961,8 +1968,17 @@ def _prior_interpretation(conn, cutoff, report_type: str, report_date: date) -> 
         obs = db_mod.facts_as_of(conn, cutoff, subject=subject, metric=metric)
         vals = sorted(((r["event_at"] or "", r["value_num"], r["unit"]) for r in obs
                        if r["value_num"] is not None), key=lambda x: x[0])
-        # 그때 = 지난 해석의 리포트 날짜 이전 마지막 관측, 지금 = 차단선 기준 최신.
-        then = [v for v in vals if v[0][:10] <= (prev.get("report_date") or "")]
+        # 그때 = **지난 해석의 차단선** 이전 마지막 관측, 지금 = 이 리포트 차단선
+        # 기준 최신.
+        #
+        # 날짜가 아니라 차단선으로 가르는 이유: 같은 날 아침↔오후를 대조할 때
+        # 날짜로 가르면 둘 다 같은 날이라 "그때"와 "지금"이 같은 관측이 되고,
+        # 아래 동일성 검사에 걸려 **대조가 통째로 빈다.** 차단선으로 가르면
+        # 그날 한국 종가(06:30Z)가 아침 차단선(전날 22:15Z) 뒤·오후 차단선
+        # (07:15Z) 앞에 정확히 놓인다. 날짜를 건너뛰는 대조에서도 차단선 쪽이
+        # 더 정확하다 — "그 리포트가 볼 수 있었던 것"이 곧 차단선이다.
+        prev_cutoff = prev.get("cutoff_utc") or ""
+        then = [v for v in vals if v[0] <= prev_cutoff]
         if not then or not vals:
             continue
         then_v, now_v, unit = then[-1][1], vals[-1][1], vals[-1][2] or ""

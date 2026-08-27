@@ -340,6 +340,44 @@ def reusable_interpretation(conn: sqlite3.Connection, report_type: str, report_d
     return d
 
 
+def _hydrate_interpretation(row) -> dict:
+    d = dict(row)
+    stored = json.loads(d.pop("text_json") or "{}")
+    d["text"] = stored.get("text") if "text" in stored else stored
+    d["fields"] = json.loads(d.pop("fields_json") or "{}")
+    d["evidence"] = json.loads(d.pop("evidence_json") or "[]")
+    return d
+
+
+def earlier_interpretation_same_day(conn: sqlite3.Connection, report_date: str,
+                                    cutoff_utc: str) -> dict | None:
+    """**같은 날 앞선 리포트**의 해석. 없으면 None.
+
+    CEO 지적(2026-08-27): *"오늘 오전의 해석이 오늘 오후에 맞았는지 제대로
+    작동하지 않는 것 같다."* 맞다 — 대조는 "같은 종류의 직전 리포트"로만 걸려
+    있어서, 오후 리포트는 **어제 오후**를 보고 그날 아침 해석은 안 봤다.
+
+    하루 안의 짝이 이 시스템이 가질 수 있는 **가장 짧은 피드백 고리**다:
+    ```
+    아침 리포트  차단선 07:15 KST  ← 한국 장 열기 전
+    오후 리포트  차단선 16:15 KST  ← 한국 장 닫힌 뒤
+    ```
+    아침에 한국 시장에 대해 한 말은 그날 오후면 답이 나온다. 종류를 따지지 않고
+    **차단선이 앞선 것**을 고르는 이유: 월요일 아침은 `weekly_review`, 다른 날은
+    `morning`이라 종류로 적으면 월요일만 조용히 빠진다.
+
+    `previous_interpretation`을 대체하지 않는다 — 같은 날 앞선 것이 없으면
+    호출부가 그쪽으로 넘어간다(주간·월간의 비교 주기는 그대로다).
+    """
+    row = conn.execute(
+        "SELECT * FROM interpretations WHERE report_date=? AND cutoff_utc<? "
+        "AND status='ok' AND text_json<>'' AND evidence_json IS NOT NULL "
+        "ORDER BY cutoff_utc DESC, created_at DESC, rowid DESC LIMIT 1",
+        (report_date, cutoff_utc),
+    ).fetchone()
+    return _hydrate_interpretation(row) if row is not None else None
+
+
 def previous_interpretation(conn: sqlite3.Connection, report_type: str,
                             before_report_date: str) -> dict | None:
     """**같은 종류**의 직전 리포트에 쓰인 해석. 없으면 None.
@@ -360,14 +398,7 @@ def previous_interpretation(conn: sqlite3.Connection, report_type: str,
         "ORDER BY report_date DESC, created_at DESC, rowid DESC LIMIT 1",
         (report_type, before_report_date),
     ).fetchone()
-    if row is None:
-        return None
-    d = dict(row)
-    stored = json.loads(d.pop("text_json") or "{}")
-    d["text"] = stored.get("text") if "text" in stored else stored
-    d["fields"] = json.loads(d.pop("fields_json") or "{}")
-    d["evidence"] = json.loads(d.pop("evidence_json") or "[]")
-    return d
+    return _hydrate_interpretation(row) if row is not None else None
 
 
 def last_interpretation(conn: sqlite3.Connection, report_type: str | None = None) -> dict | None:

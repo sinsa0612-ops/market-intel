@@ -44,16 +44,20 @@ def _flow(day: str, value: float, subject: str = "000660.KS",
 
 
 def _record(conn, report_type: str, report_date: str, evidence, text: dict,
-            status: str = "ok") -> None:
+            status: str = "ok", cutoff: str | None = None) -> None:
     """원장에 해석 한 건. `store.record_interpretation`을 거치지 않고 직접 넣는 이유는
-    이 테스트가 보려는 것이 **조회 계약**이지 기록 경로가 아니기 때문이다."""
+    이 테스트가 보려는 것이 **조회 계약**이지 기록 경로가 아니기 때문이다.
+
+    `cutoff`는 같은 날 아침↔오후 대조 시험에서만 쓴다 — 그 쪽은 날짜가 같으므로
+    **차단선만이 둘을 가른다**."""
+    cutoff = cutoff or f"{report_date}T07:15:00+00:00"
     conn.execute(
         "INSERT INTO interpretations(interpretation_id, report_type, report_date, cutoff_utc,"
         " status, model, prompt_version, prompt_sha256, fields_json, violations_json,"
         " evidence_json, attempts, elapsed_ms, engine_version, created_at, facts_sha256, text_json)"
         " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (f"{report_type}-{report_date}", report_type, report_date,
-         f"{report_date}T07:15:00+00:00", status, "test", "v3", "x", "{}", None,
+         cutoff, status, "test", "v3", "x", "{}", None,
          json.dumps(evidence), 1, 10, "t", f"{report_date}T08:00:00+00:00", "",
          json.dumps({"text": text})),
     )
@@ -270,3 +274,130 @@ def test_old_reports_do_not_grow_an_empty_subheading():
     fresh.prior = PriorInterpretation(unavailable="대조할 지난 해석이 아직 없습니다.")
     text = md.render_markdown(fresh)
     assert "지난 해석 대조" in text and "대조할 지난 해석이 아직 없습니다" in text
+
+
+# --- 같은 날 아침 -> 오후 (CEO 지적 2026-08-27) --------------------------------
+#
+# *"오늘 오전의 해석이 오늘 오후에 맞았는지 제대로 작동하지 않는 것 같다."*
+#
+# 맞았다. 대조는 "같은 종류의 직전 리포트"로만 걸려 있어서 오후 리포트는
+# **어제 오후**를 보고 그날 아침 해석은 아무도 안 봤다. 그런데 차단선을 보면
+# 하루 안의 짝이 이 시스템이 가질 수 있는 가장 짧은 피드백 고리다:
+#
+#     아침 07:15 KST(= 전날 22:15Z)  <- 한국 장 열기 전
+#     오후 16:15 KST(= 당일 07:15Z)  <- 한국 장 닫힌 뒤
+#
+# 그 사이에 그날 한국 종가(06:30Z)가 정확히 놓인다.
+
+_MORNING_CUTOFF = "2026-08-11T22:15:00+00:00"   # 8/12 아침 (KST 07:15)
+_CLOSE_CUTOFF = "2026-08-12T07:15:00+00:00"     # 8/12 오후 (KST 16:15)
+_EV = [["F6", "kis:000660.KS:net_buy_foreign_value:20260811", 1]]
+
+
+def test_the_afternoon_report_looks_at_this_morning_not_yesterday(settings):
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_pair(conn, settings.raw_dir)
+    _record(conn, "close_delta", "2026-08-11", _EV, {"reading": "어제 오후"})
+    _record(conn, "morning", "2026-08-12", _EV, {"reading": "오늘 아침"},
+            cutoff=_MORNING_CUTOFF)
+
+    p = build_mod._prior_interpretation(
+        conn, _cutoff(_CLOSE_CUTOFF), "close_delta", date(2026, 8, 12))
+    assert p.reading == "오늘 아침", "오후가 그날 아침이 아니라 어제를 봤다"
+    assert p.report_date == "2026-08-12" and p.report_type == "morning"
+
+
+def test_monday_is_not_skipped_because_its_morning_slot_has_another_name(settings):
+    """월요일 아침은 `weekly_review`다. 종류로 짝을 지으면 월요일만 조용히
+    빠진다 — 그래서 **차단선이 앞선 것**으로 고른다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_pair(conn, settings.raw_dir)
+    _record(conn, "weekly_review", "2026-08-12", _EV, {"reading": "월요일 아침"},
+            cutoff=_MORNING_CUTOFF)
+
+    p = build_mod._prior_interpretation(
+        conn, _cutoff(_CLOSE_CUTOFF), "close_delta", date(2026, 8, 12))
+    assert p.reading == "월요일 아침" and p.report_type == "weekly_review"
+
+
+def test_without_a_morning_that_day_it_falls_back_to_the_old_rule(settings):
+    """같은 날 앞선 해석이 없으면 지금까지의 규칙 그대로다 — 주간·월간의
+    비교 주기를 깨지 않는다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_pair(conn, settings.raw_dir)
+    _record(conn, "close_delta", "2026-08-11", _EV, {"reading": "어제 오후"})
+
+    p = build_mod._prior_interpretation(
+        conn, _cutoff(_CLOSE_CUTOFF), "close_delta", date(2026, 8, 12))
+    assert p.reading == "어제 오후" and p.report_date == "2026-08-11"
+
+
+def test_a_failed_morning_does_not_become_the_afternoon_target(settings):
+    """검증에 걸려 비었던 판은 대조할 주장 자체가 없다 — 같은 날이어도 마찬가지다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_pair(conn, settings.raw_dir)
+    _record(conn, "close_delta", "2026-08-11", _EV, {"reading": "어제 오후"})
+    _record(conn, "morning", "2026-08-12", _EV, {"reading": "걸린 아침"},
+            status="partial", cutoff=_MORNING_CUTOFF)
+
+    p = build_mod._prior_interpretation(
+        conn, _cutoff(_CLOSE_CUTOFF), "close_delta", date(2026, 8, 12))
+    assert p.reading == "어제 오후"
+
+
+def test_the_morning_report_does_not_compare_against_itself(settings):
+    """아침에는 그날 자기보다 앞선 해석이 없다. 자기 자신을 집으면 "그때"와
+    "지금"이 같아진다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_pair(conn, settings.raw_dir)
+    _record(conn, "morning", "2026-08-11", _EV, {"reading": "어제 아침"})
+    _record(conn, "morning", "2026-08-12", _EV, {"reading": "오늘 아침"},
+            cutoff=_MORNING_CUTOFF)
+
+    p = build_mod._prior_interpretation(
+        conn, _cutoff(_MORNING_CUTOFF), "morning", date(2026, 8, 12))
+    assert p.reading == "어제 아침"
+
+
+def test_then_and_now_are_split_by_the_cutoff_not_the_date(settings):
+    """**날짜로 가르면 같은 날 대조가 통째로 빈다** — 아침도 오후도 같은 날이라
+    "그때"와 "지금"이 같은 관측이 되고 동일성 검사에 걸린다. 차단선으로 가르면
+    그날 한국 종가(06:30Z)가 아침 차단선 뒤·오후 차단선 앞에 정확히 놓인다."""
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_pair(conn, settings.raw_dir)
+    _record(conn, "morning", "2026-08-12", _EV, {"reading": "오늘 아침"},
+            cutoff=_MORNING_CUTOFF)
+
+    p = build_mod._prior_interpretation(
+        conn, _cutoff(_CLOSE_CUTOFF), "close_delta", date(2026, 8, 12))
+    assert p.rows, f"같은 날 대조가 비었다: {p.unavailable!r}"
+    assert p.rows[0].change_ko, "그때/지금이 같은 값으로 접혔다"
+
+
+def test_the_closest_earlier_interpretation_wins_not_the_earliest(settings):
+    """같은 날 앞선 해석이 **여럿이면 가장 가까운 것**을 본다.
+
+    피드백 고리는 짧을수록 좋다 — 오후 리포트가 그날 정오 해석을 두고 새벽
+    해석을 집으면, 그 사이에 일어난 일이 통째로 "그때"에 묻힌다.
+
+    ⚠️ 이 시험이 없으면 정렬 방향을 뒤집는 변이가 살아남는다(실제로 살아남았다).
+    앞선 해석이 하나뿐인 판에서는 ASC와 DESC가 같은 답을 내기 때문이다 — 겨냥한
+    가드에 닿으려면 **둘 이상**이어야 한다.
+    """
+    db_mod.init_db(settings.db_path)
+    conn = db_mod.connect(settings.db_path)
+    _seed_pair(conn, settings.raw_dir)
+    _record(conn, "morning", "2026-08-12", _EV, {"reading": "새벽"},
+            cutoff="2026-08-11T20:00:00+00:00")
+    _record(conn, "week_start", "2026-08-12", _EV, {"reading": "정오"},
+            cutoff="2026-08-12T03:00:00+00:00")
+
+    p = build_mod._prior_interpretation(
+        conn, _cutoff(_CLOSE_CUTOFF), "close_delta", date(2026, 8, 12))
+    assert p.reading == "정오", "가장 가까운 앞선 해석이 아니라 가장 이른 것을 집었다"
