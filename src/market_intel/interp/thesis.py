@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import operator
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from .. import db as db_mod
 
@@ -710,24 +710,86 @@ def state_fragment(row: dict, state: dict | None) -> str:
     가장 짧은 구간) — 옛 `_streak` 기반 로직의 "여럿이 발화하면 가장 최근에
     넘은 것을 말한다"와 같은 선택 규칙이다. 판정을 바꾼 사건이 그것이고,
     나머지는 이미 참이던 상태이기 때문이다."""
-    if state is None:
+    run = _current_run(row, state)
+    if run is None:
         return ""
+    return _run_fragment(run, state.get("ledger_start"))
+
+
+def _current_run(row: dict, state: dict | None):
+    """그 판정을 만든 원자들 중 **가장 최근에 넘은** 구간. 없으면 None.
+
+    `state_fragment`가 쓰던 선택 규칙을 그대로 꺼낸 것이다 — 산문과 상태판이
+    같은 구간을 가리켜야 한다. 두 곳이 따로 고르면 표에는 "3일째"인데 문장에는
+    "20일째"인 날이 온다."""
+    if state is None:
+        return None
     group = _VERDICT_GROUP.get(row.get("verdict"))
     if not group:
-        return ""
+        return None
     atoms = state.get("atoms") or {}
     candidates = []
     for atom_id in _fired_atom_ids(row, group):
         runs = atoms.get(atom_id)
-        if not runs:
-            continue
-        current = runs[-1]
-        if current.status == "TRUE":
-            candidates.append(current)
+        if runs and runs[-1].status == "TRUE":
+            candidates.append(runs[-1])
     if not candidates:
+        return None
+    return min(candidates, key=lambda r: (r.duration_days, r.atom_id))
+
+
+def _basis_date(row: dict) -> str:
+    """이 판정의 **나이**. 발화한 원자들의 근거 날짜 중 가장 오래된 것.
+
+    최신이 아니라 가장 오래된 것을 쓰는 이유는 `_evidence_note`와 같다: 조건이
+    여럿이면 그 전부가 참이어야 판정이 서므로, 가장 묵은 근거가 이 판정의
+    나이다. 최신을 쓰면 두 달 된 근거가 어제 근거 뒤에 숨는다."""
+    group = _VERDICT_GROUP.get(row.get("verdict"))
+    if not group:
         return ""
-    run = min(candidates, key=lambda r: (r.duration_days, r.atom_id))
-    return _run_fragment(run, state.get("ledger_start"))
+    evals = (row.get("evals_by_group") or {}).get(group) or []
+    dates = sorted(str(e["detail"]["latest_at"])[:10] for e in evals
+                   if e.get("status") == "TRUE" and (e.get("detail") or {}).get("latest_at"))
+    return dates[0] if dates else ""
+
+
+def board_rows(reviews: list[dict], report_date: str = "",
+               states: dict | None = None) -> list[dict]:
+    """**가설 상태판** — 산문 9줄을 읽지 않고도 지금 상태를 아는 표 (CEO 지적
+    2026-08-27: *"강화 유지 같은 지표가 한눈에 보이지 않아"*).
+
+    `render_impact`가 만드는 산문을 대체하지 않는다. 같은 판정을 **같은 선택
+    규칙으로**(`_current_run`·`_basis_date`) 요약만 해서 앞으로 뺀다 — 두 곳이
+    따로 고르면 표와 문장이 어긋나는 날이 온다.
+
+    `basis_age_days`가 이 표의 핵심이다: "강화"라고 적혀 있어도 근거가 두 달
+    전이면 오늘 새로 안 것이 아니다(실측 2026-08-21: 강화 7건 중 3건의 근거가
+    두 달 전이었다). 상태만 보면 매일 뭔가 좋아지는 것처럼 읽힌다.
+    """
+    out: list[dict] = []
+    for row in reviews:
+        run = _current_run(row, (states or {}).get(row.get("thesis_id")))
+        basis = _basis_date(row)
+        age = None
+        if basis and report_date:
+            try:
+                age = (date.fromisoformat(report_date[:10]) - date.fromisoformat(basis)).days
+            except ValueError:
+                age = None
+        out.append({
+            "label": f"{THEME_LABELS.get(row['theme'], row['theme'])} #{row['slot']}",
+            "verdict": row["verdict"],
+            "changed": bool(row.get("changed")),
+            "prev_verdict": row.get("prev_verdict") or "",
+            # 좌측 절단(기록 시작 이전부터)이어도 **일수는 안다** — 모르는 것은
+            # 그 전에 더 있었는지다. 산문도 그렇게 쓴다("지속 20판정일"). 여기서
+            # 버리면 표만 "—"가 되어 같은 판정을 두 곳이 다르게 말한다.
+            "duration_days": None if run is None else int(run.duration_days),
+            "duration_at_least": bool(run is not None and run.left_censored),
+            "basis_date": basis,
+            "basis_age_days": age,
+        })
+    return out
 
 
 def _evidence_note(row: dict, report_date: str = "", state: dict | None = None) -> str:

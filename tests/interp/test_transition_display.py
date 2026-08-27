@@ -119,7 +119,7 @@ def test_pipeline_and_cli_paths_agree_on_duration_and_new_observations(tmp_path)
 
     report_b = make_report(report_type="morning", report_date=_NEW_DAY,
                            cutoff_utc=f"{_NEW_DAY}T22:00:00+00:00")
-    impact_b, _next_check, _summary = cli_interpret_mod._thesis_summary(conn_b, report_b, theses_path)
+    impact_b, _next_check, _summary, _board = cli_interpret_mod._thesis_summary(conn_b, report_b, theses_path)
 
     assert impact_a and impact_b
     # 4 recorded days total (3 history + today) — both paths must count the
@@ -196,7 +196,7 @@ def test_historical_report_never_cites_a_date_after_its_own_report_date(tmp_path
                          cutoff_utc=f"{historical_date}T22:00:00+00:00")
 
     # --- path B: cli_interpret._thesis_summary (never records) ---
-    impact_cli, _next_check, _summary = cli_interpret_mod._thesis_summary(conn, report, theses_path)
+    impact_cli, _next_check, _summary, _board = cli_interpret_mod._thesis_summary(conn, report, theses_path)
     assert impact_cli
     for later_date in later_dates:
         assert later_date not in impact_cli, (
@@ -269,7 +269,7 @@ def test_pipeline_and_cli_paths_agree_on_the_introduced_on_legend_on_first_use(t
 
     report_b = make_report(report_type="morning", report_date=first_day,
                            cutoff_utc=f"{first_day}T22:00:00+00:00")
-    impact_b, _next_check, _summary = cli_interpret_mod._thesis_summary(conn_b, report_b, theses_path)
+    impact_b, _next_check, _summary, _board = cli_interpret_mod._thesis_summary(conn_b, report_b, theses_path)
 
     assert "도입" in impact_a, f"ops 경로에 범례가 없다 (배포 첫날): {impact_a!r}"
     assert "도입" in impact_b, (
@@ -447,3 +447,35 @@ def test_no_state_omits_the_fragment_but_keeps_the_evidence_date():
     # F-A 잔여분 수리 이후 항상 붙는 R8/R9 범례("지속일은 독립 증거의 수가
     # 아니다")의 "지속일"과 오검출로 충돌하므로 트레일링 공백까지 맞춘다.
     assert "지속 " not in out and "새 관측" not in out
+
+
+def test_the_board_and_the_prose_point_at_the_same_run(tmp_path):
+    """**계약 1: 상태판은 산문을 요약할 뿐 다시 판단하지 않는다.**
+
+    두 곳이 각자 구간을 고르면 표에는 "3일째"인데 문장에는 "지속 20판정일"인
+    날이 온다 — 같은 리포트가 자기 자신과 어긋나는 것이고, 읽는 사람은 어느
+    쪽을 믿어야 할지 알 수 없다. 그래서 `board_rows`는 `state_fragment`가 쓰던
+    선택 규칙(`_current_run`)을 **그대로 꺼내 쓴다**.
+    """
+    db = str(tmp_path / "market_intel.db")
+    raw = str(tmp_path / "raw")
+    Path(raw).mkdir(parents=True)
+    db_mod.init_db(db)
+    conn = db_mod.connect(db)
+    _seed(conn, raw)
+    _record_history(conn, _HISTORY_DATES)
+    theses_path = tmp_path / "theses.json"
+    theses_path.write_text(json.dumps(_theses_json_payload([_THESIS]), ensure_ascii=False),
+                           encoding="utf-8")
+
+    report = make_report(report_type="morning", report_date=_NEW_DAY,
+                         cutoff_utc=f"{_NEW_DAY}T22:00:00+00:00")
+    impact, _next_check, _summary, board = cli_interpret_mod._thesis_summary(
+        conn, report, theses_path)
+
+    assert "지속 4판정일" in impact, impact
+    assert board, "산문이 판정을 냈으면 표에도 줄이 있어야 한다"
+    assert board[0]["duration_days"] == 4, (
+        "표와 산문이 다른 구간을 가리킨다\n"
+        f"산문: {impact!r}\n표: {board[0]!r}")
+    assert board[0]["verdict"] in impact

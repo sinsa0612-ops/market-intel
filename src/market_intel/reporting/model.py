@@ -216,6 +216,36 @@ class PriorInterpretation:
 
 
 @dataclass
+class ThesisBoardRow:
+    """**가설 상태판** 한 줄 (CEO 지적 2026-08-27: *"강화 유지 같은 지표가 한눈에
+    보이지 않아"*).
+
+    지금까지 판정은 「해석」 섹션 안쪽 269번째 줄에 산문 9줄로만 있었다. 그 앞에
+    핵심 사실 125줄이 먼저 온다 — "지금 무슨 상태인가"를 알려면 스크롤해서 문장을
+    읽어야 했다.
+
+    산문을 **지우지 않는다.** 같은 판정을 같은 선택 규칙으로 요약만 해서 맨 앞으로
+    뺀다(`interp/thesis.board_rows`).
+
+    `basis_age_days`가 이 표의 핵심이다: "강화"라도 근거가 두 달 전이면 오늘 새로
+    안 것이 아니다(실측 2026-08-21: 강화 7건 중 3건이 그랬다). 상태만 보면 매일
+    무언가 좋아지는 것처럼 읽힌다.
+    """
+    label: str = ""            # "AI·반도체 #1"
+    verdict: str = ""          # 강화 · 유지 · 약화 · 무효 · 판정 불가
+    changed: bool = False      # 오늘 상태가 바뀌었나
+    prev_verdict: str = ""     # 바뀌었다면 그 전은 무엇이었나
+    # 며칠째 그 상태인가. `None`은 그 판정을 만든 조건 자체가 없다는 뜻이다
+    # (유지·판정 불가). 0으로 두면 "오늘 시작"이 되어 정반대를 말한다.
+    duration_days: int | None = None
+    # 원장 기록 시작 이전부터 이어진 구간이면 True — 일수는 알지만 **그 전에 더
+    # 있었는지를 모른다**. 화면이 "20일째+"로 적어 그 차이를 보인다.
+    duration_at_least: bool = False
+    basis_date: str = ""       # 이 판정을 만든 가장 오래된 근거의 날짜
+    basis_age_days: int | None = None   # 그 근거가 며칠 묵었나
+
+
+@dataclass
 class ScorecardRow:
     """성적표 한 줄 — 한 대상(변수)의 누적 성적."""
     label: str = ""       # 사람이 읽는 이름("KOSPI"). 표시용.
@@ -349,6 +379,9 @@ class Report:
     # 해석 성적표(CEO 지시 2026-08-20, E 증분 3) — 해석이 미리 등록한 숫자
     # 조건의 누적 성적. 옛 리포트 JSON에는 이 키가 없다.
     scorecard: InterpretationScorecard = field(default_factory=InterpretationScorecard)
+    # 가설 상태판(CEO 지적 2026-08-27). 해석 단계에서 채워진다 — build 시점에는
+    # 아직 판정이 없다. 옛 리포트 JSON에는 이 키가 없다.
+    thesis_board: list[ThesisBoardRow] = field(default_factory=list)
     interpretation: Interpretation = field(default_factory=Interpretation)
     meta: dict = field(default_factory=dict)
 
@@ -396,6 +429,7 @@ class Report:
             unavailable=raw_prior.get("unavailable", ""),
             rows=[PriorClaimRow(**r) for r in raw_prior.get("rows", [])],
         )
+        d["thesis_board"] = [ThesisBoardRow(**r) for r in d.get("thesis_board", [])]
         raw_card = d.get("scorecard") or {}
         d["scorecard"] = InterpretationScorecard(
             rows=[ScorecardRow(**r) for r in raw_card.get("rows", [])],

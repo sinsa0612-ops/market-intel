@@ -25,7 +25,7 @@ from .config import PROJECT_ROOT
 from .interp import apply as apply_mod
 from .interp import ops as ops_mod
 from .interp import transitions as transitions_mod
-from .reporting.model import Report
+from .reporting.model import Report, ThesisBoardRow
 
 DEFAULT_THESES_PATH = PROJECT_ROOT / "theses" / "theses.json"
 
@@ -84,7 +84,7 @@ def _load_thesis_module():
 
 
 def _thesis_summary(conn, report: Report, theses_path: Path):
-    """-> (thesis_impact, next_check_suffix, reviews_summary|None).
+    """-> (thesis_impact, next_check_suffix, reviews_summary|None, board).
     `reviews_summary` is `None` when thesis integration is unavailable/empty,
     else a list of `{"thesis_id","verdict","changed"}` dicts for the
     `meta["interpretation"]["thesis_reviews"]` mirror (SA-8's fixed shape) —
@@ -92,15 +92,15 @@ def _thesis_summary(conn, report: Report, theses_path: Path):
     `interp.thesis`), so it is added here, after `fill()` returns."""
     thesis_mod = _load_thesis_module()
     if thesis_mod is None:
-        return "", "", None
+        return "", "", None, []
 
     load_error_cls = getattr(thesis_mod, "ThesisLoadError", Exception)
     try:
         theses = thesis_mod.load_file(str(theses_path))
     except FileNotFoundError:
-        return "", "", None
+        return "", "", None, []
     except load_error_cls:
-        return "", "", None
+        return "", "", None, []
     if not theses:
         return "", "", []
 
@@ -139,7 +139,12 @@ def _thesis_summary(conn, report: Report, theses_path: Path):
         {"thesis_id": r.get("thesis_id"), "verdict": r.get("verdict"), "changed": r.get("changed")}
         for r in reviews
     ]
-    return thesis_impact, next_check_suffix, reviews_summary
+    # `ThesisLoadError`·`ENGINE_VERSION`과 같은 관례 — 이 모듈은 **선택적으로**
+    # 실려서 부분 구현일 수 있다(시험이 대역을 끼운다). 없으면 상태판만 비고
+    # 산문은 그대로 나간다.
+    make_board = getattr(thesis_mod, "board_rows", None)
+    board = make_board(reviews, report.report_date, states=states) if make_board else []
+    return thesis_impact, next_check_suffix, reviews_summary, board
 
 
 _VERDICT_ORDER = ("강화", "유지", "약화", "무효", "판정 불가")
@@ -168,7 +173,8 @@ def _cmd_interpret(conn, settings, args) -> int:
     report = Report.from_json(path.read_text(encoding="utf-8"))
     cutoff = datetime.fromisoformat(report.cutoff_utc)
 
-    thesis_impact, next_check_suffix, reviews_summary = _thesis_summary(conn, report, DEFAULT_THESES_PATH)
+    thesis_impact, next_check_suffix, reviews_summary, board = _thesis_summary(
+        conn, report, DEFAULT_THESES_PATH)
 
     # final-review F6: the "규칙 판정 · thesis/X" byline needs the judgment
     # engine's own version, not the LLM engine's — `_load_thesis_module()`
@@ -185,6 +191,9 @@ def _cmd_interpret(conn, settings, args) -> int:
 
     if reviews_summary is not None:
         report.meta["interpretation"]["thesis_reviews"] = reviews_summary
+    # 파이프라인(`ops.interpret_report`)과 같은 표를 만든다 — 한쪽만 채우면
+    # 손으로 돌린 해석의 리포트에서만 상태판이 빈다.
+    report.thesis_board = [ThesisBoardRow(**r) for r in board]
 
     out_path = Path(args.out) if args.out else path
     if not args.dry_run:

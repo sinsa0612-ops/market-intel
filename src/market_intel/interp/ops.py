@@ -31,7 +31,7 @@ from pathlib import Path
 
 from .. import db as db_mod
 from ..reporting.cutoff import KST
-from ..reporting.model import Report
+from ..reporting.model import Report, ThesisBoardRow
 from . import apply as apply_mod
 from . import checks as checks_mod
 from . import store as store_mod
@@ -236,6 +236,12 @@ def interpret_report(conn, path, *, model: str | None = None, use_llm: bool = Tr
         model=model, use_llm=use_llm,
     )
     if reviews:
+        # 가설 상태판(CEO 지적 2026-08-27) — 산문과 **같은 판정·같은 선택 규칙**을
+        # 요약해 맨 앞으로 뺀다. 여기서 채우는 이유는 build 시점에는 아직 판정이
+        # 없기 때문이다.
+        report.thesis_board = [
+            ThesisBoardRow(**r) for r in
+            thesis_mod.board_rows(reviews, report.report_date, states=states)]
         report.meta["interpretation"]["thesis_reviews"] = [
             {"thesis_id": r["thesis_id"], "verdict": r["verdict"], "changed": bool(r["changed"])}
             for r in reviews

@@ -650,7 +650,12 @@ def sections(report: Report) -> list[tuple[str, list[dict]]]:
     # §4.2/§6.2/§7.2가 못박은 머리말 순서가 밀린다(그 순서는 테스트가 고정).
     if out:
         header, blocks = out[0]
-        out[0] = (header, [_hero(report), {"kind": "legend"}] + blocks)
+        # 가설 상태판은 **첫 섹션 안쪽 맨 끝**이다(CEO 지적 2026-08-27). 새 `## `
+        # 섹션을 만들지 않는 이유는 히어로/범례와 같다 — 머리말 순서를 시험이
+        # 못박고 있다(`test_cli_report`: 시장 한 줄·핵심 사실·시장 반응·해석).
+        # 판정이 없으면(옛 리포트 JSON, 해석 실패) 아무것도 안 붙는다.
+        board = [{"kind": "thesis_board", "rows": report.thesis_board}] if report.thesis_board else []
+        out[0] = (header, [_hero(report), {"kind": "legend"}] + blocks + board)
     # spec 20260806-report-visual §1① — "오늘 유별난 것"은 `## 시장 한 줄`
     # **위**에 얹는다(그 헤딩이 있는 타입 = 일간 3종뿐). 위 hero/legend
     # 부착 다음에 끼워 넣는 이유: 그 로직이 "첫 섹션"을 그 타입의 머리
@@ -979,6 +984,56 @@ def _scorecard_md(c) -> str:
                          *scorecard_notes(c), SCORECARD_CAVEAT])
 
 
+VERDICT_MARKS = {"강화": "🔺", "약화": "🔻", "무효": "✕", "유지": "―", "판정 불가": "?"}
+# 근거가 이만큼 묵으면 표에 그렇게 적는다. 분기 실적은 다음 발표까지 90일 가까이
+# 같은 값이라, 그 사이 "강화"가 매일 찍히는 것이 2026-08-21에 실측된 문제였다.
+STALE_BASIS_DAYS = 30
+
+
+def thesis_board_days(r) -> str:
+    """며칠째 그 상태인가. `+`는 **그 전에 더 있었을 수 있다**는 뜻이다(원장
+    기록 시작 이전부터 이어진 구간). `—`는 판정을 만든 조건 자체가 없다는
+    뜻이다(유지·판정 불가) — 둘은 다른 사정이라 같은 글자로 쓰면 안 된다."""
+    if r.duration_days is None:
+        return "—"
+    return f"{r.duration_days}일째" + ("+" if r.duration_at_least else "")
+
+
+def thesis_board_lines(rows) -> list[str]:
+    """상태판 표. md/html이 **같은 문장·같은 기준**을 쓰도록 여기서 한 번만 만든다."""
+    lines = ["| 가설 | 상태 | 며칠째 | 근거 |", "|---|---|---:|---|"]
+    for r in rows:
+        mark = VERDICT_MARKS.get(r.verdict, "")
+        state = f"{mark} {r.verdict}".strip()
+        if r.changed and r.prev_verdict:
+            state += f" (오늘 {r.prev_verdict}→{r.verdict})"
+        days = thesis_board_days(r)
+        basis = r.basis_date or "—"
+        if r.basis_age_days is not None:
+            basis += (f" ({r.basis_age_days}일 전)" if r.basis_age_days >= STALE_BASIS_DAYS
+                      else " (최근)")
+        lines.append(f"| {r.label} | {state} | {days} | {basis} |")
+    return lines
+
+
+def thesis_board_note(rows) -> str:
+    """표 아래 한 줄. **상태는 오늘의 사건이 아니다**를 못박는다 — 실측(2026-08-21)
+    판정 244건 중 상태가 바뀐 것은 4건(1.6%)뿐이었다."""
+    moved = [r for r in rows if r.changed]
+    stale = [r for r in rows if r.basis_age_days is not None
+             and r.basis_age_days >= STALE_BASIS_DAYS]
+    head = (f"오늘 상태가 바뀐 가설 {len(moved)}건" if moved else "오늘 상태가 바뀐 가설 없음")
+    tail = f" · 근거가 {STALE_BASIS_DAYS}일 넘게 묵은 것 {len(stale)}건" if stale else ""
+    return f"{head}{tail} — 상태는 오늘의 사건이 아니라 지금까지의 상태입니다."
+
+
+def _thesis_board_md(rows) -> str:
+    if not rows:
+        return ""
+    return "\n\n".join(["**가설 상태**", "\n".join(thesis_board_lines(rows)),
+                         thesis_board_note(rows)])
+
+
 def _blindspot_md(block: dict) -> str:
     """신고가 있으면 신고를, 없어도 **관측하지 않는 업종 목록은 항상** 싣는다.
 
@@ -1003,6 +1058,8 @@ def _block_md(block: dict) -> str:
         return _prior_md(block["prior"])
     if kind == "scorecard":
         return _scorecard_md(block["card"])
+    if kind == "thesis_board":
+        return _thesis_board_md(block["rows"])
     if kind == "chart":
         return _chart_md(block["block"])
     if kind == "unusual_day":

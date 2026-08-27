@@ -667,12 +667,40 @@ def _scorecard_html(c) -> str:
     )
 
 
+def _thesis_board_html(rows) -> str:
+    """`_thesis_board_md`와 같은 표. 문구·기준은 `render_md`가 한 자리에서 만든다."""
+    from .render_md import VERDICT_MARKS, thesis_board_days, thesis_board_note
+
+    if not rows:
+        return ""
+    body = ""
+    for r in rows:
+        state = f"{VERDICT_MARKS.get(r.verdict, '')} {r.verdict}".strip()
+        if r.changed and r.prev_verdict:
+            state += f" (오늘 {r.prev_verdict}→{r.verdict})"
+        days = thesis_board_days(r)
+        basis = r.basis_date or "—"
+        if r.basis_age_days is not None:
+            basis += f" ({r.basis_age_days}일 전)" if r.basis_age_days >= 30 else " (최근)"
+        body += (f"<tr><td>{_esc(r.label)}</td><td>{_esc(state)}</td>"
+                 f'<td class="num">{_esc(days)}</td><td>{_esc(basis)}</td></tr>')
+    return (
+        "<p><strong>가설 상태</strong></p>"
+        '<div class="scroll"><table><thead><tr><th>가설</th><th>상태</th>'
+        '<th class="num">며칠째</th><th>근거</th></tr></thead>'
+        f"<tbody>{body}</tbody></table></div>"
+        f'<p class="muted">{_esc(thesis_board_note(rows))}</p>'
+    )
+
+
 def _block_html(block: dict) -> str:
     kind = block["kind"]
     if kind == "prior":
         return _prior_html(block["prior"])
     if kind == "scorecard":
         return _scorecard_html(block["card"])
+    if kind == "thesis_board":
+        return _thesis_board_html(block["rows"])
     if kind == "chart":
         return chart_svg(block["block"])
     if kind == "unusual_day":
