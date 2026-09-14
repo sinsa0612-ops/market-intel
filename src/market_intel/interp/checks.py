@@ -45,6 +45,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 from .. import db as db_mod
+from ..universe import UNIVERSE
 from . import store as store_mod
 from . import thesis as thesis_mod
 
@@ -58,6 +59,26 @@ TRUSTED_MODEL_PREFIXES = ("gpt:", "claude:")
 DEFAULT_HORIZON_DAYS = 7
 
 MAX_PER_INTERPRETATION = 4  # 한 해석이 등록할 수 있는 조건 수 상한
+
+# 한국 시장 종목은 **그날 안에 답이 나온다** (CEO 지적 2026-08-27).
+#
+#   아침 리포트 차단선 07:15 KST  <- 한국 장 열기 전
+#   한국 종가                      06:30Z = 15:30 KST
+#   오후 리포트 차단선 16:15 KST  <- 한국 장 닫힌 뒤
+#
+# 아침에 KOSPI에 대해 건 조건은 그날 오후면 채점할 수 있다. 일괄 7일을 쓰면
+# 그 답이 일주일 뒤에야 나오고, "오늘 아침 말이 오늘 오후에 맞았나"는 영원히
+# 물을 수 없다.
+#
+# 미국·거시는 그럴 수 없다: 미국 종가는 다음 날 새벽 KST라 오후 차단선에는
+# 아직 그날 값이 없다. 그래서 시장으로 가른다.
+SAME_DAY_HORIZON_DAYS = 0
+_KR_SUBJECTS = frozenset(m["symbol"] for m in UNIVERSE if m.get("market") == "KR")
+
+
+def horizon_for(subject: str, horizon_days: int = DEFAULT_HORIZON_DAYS) -> int:
+    """이 대상의 답이 며칠 뒤에 나오나. 한국 시장은 그날 안이다."""
+    return SAME_DAY_HORIZON_DAYS if subject in _KR_SUBJECTS else horizon_days
 
 # 「등록 이후 새 관측」을 요구하지 **않는** 조건 종류. `stale`은 "N일째 갱신이
 # 없다"가 주장 그 자체라, 새 관측을 요구하면 뜻이 뒤집힌다.
@@ -120,7 +141,6 @@ def register(conn, *, interpretation_id: str, report_type: str, report_date: str
     같은 (해석, 조건 id)는 UNIQUE라 재실행해도 늘지 않는다."""
     if not is_trusted(model):
         return 0
-    due = due_date_for(report_date, horizon_days)
     now = db_mod.iso_utc()
     n = 0
     for atom in atoms[:MAX_PER_INTERPRETATION]:
@@ -138,6 +158,8 @@ def register(conn, *, interpretation_id: str, report_type: str, report_date: str
         if clean.get("benchmark") and not _has_observations(
                 conn, clean["benchmark"], clean["metric"], cutoff):
             continue
+        # 만기는 **대상마다** 다르다 — 한국 종목은 그날 오후, 나머지는 기본 창.
+        due = due_date_for(report_date, horizon_for(clean["subject"], horizon_days))
         store_mod.insert_check(conn, {
             "check_id": f"chk_{uuid.uuid4().hex[:20]}",
             "interpretation_id": interpretation_id, "report_type": report_type,
@@ -158,7 +180,7 @@ def due(conn, as_of: str) -> list[dict]:
 
 
 def _require_new_observation(atom: dict, status: str, detail: dict,
-                             report_date: str) -> tuple[str, dict]:
+                             registered_cutoff: str) -> tuple[str, dict]:
     """**등록 이후 새 관측이 없으면 채점하지 않는다** — TRUE/FALSE가 아니라 UNKNOWN.
 
     실측(2026-08-21 E2E, 실제 발행된 조건 4건): 모델은 문턱을 **오늘 값에서**
@@ -181,10 +203,14 @@ def _require_new_observation(atom: dict, status: str, detail: dict,
     if status not in ("TRUE", "FALSE") or atom.get("kind") in FRESHNESS_EXEMPT_KINDS:
         return status, detail
     latest_at = str(detail.get("latest_at") or detail.get("latest_event_at") or "")
-    if latest_at[:10] > report_date:
+    # **날짜가 아니라 차단선으로 가른다.** 아침에 등록한 조건을 그날 오후에
+    # 채점하려면 날짜로는 가를 수 없다 — 둘 다 같은 날이다. 차단선으로 가르면
+    # 그날 한국 종가(06:30Z)가 아침 차단선(전날 22:15Z) 뒤에 정확히 놓인다.
+    if latest_at and registered_cutoff and (
+            db_mod.iso_utc(latest_at) > db_mod.iso_utc(registered_cutoff)):
         return status, detail
     return "UNKNOWN", {**detail, "message": (
-        f"등록({report_date}) 이후 새 관측이 없다 — 채점 불가"
+        f"등록 시점({str(registered_cutoff)[:16]}) 이후 새 관측이 없다 — 채점 불가"
         f"{f' (최신 관측 {latest_at[:10]})' if latest_at else ''}")}
 
 
@@ -200,7 +226,11 @@ def score_due(conn, as_of: str, cutoff) -> int:
         atom.setdefault("id", row["atom_id"])
         try:
             status, detail = thesis_mod.evaluate_atom(conn, atom, cutoff)
-            status, detail = _require_new_observation(atom, status, detail, row["report_date"])
+            status, detail = _require_new_observation(
+                atom, status, detail,
+                # 차단선을 못 읽으면(옛 행, 조인 실패) **그날 전체를 지난 뒤**를
+                # 요구한다 — 지금까지의 보수적인 동작 그대로다.
+                row.get("registered_cutoff") or f"{row['report_date']}T23:59:59+00:00")
         except Exception as exc:  # noqa: BLE001 — 조건 하나가 성적표를 막지 않는다
             status, detail = "UNKNOWN", {"message": f"채점 실패: {type(exc).__name__}"}
         store_mod.mark_check_scored(

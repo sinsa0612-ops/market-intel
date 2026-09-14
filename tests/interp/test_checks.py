@@ -315,3 +315,143 @@ def test_an_unknown_observation_date_falls_to_unscorable(conn):
     """근거의 날짜를 모르는 채로 "맞았다"고 말할 수는 없다 — UNKNOWN 쪽으로 넘어진다."""
     assert checks._require_new_observation(
         {"kind": "threshold"}, "TRUE", {"message": "x"}, "2026-03-02")[0] == "UNKNOWN"
+
+
+# --- 당일 만기 (CEO 지적 2026-08-27) ------------------------------------------
+#
+# *"오늘 오전의 해석이 오늘 오후에 맞았는지 제대로 작동하지 않는 것 같다."*
+#
+# 만기가 일괄 7일이라 그 질문에 영원히 답이 안 나왔다. 그런데 한국 시장은
+# 그날 안에 답이 나온다:
+#
+#     아침 차단선 07:15 KST(= 전날 22:15Z)  <- 장 열기 전
+#     한국 종가                06:30Z       <- 15:30 KST
+#     오후 차단선 16:15 KST(= 당일 07:15Z)  <- 장 닫힌 뒤
+
+KR_ATOM = {"id": "k1", "kind": "threshold", "subject": "^KS11", "metric": "price_close",
+           "op": ">", "value": 6700.0, "why": "코스피가 6700을 넘는지"}
+KR_CUTOFF = datetime(2026, 3, 1, 22, 15, tzinfo=timezone.utc)   # 3/2 아침 07:15 KST
+
+
+def _kr_conn(conn):
+    """원장에 코스피 관측 하나 + **아침 차단선을 가진 해석 한 건**.
+
+    해석의 차단선이 곧 등록 시점이다 — 채점의 신선도 가드가 `due_checks`의
+    조인으로 그 값을 읽는다. 실제 파이프라인에서 둘은 항상 같다
+    (`ops.record_outcome`이 `report.cutoff_utc`를 그대로 넘긴다: *"리포트가
+    자기 차단선을 들고 있다 — 별도로 넘겨받지 않는다"*). 픽스처도 그래야 한다."""
+    _seed(conn, "^KS11", "price_close", "2026-02-27T06:30:00+00:00", 6600.0)
+    conn.execute(
+        "INSERT INTO interpretations(interpretation_id, report_type, report_date, cutoff_utc,"
+        " status, fields_json, engine_version, created_at, model) "
+        "VALUES ('i_am','morning','2026-03-02',?,'ok','{}','x',"
+        "'2026-03-02T07:20:00+00:00','gpt:gpt-5.6-luna')",
+        (db_mod.iso_utc(KR_CUTOFF),))
+    conn.commit()
+    return conn
+
+
+def _reg_kr(conn, atoms):
+    return checks.register(conn, interpretation_id="i_am", report_type="morning",
+                           report_date="2026-03-02", atoms=atoms,
+                           model="gpt:gpt-5.6-luna", cutoff=KR_CUTOFF)
+
+
+def test_a_korean_subject_is_due_the_same_day(conn):
+    """미국·거시는 그럴 수 없다 — 미국 종가는 다음 날 새벽 KST라 그날 오후
+    차단선에는 아직 값이 없다. 그래서 시장으로 가른다."""
+    _kr_conn(conn)
+    assert _reg_kr(conn, [KR_ATOM, GOOD]) == 2
+    due = dict(conn.execute(
+        "SELECT atom_id, due_date FROM interpretation_checks").fetchall())
+    assert due["k1"] == "2026-03-02", "한국 종목인데 그날 안에 안 묻는다"
+    assert due["a1"] == "2026-03-09", "미국 대상까지 당일로 당기면 늘 채점 불가가 된다"
+
+
+def test_the_afternoon_scores_what_the_morning_registered(conn):
+    """**이것이 B의 존재 이유다.** 아침 07:15에 건 조건을 그날 16:15에 채점한다."""
+    _kr_conn(conn)
+    _reg_kr(conn, [KR_ATOM])
+    # 그날 한국 종가가 아침 차단선 **뒤에** 들어온다.
+    _seed(conn, "^KS11", "price_close", "2026-03-02T06:30:00+00:00", 6813.21)
+
+    afternoon = datetime(2026, 3, 2, 7, 15, tzinfo=timezone.utc)   # 16:15 KST
+    assert checks.score_due(conn, "2026-03-02", afternoon) == 1
+    assert conn.execute("SELECT verdict FROM interpretation_checks").fetchone()[0] == "TRUE"
+
+
+def test_the_freshness_guard_uses_the_cutoff_not_the_date(conn):
+    """날짜로 가르면 같은 날 채점이 **전부 채점 불가**가 된다 — 등록도 관측도
+    같은 날짜라 "등록 이후"가 성립하지 않는다. 차단선으로 가르면 그날 종가가
+    아침 차단선 뒤에 정확히 놓인다."""
+    _kr_conn(conn)
+    _reg_kr(conn, [KR_ATOM])
+    _seed(conn, "^KS11", "price_close", "2026-03-02T06:30:00+00:00", 6813.21)
+    row = checks.due(conn, "2026-03-02")[0]
+    assert row["registered_cutoff"] == "2026-03-01T22:15:00+00:00", \
+        "등록한 해석의 차단선을 못 읽으면 당일 채점이 불가능하다"
+
+
+def test_same_day_without_a_new_close_is_still_unscorable(conn):
+    """당일 만기가 원래 결함(문턱을 뽑아온 그 값으로 채점)을 되살리면 안 된다.
+    그날 종가가 아직 안 들어왔으면 채점 불가다."""
+    _kr_conn(conn)
+    _reg_kr(conn, [KR_ATOM])
+    checks.score_due(conn, "2026-03-02", datetime(2026, 3, 2, 7, 15, tzinfo=timezone.utc))
+    row = conn.execute("SELECT verdict, detail_json FROM interpretation_checks").fetchone()
+    assert row["verdict"] == "UNKNOWN"
+    assert "새 관측이 없다" in row["detail_json"]
+
+
+def test_a_check_is_never_scored_by_the_report_that_registered_it(conn):
+    """리포트 파이프라인은 build에서 채점하고 그 뒤 해석이 등록한다 — 순서상
+    자기 자신을 채점할 수 없다. 그 순서가 뒤집히면 아침 리포트가 방금 건 조건을
+    그 자리에서 "맞았다"고 적는다."""
+    _kr_conn(conn)
+    morning = datetime(2026, 3, 1, 22, 15, tzinfo=timezone.utc)
+    assert checks.score_due(conn, "2026-03-02", morning) == 0, "등록 전인데 채점거리가 있다"
+    _reg_kr(conn, [KR_ATOM])
+    # 등록 직후 같은 차단선으로 채점해도 새 관측이 없어 판정이 서지 않는다.
+    checks.score_due(conn, "2026-03-02", morning)
+    assert conn.execute(
+        "SELECT verdict FROM interpretation_checks").fetchone()[0] == "UNKNOWN"
+
+
+def test_an_afternoon_check_can_be_scored_by_that_night_us_close(conn):
+    """**여기서 날짜와 차단선이 갈린다.**
+
+    오후 리포트(차단선 03-02 07:15Z)가 미국 대상 조건을 걸면, 그날 미국 종가는
+    같은 UTC 날짜의 21:00Z에 들어온다. 날짜로 가르면 `03-02 > 03-02`가 거짓이라
+    **영원히 채점 불가**가 되고, 차단선으로 가르면 21:00Z > 07:15Z라 채점된다.
+
+    아침 등록만 시험하면 이 차이가 안 보인다 — 아침 차단선은 UTC로 전날이라
+    날짜 비교도 우연히 맞아떨어지기 때문이다(변이가 실제로 살아남았다).
+    """
+    afternoon = datetime(2026, 3, 2, 7, 15, tzinfo=timezone.utc)
+    conn.execute(
+        "INSERT INTO interpretations(interpretation_id, report_type, report_date, cutoff_utc,"
+        " status, fields_json, engine_version, created_at, model) "
+        "VALUES ('i_pm','close_delta','2026-03-02',?,'ok','{}','x',"
+        "'2026-03-02T07:20:00+00:00','gpt:gpt-5.6-luna')", (db_mod.iso_utc(afternoon),))
+    conn.commit()
+    checks.register(conn, interpretation_id="i_pm", report_type="close_delta",
+                    report_date="2026-03-02", atoms=[GOOD],
+                    model="gpt:gpt-5.6-luna", cutoff=afternoon)
+    _seed(conn, "DGS2", "value", "2026-03-02T21:00:00+00:00", 4.10)
+
+    checks.score_due(conn, "2026-03-09", datetime(2026, 3, 9, 7, 15, tzinfo=timezone.utc))
+    row = conn.execute(
+        "SELECT verdict FROM interpretation_checks WHERE interpretation_id='i_pm'").fetchone()
+    assert row["verdict"] == "TRUE", "같은 UTC 날짜의 새 관측이 채점되지 않았다"
+
+
+def test_an_observation_stamped_exactly_at_the_cutoff_is_not_new(conn):
+    """차단선에 정확히 걸친 관측은 **등록한 해석이 이미 본 것**이다. 그것으로
+    채점하면 문턱을 뽑아온 바로 그 값으로 채점하는 원래 결함이 돌아온다."""
+    _kr_conn(conn)
+    _reg_kr(conn, [KR_ATOM])
+    _seed(conn, "^KS11", "price_close", db_mod.iso_utc(KR_CUTOFF), 6813.21)
+
+    checks.score_due(conn, "2026-03-02", datetime(2026, 3, 2, 7, 15, tzinfo=timezone.utc))
+    row = conn.execute("SELECT verdict FROM interpretation_checks").fetchone()
+    assert row["verdict"] == "UNKNOWN", "차단선에 걸친 관측을 새 관측으로 셌다"

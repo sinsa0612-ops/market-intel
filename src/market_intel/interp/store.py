@@ -263,10 +263,19 @@ def insert_check(conn: sqlite3.Connection, row: dict) -> None:
 
 
 def due_checks(conn: sqlite3.Connection, as_of: str) -> list[dict]:
-    """만기가 지났는데 아직 채점 안 된 조건들."""
+    """만기가 지났는데 아직 채점 안 된 조건들.
+
+    등록한 해석의 **차단선**을 함께 실어 준다(`registered_cutoff`). 채점이
+    "등록 이후 새 관측인가"를 판단할 때 날짜가 아니라 차단선을 봐야 하기
+    때문이다 — 같은 날 아침에 등록한 조건을 그날 오후에 채점하려면 날짜로는
+    가를 수 없다(둘 다 같은 날이다). 차단선은 해석이 이미 갖고 있으므로
+    여기서 조인해 온다: 같은 값을 이 표에 또 적으면 두 곳이 어긋나는 날이 온다.
+    """
     rows = conn.execute(
-        "SELECT * FROM interpretation_checks WHERE scored_at IS NULL AND due_date <= ? "
-        "ORDER BY due_date, registered_at", (as_of,)).fetchall()
+        "SELECT c.*, i.cutoff_utc AS registered_cutoff FROM interpretation_checks c "
+        "JOIN interpretations i ON i.interpretation_id = c.interpretation_id "
+        "WHERE c.scored_at IS NULL AND c.due_date <= ? "
+        "ORDER BY c.due_date, c.registered_at", (as_of,)).fetchall()
     return [dict(r) for r in rows]
 
 
