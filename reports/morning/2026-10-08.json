@@ -4097,14 +4097,105 @@
     "next_due": "2026-10-09",
     "unavailable": ""
   },
-  "thesis_board": [],
+  "thesis_board": [
+    {
+      "label": "AI·반도체 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 43,
+      "duration_at_least": false,
+      "basis_date": "2026-06-30",
+      "basis_age_days": 100
+    },
+    {
+      "label": "AI·반도체 #2",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 8,
+      "duration_at_least": false,
+      "basis_date": "2026-10-07",
+      "basis_age_days": 1
+    },
+    {
+      "label": "AI·반도체 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 2,
+      "duration_at_least": false,
+      "basis_date": "2026-10-07",
+      "basis_age_days": 1
+    },
+    {
+      "label": "소비·경기 #1",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 54,
+      "duration_at_least": true,
+      "basis_date": "2026-10-05",
+      "basis_age_days": 3
+    },
+    {
+      "label": "금융·신용 #2",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 43,
+      "duration_at_least": true,
+      "basis_date": "2026-10-05",
+      "basis_age_days": 3
+    },
+    {
+      "label": "정책·지정학 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 2,
+      "duration_at_least": false,
+      "basis_date": "2026-10-06",
+      "basis_age_days": 2
+    },
+    {
+      "label": "전력·에너지 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 50,
+      "duration_at_least": true,
+      "basis_date": "2026-06-30",
+      "basis_age_days": 100
+    }
+  ],
   "interpretation": {
-    "reading": "",
-    "counter_reading": "",
-    "thesis_impact": "",
-    "next_check": "",
-    "generated_by": "",
-    "generated_at": ""
+    "reading": "S&P 500과 SOX가 오르고 VIX가 내린 가운데 KOSPI와 KOSDAQ이 함께 하락했으므로, 현재 국내 약세는 전면적인 세계 위험 회피보다 국내 수급과 시장별 차이에 더 가깝게 읽힌다(F111, F112, F113, F117, F118). 코스피 상위 20종목 표본에서는 개인이 순매수한 반면 기관과 외국인이 순매도했고, SK하이닉스에서도 개인 순매수와 외국인 순매도가 함께 나타났다(F87, F88, F90, F91, F94).",
+    "counter_reading": "반대로 국내 하락은 수급의 일시적 차이보다 높은 금리와 물가 압력이 위험자산에 전달되는 초기 신호일 수 있다. 미국채 2년물 금리가 연방기금금리 상단보다 높고, 미국 10년물 실질금리와 미국 생산자물가가 직전 관측보다 올랐으며, 달러지수도 상승했다(F9, F6, F15, F10). S&P 500 상승과 VIX 하락은 이런 부담이 아직 미국 시장에 뚜렷하게 나타나지 않았다는 반대 증거일 뿐, 국내 약세와 모순되지 않을 수 있다(F113, F118).",
+    "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 5 · 유지 2 · 약화 2 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인 (진입 2026-08-12(기준 변경 후 재시작) · 지속 43판정일 · 새 관측 미상 · 근거 2026-06-30).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -3,811,042,000,000) (진입 2026-09-29 · 지속 8판정일 · 새 관측 6건, 마지막 2026-10-07 · 근거 2026-10-07).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -9,398,730,000,000) (진입 2026-10-07 · 지속 2판정일 · 새 관측 1건, 마지막 2026-10-07 · 근거 2026-10-07).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.31 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 54판정일 · 새 관측 38건 이상(그 외 일부 판정일 미상) · 근거 2026-10-05).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.95 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 43판정일 · 새 관측 38건, 마지막 2026-10-07 · 근거 2026-10-05).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1343.4 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 2판정일 · 새 관측 1건, 마지막 2026-10-07 · 근거 2026-10-06).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 50판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+    "next_check": "다음 미국 CPI와 소매판매 발표에서 미국 CPI가 334.13을 넘는지, 미국 소매판매가 737,763보다 낮은지 확인한다(F4, F16). 이어서 미국채 2년물 금리가 4.84%를 웃도는지와 KOSPI가 S&P 500보다 낮은 변화율을 보이는지를 확인한다(F8, F111, F113). 앞의 물가, 수요, 금리 조건이 함께 충족되면 고금리와 물가 압력 해석을 검증하고, KOSPI의 상대 약세만 확인되면 국내 수급 중심 해석을 검증한다.\n\n확인 일정: 2026-10-14 Consumer Price Index(A) · 2026-10-22 한국은행 금융통화위원회(A) · 가설 재점검 2026-09-01",
+    "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+    "generated_at": "2026-10-08T07:07:11+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -4117,6 +4208,397 @@
       "schedule_changes": 4,
       "missing": 0,
       "sector_index": 25
+    },
+    "interpretation": {
+      "checks": [
+        {
+          "id": "c1",
+          "kind": "relative_change_pct",
+          "subject": "^KS11",
+          "metric": "price_close",
+          "op": "<",
+          "value": 0,
+          "lookback": 1,
+          "benchmark": "^GSPC",
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "KOSPI가 S&P 500보다 낮은 변화율인지 확인한다(F111, F113)"
+        },
+        {
+          "id": "c2",
+          "kind": "threshold",
+          "subject": "CPIAUCSL",
+          "metric": "value",
+          "op": ">",
+          "value": 334.13,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "미국 CPI 발표값이 334.13보다 높은지 확인한다(F4)"
+        },
+        {
+          "id": "c3",
+          "kind": "threshold",
+          "subject": "DGS2",
+          "metric": "value",
+          "op": ">",
+          "value": 4.84,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "미국채 2년물 금리가 4.84%보다 높은지 확인한다(F8)"
+        },
+        {
+          "id": "c4",
+          "kind": "threshold",
+          "subject": "RSAFS",
+          "metric": "value",
+          "op": "<",
+          "value": 737763,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "미국 소매판매 발표값이 737,763보다 낮은지 확인한다(F16)"
+        }
+      ],
+      "engine_version": "2b.2",
+      "status": "ok",
+      "model": "gpt:gpt-5.6-luna",
+      "prompt_version": "interpretation_v4",
+      "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+      "generated_at": "2026-10-08T07:07:11+00:00",
+      "elapsed_ms": 366603,
+      "attempts": 1,
+      "fields": {
+        "reading": "ok",
+        "counter_reading": "ok",
+        "thesis_impact": "rules",
+        "next_check": "ok"
+      },
+      "violations": {},
+      "evidence": [
+        [
+          "F4",
+          "fred:CPIAUCSL:value:20260801",
+          1
+        ],
+        [
+          "F6",
+          "fred:DFII10:value:20261005",
+          1
+        ],
+        [
+          "F8",
+          "fred:DGS2:value:20261005",
+          1
+        ],
+        [
+          "F9",
+          "fred:DGS2:value:20261005",
+          1
+        ],
+        [
+          "F10",
+          "fred:DTWEXBGS:value:20261002",
+          1
+        ],
+        [
+          "F15",
+          "fred:PPIFIS:value:20260801",
+          1
+        ],
+        [
+          "F16",
+          "fred:RSAFS:value:20260801",
+          2
+        ],
+        [
+          "F91",
+          "kis:000660.KS:net_buy_individual_value:20261007",
+          1
+        ],
+        [
+          "F94",
+          "kis:000660.KS:net_buy_foreign_value:20261007",
+          1
+        ],
+        [
+          "F111",
+          "yfinance:^KS11:price_close:20261006",
+          2
+        ],
+        [
+          "F111",
+          "yfinance:^KS11:price_close:20261007",
+          1
+        ],
+        [
+          "F112",
+          "yfinance:^KQ11:price_close:20261006",
+          2
+        ],
+        [
+          "F112",
+          "yfinance:^KQ11:price_close:20261007",
+          1
+        ],
+        [
+          "F113",
+          "yfinance:^GSPC:price_close:20261006",
+          1
+        ],
+        [
+          "F117",
+          "yfinance:^SOX:price_close:20261006",
+          2
+        ],
+        [
+          "F118",
+          "yfinance:^VIX:price_close:20261006",
+          1
+        ]
+      ],
+      "evidence_unresolved": [
+        "F87",
+        "F88",
+        "F90"
+      ],
+      "digest_truncated": false,
+      "facts_sha256": "bf03660fb5d545617028d8635adba946748838b4c9ae023fc7ee4637237ae8a4",
+      "text": {
+        "reading": "S&P 500과 SOX가 오르고 VIX가 내린 가운데 KOSPI와 KOSDAQ이 함께 하락했으므로, 현재 국내 약세는 전면적인 세계 위험 회피보다 국내 수급과 시장별 차이에 더 가깝게 읽힌다(F111, F112, F113, F117, F118). 코스피 상위 20종목 표본에서는 개인이 순매수한 반면 기관과 외국인이 순매도했고, SK하이닉스에서도 개인 순매수와 외국인 순매도가 함께 나타났다(F87, F88, F90, F91, F94).",
+        "counter_reading": "반대로 국내 하락은 수급의 일시적 차이보다 높은 금리와 물가 압력이 위험자산에 전달되는 초기 신호일 수 있다. 미국채 2년물 금리가 연방기금금리 상단보다 높고, 미국 10년물 실질금리와 미국 생산자물가가 직전 관측보다 올랐으며, 달러지수도 상승했다(F9, F6, F15, F10). S&P 500 상승과 VIX 하락은 이런 부담이 아직 미국 시장에 뚜렷하게 나타나지 않았다는 반대 증거일 뿐, 국내 약세와 모순되지 않을 수 있다(F113, F118).",
+        "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 5 · 유지 2 · 약화 2 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인 (진입 2026-08-12(기준 변경 후 재시작) · 지속 43판정일 · 새 관측 미상 · 근거 2026-06-30).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -3,811,042,000,000) (진입 2026-09-29 · 지속 8판정일 · 새 관측 6건, 마지막 2026-10-07 · 근거 2026-10-07).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -9,398,730,000,000) (진입 2026-10-07 · 지속 2판정일 · 새 관측 1건, 마지막 2026-10-07 · 근거 2026-10-07).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.31 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 54판정일 · 새 관측 38건 이상(그 외 일부 판정일 미상) · 근거 2026-10-05).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.95 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 43판정일 · 새 관측 38건, 마지막 2026-10-07 · 근거 2026-10-05).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1343.4 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 2판정일 · 새 관측 1건, 마지막 2026-10-07 · 근거 2026-10-06).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 50판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+        "next_check": "다음 미국 CPI와 소매판매 발표에서 미국 CPI가 334.13을 넘는지, 미국 소매판매가 737,763보다 낮은지 확인한다(F4, F16). 이어서 미국채 2년물 금리가 4.84%를 웃도는지와 KOSPI가 S&P 500보다 낮은 변화율을 보이는지를 확인한다(F8, F111, F113). 앞의 물가, 수요, 금리 조건이 함께 충족되면 고금리와 물가 압력 해석을 검증하고, KOSPI의 상대 약세만 확인되면 국내 수급 중심 해석을 검증한다.\n\n확인 일정: 2026-10-14 Consumer Price Index(A) · 2026-10-22 한국은행 금융통화위원회(A) · 가설 재점검 2026-09-01",
+        "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+        "generated_at": "2026-10-08T07:07:11+00:00"
+      },
+      "restorable_meta": {
+        "checks": [
+          {
+            "id": "c1",
+            "kind": "relative_change_pct",
+            "subject": "^KS11",
+            "metric": "price_close",
+            "op": "<",
+            "value": 0,
+            "lookback": 1,
+            "benchmark": "^GSPC",
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "KOSPI가 S&P 500보다 낮은 변화율인지 확인한다(F111, F113)"
+          },
+          {
+            "id": "c2",
+            "kind": "threshold",
+            "subject": "CPIAUCSL",
+            "metric": "value",
+            "op": ">",
+            "value": 334.13,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "미국 CPI 발표값이 334.13보다 높은지 확인한다(F4)"
+          },
+          {
+            "id": "c3",
+            "kind": "threshold",
+            "subject": "DGS2",
+            "metric": "value",
+            "op": ">",
+            "value": 4.84,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "미국채 2년물 금리가 4.84%보다 높은지 확인한다(F8)"
+          },
+          {
+            "id": "c4",
+            "kind": "threshold",
+            "subject": "RSAFS",
+            "metric": "value",
+            "op": "<",
+            "value": 737763,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "미국 소매판매 발표값이 737,763보다 낮은지 확인한다(F16)"
+          }
+        ],
+        "engine_version": "2b.2",
+        "status": "ok",
+        "model": "gpt:gpt-5.6-luna",
+        "prompt_version": "interpretation_v4",
+        "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+        "generated_at": "2026-10-08T07:07:11+00:00",
+        "elapsed_ms": 366603,
+        "attempts": 1,
+        "fields": {
+          "reading": "ok",
+          "counter_reading": "ok",
+          "thesis_impact": "rules",
+          "next_check": "ok"
+        },
+        "violations": {},
+        "evidence": [
+          [
+            "F4",
+            "fred:CPIAUCSL:value:20260801",
+            1
+          ],
+          [
+            "F6",
+            "fred:DFII10:value:20261005",
+            1
+          ],
+          [
+            "F8",
+            "fred:DGS2:value:20261005",
+            1
+          ],
+          [
+            "F9",
+            "fred:DGS2:value:20261005",
+            1
+          ],
+          [
+            "F10",
+            "fred:DTWEXBGS:value:20261002",
+            1
+          ],
+          [
+            "F15",
+            "fred:PPIFIS:value:20260801",
+            1
+          ],
+          [
+            "F16",
+            "fred:RSAFS:value:20260801",
+            2
+          ],
+          [
+            "F91",
+            "kis:000660.KS:net_buy_individual_value:20261007",
+            1
+          ],
+          [
+            "F94",
+            "kis:000660.KS:net_buy_foreign_value:20261007",
+            1
+          ],
+          [
+            "F111",
+            "yfinance:^KS11:price_close:20261006",
+            2
+          ],
+          [
+            "F111",
+            "yfinance:^KS11:price_close:20261007",
+            1
+          ],
+          [
+            "F112",
+            "yfinance:^KQ11:price_close:20261006",
+            2
+          ],
+          [
+            "F112",
+            "yfinance:^KQ11:price_close:20261007",
+            1
+          ],
+          [
+            "F113",
+            "yfinance:^GSPC:price_close:20261006",
+            1
+          ],
+          [
+            "F117",
+            "yfinance:^SOX:price_close:20261006",
+            2
+          ],
+          [
+            "F118",
+            "yfinance:^VIX:price_close:20261006",
+            1
+          ]
+        ],
+        "evidence_unresolved": [
+          "F87",
+          "F88",
+          "F90"
+        ],
+        "digest_truncated": false,
+        "facts_sha256": "bf03660fb5d545617028d8635adba946748838b4c9ae023fc7ee4637237ae8a4",
+        "text": {
+          "reading": "S&P 500과 SOX가 오르고 VIX가 내린 가운데 KOSPI와 KOSDAQ이 함께 하락했으므로, 현재 국내 약세는 전면적인 세계 위험 회피보다 국내 수급과 시장별 차이에 더 가깝게 읽힌다(F111, F112, F113, F117, F118). 코스피 상위 20종목 표본에서는 개인이 순매수한 반면 기관과 외국인이 순매도했고, SK하이닉스에서도 개인 순매수와 외국인 순매도가 함께 나타났다(F87, F88, F90, F91, F94).",
+          "counter_reading": "반대로 국내 하락은 수급의 일시적 차이보다 높은 금리와 물가 압력이 위험자산에 전달되는 초기 신호일 수 있다. 미국채 2년물 금리가 연방기금금리 상단보다 높고, 미국 10년물 실질금리와 미국 생산자물가가 직전 관측보다 올랐으며, 달러지수도 상승했다(F9, F6, F15, F10). S&P 500 상승과 VIX 하락은 이런 부담이 아직 미국 시장에 뚜렷하게 나타나지 않았다는 반대 증거일 뿐, 국내 약세와 모순되지 않을 수 있다(F113, F118).",
+          "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 5 · 유지 2 · 약화 2 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인 (진입 2026-08-12(기준 변경 후 재시작) · 지속 43판정일 · 새 관측 미상 · 근거 2026-06-30).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -3,811,042,000,000) (진입 2026-09-29 · 지속 8판정일 · 새 관측 6건, 마지막 2026-10-07 · 근거 2026-10-07).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -9,398,730,000,000) (진입 2026-10-07 · 지속 2판정일 · 새 관측 1건, 마지막 2026-10-07 · 근거 2026-10-07).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.31 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 54판정일 · 새 관측 38건 이상(그 외 일부 판정일 미상) · 근거 2026-10-05).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.95 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 43판정일 · 새 관측 38건, 마지막 2026-10-07 · 근거 2026-10-05).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1343.4 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 2판정일 · 새 관측 1건, 마지막 2026-10-07 · 근거 2026-10-06).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 50판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+          "next_check": "다음 미국 CPI와 소매판매 발표에서 미국 CPI가 334.13을 넘는지, 미국 소매판매가 737,763보다 낮은지 확인한다(F4, F16). 이어서 미국채 2년물 금리가 4.84%를 웃도는지와 KOSPI가 S&P 500보다 낮은 변화율을 보이는지를 확인한다(F8, F111, F113). 앞의 물가, 수요, 금리 조건이 함께 충족되면 고금리와 물가 압력 해석을 검증하고, KOSPI의 상대 약세만 확인되면 국내 수급 중심 해석을 검증한다.\n\n확인 일정: 2026-10-14 Consumer Price Index(A) · 2026-10-22 한국은행 금융통화위원회(A) · 가설 재점검 2026-09-01",
+          "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+          "generated_at": "2026-10-08T07:07:11+00:00"
+        }
+      },
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "consumer_cycle_1",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_2",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "policy_geo_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "power_energy_1",
+          "verdict": "강화",
+          "changed": false
+        }
+      ]
     }
   }
 }
