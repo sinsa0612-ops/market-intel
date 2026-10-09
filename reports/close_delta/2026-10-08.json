@@ -1992,7 +1992,14 @@
       "data_status": ""
     }
   ],
-  "missing": [],
+  "missing": [
+    {
+      "area": "AI 해석",
+      "reason": "ollama에 연결하지 못해 해석을 생성하지 못했다(llm_unavailable). 사실 계층은 정상.",
+      "since": "2026-10-09T04:40:29+00:00",
+      "gap_id": "interp:llm_unavailable"
+    }
+  ],
   "sector_summary": [
     {
       "sector": "플랫폼·AI 수익화",
@@ -3766,14 +3773,105 @@
     "next_due": "2026-10-09",
     "unavailable": ""
   },
-  "thesis_board": [],
+  "thesis_board": [
+    {
+      "label": "AI·반도체 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 43,
+      "duration_at_least": false,
+      "basis_date": "2026-06-30",
+      "basis_age_days": 100
+    },
+    {
+      "label": "AI·반도체 #2",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 8,
+      "duration_at_least": false,
+      "basis_date": "2026-10-08",
+      "basis_age_days": 0
+    },
+    {
+      "label": "AI·반도체 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 2,
+      "duration_at_least": false,
+      "basis_date": "2026-10-08",
+      "basis_age_days": 0
+    },
+    {
+      "label": "소비·경기 #1",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 54,
+      "duration_at_least": true,
+      "basis_date": "2026-10-06",
+      "basis_age_days": 2
+    },
+    {
+      "label": "금융·신용 #2",
+      "verdict": "강화",
+      "changed": true,
+      "prev_verdict": "유지",
+      "duration_days": 1,
+      "duration_at_least": false,
+      "basis_date": "2026-10-07",
+      "basis_age_days": 1
+    },
+    {
+      "label": "금융·신용 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 43,
+      "duration_at_least": true,
+      "basis_date": "2026-10-06",
+      "basis_age_days": 2
+    },
+    {
+      "label": "정책·지정학 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 2,
+      "duration_at_least": false,
+      "basis_date": "2026-10-07",
+      "basis_age_days": 1
+    },
+    {
+      "label": "전력·에너지 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 50,
+      "duration_at_least": true,
+      "basis_date": "2026-06-30",
+      "basis_age_days": 100
+    }
+  ],
   "interpretation": {
     "reading": "",
     "counter_reading": "",
-    "thesis_impact": "",
+    "thesis_impact": "가설 9건 판정 — **상태가 바뀐 가설 1건** — 금융·신용 #2 유지 → 강화. (현재 상태: 강화 6 · 유지 1 · 약화 2 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인 (진입 2026-08-12(기준 변경 후 재시작) · 지속 43판정일 · 새 관측 미상 · 근거 2026-06-30).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -4,067,547,000,000) (진입 2026-09-29 · 지속 8판정일 · 새 관측 7건, 마지막 2026-10-08 · 근거 오늘).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -9,590,377,000,000) (진입 2026-10-07 · 지속 2판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 오늘).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.27 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 54판정일 · 새 관측 39건 이상(그 외 일부 판정일 미상) · 근거 2026-10-06).\n[금융·신용 #2] 강화 — T10Y2Y value 최신값 0.51 (조건 >= 0.5 충족) (진입 2026-10-08 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-08 · 근거 2026-10-07).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.91 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 43판정일 · 새 관측 39건, 마지막 2026-10-08 · 근거 2026-10-06).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 2판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 50판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
     "next_check": "",
-    "generated_by": "",
-    "generated_at": ""
+    "generated_by": "규칙 판정 · thesis/2b.3",
+    "generated_at": "2026-10-09T04:40:29+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -3786,6 +3884,113 @@
       "schedule_changes": 4,
       "missing": 0,
       "sector_index": 25
+    },
+    "interpretation": {
+      "checks": [],
+      "engine_version": "2b.2",
+      "status": "llm_unavailable",
+      "model": "gpt:gpt-5.6-luna",
+      "prompt_version": "interpretation_v4",
+      "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+      "generated_at": "2026-10-09T04:40:29+00:00",
+      "elapsed_ms": 845254,
+      "attempts": 1,
+      "fields": {
+        "reading": "empty",
+        "counter_reading": "empty",
+        "thesis_impact": "rules",
+        "next_check": "empty"
+      },
+      "violations": {},
+      "evidence": [],
+      "evidence_unresolved": [],
+      "digest_truncated": false,
+      "facts_sha256": "5a3b6c88ebaae7e96d07603d51f42744bb6c5bf4c8550253b1dd2818f794a8c3",
+      "text": {
+        "reading": "",
+        "counter_reading": "",
+        "thesis_impact": "가설 9건 판정 — **상태가 바뀐 가설 1건** — 금융·신용 #2 유지 → 강화. (현재 상태: 강화 6 · 유지 1 · 약화 2 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인 (진입 2026-08-12(기준 변경 후 재시작) · 지속 43판정일 · 새 관측 미상 · 근거 2026-06-30).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -4,067,547,000,000) (진입 2026-09-29 · 지속 8판정일 · 새 관측 7건, 마지막 2026-10-08 · 근거 오늘).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -9,590,377,000,000) (진입 2026-10-07 · 지속 2판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 오늘).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.27 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 54판정일 · 새 관측 39건 이상(그 외 일부 판정일 미상) · 근거 2026-10-06).\n[금융·신용 #2] 강화 — T10Y2Y value 최신값 0.51 (조건 >= 0.5 충족) (진입 2026-10-08 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-08 · 근거 2026-10-07).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.91 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 43판정일 · 새 관측 39건, 마지막 2026-10-08 · 근거 2026-10-06).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 2판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 50판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+        "next_check": "",
+        "generated_by": "규칙 판정 · thesis/2b.3",
+        "generated_at": "2026-10-09T04:40:29+00:00"
+      },
+      "restorable_meta": {
+        "checks": [],
+        "engine_version": "2b.2",
+        "status": "llm_unavailable",
+        "model": "gpt:gpt-5.6-luna",
+        "prompt_version": "interpretation_v4",
+        "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+        "generated_at": "2026-10-09T04:40:29+00:00",
+        "elapsed_ms": 845254,
+        "attempts": 1,
+        "fields": {
+          "reading": "empty",
+          "counter_reading": "empty",
+          "thesis_impact": "rules",
+          "next_check": "empty"
+        },
+        "violations": {},
+        "evidence": [],
+        "evidence_unresolved": [],
+        "digest_truncated": false,
+        "facts_sha256": "5a3b6c88ebaae7e96d07603d51f42744bb6c5bf4c8550253b1dd2818f794a8c3",
+        "text": {
+          "reading": "",
+          "counter_reading": "",
+          "thesis_impact": "가설 9건 판정 — **상태가 바뀐 가설 1건** — 금융·신용 #2 유지 → 강화. (현재 상태: 강화 6 · 유지 1 · 약화 2 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 강화 — MSFT operating_income 최근 2구간 연속 up 확인 (진입 2026-08-12(기준 변경 후 재시작) · 지속 43판정일 · 새 관측 미상 · 근거 2026-06-30).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -4,067,547,000,000) (진입 2026-09-29 · 지속 8판정일 · 새 관측 7건, 마지막 2026-10-08 · 근거 오늘).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -9,590,377,000,000) (진입 2026-10-07 · 지속 2판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 오늘).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.27 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 54판정일 · 새 관측 39건 이상(그 외 일부 판정일 미상) · 근거 2026-10-06).\n[금융·신용 #2] 강화 — T10Y2Y value 최신값 0.51 (조건 >= 0.5 충족) (진입 2026-10-08 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-08 · 근거 2026-10-07).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.91 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 43판정일 · 새 관측 39건, 마지막 2026-10-08 · 근거 2026-10-06).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 2판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 50판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+          "next_check": "",
+          "generated_by": "규칙 판정 · thesis/2b.3",
+          "generated_at": "2026-10-09T04:40:29+00:00"
+        }
+      },
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "consumer_cycle_1",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_2",
+          "verdict": "강화",
+          "changed": true
+        },
+        {
+          "thesis_id": "fin_credit_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "policy_geo_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "power_energy_1",
+          "verdict": "강화",
+          "changed": false
+        }
+      ]
     }
   }
 }
