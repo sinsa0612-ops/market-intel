@@ -4754,14 +4754,105 @@
     "next_due": "2026-10-21",
     "unavailable": ""
   },
-  "thesis_board": [],
+  "thesis_board": [
+    {
+      "label": "AI·반도체 #1",
+      "verdict": "약화",
+      "changed": true,
+      "prev_verdict": "강화",
+      "duration_days": 1,
+      "duration_at_least": false,
+      "basis_date": "2026-10-14",
+      "basis_age_days": 2
+    },
+    {
+      "label": "AI·반도체 #2",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 14,
+      "duration_at_least": false,
+      "basis_date": "2026-10-14",
+      "basis_age_days": 2
+    },
+    {
+      "label": "AI·반도체 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 8,
+      "duration_at_least": false,
+      "basis_date": "2026-10-14",
+      "basis_age_days": 2
+    },
+    {
+      "label": "소비·경기 #1",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 60,
+      "duration_at_least": true,
+      "basis_date": "2026-10-13",
+      "basis_age_days": 3
+    },
+    {
+      "label": "금융·신용 #2",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 49,
+      "duration_at_least": true,
+      "basis_date": "2026-10-13",
+      "basis_age_days": 3
+    },
+    {
+      "label": "정책·지정학 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 8,
+      "duration_at_least": false,
+      "basis_date": "2026-10-07",
+      "basis_age_days": 9
+    },
+    {
+      "label": "전력·에너지 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 56,
+      "duration_at_least": true,
+      "basis_date": "2026-06-30",
+      "basis_age_days": 108
+    }
+  ],
   "interpretation": {
-    "reading": "",
-    "counter_reading": "",
-    "thesis_impact": "",
-    "next_check": "",
-    "generated_by": "",
-    "generated_at": ""
+    "reading": "F13에서 미국 산업생산지수가 전일 대비 소폭 상승했으나 F4와 F18에 따르면 물가 지표는 인플레이션 압력을 유지하고 있어 금리 인하 기대감이 제한적입니다.",
+    "counter_reading": "반면 F9의 시장이 반영한 금리 경로가 정책금리 상단보다 높게 형성되어 있지만, 이는 곧 조만간 완화될 것이라는 신호일 수 있으며 F120에서 급등한 VIX는 시장의 과도한 공포 심리를 보여주고 있어 반등 가능성이 있습니다.",
+    "thesis_impact": "가설 9건 판정 — **상태가 바뀐 가설 1건** — AI·반도체 #1 강화 → 약화. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 10구간 -7.48% vs 기준 ^GSPC +0.88% -> 격차 -8.36%p (조건 <= -7.2%p 충족) (진입 2026-10-16 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-16 · 근거 2026-10-14).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 14판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 8판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.21 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 60판정일 · 새 관측 42건 이상(그 외 일부 판정일 미상) · 근거 2026-10-13).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.88 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 49판정일 · 새 관측 42건, 마지막 2026-10-15 · 근거 2026-10-13).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 8판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 56판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+    "next_check": "F7의 미국채 10년물 금리가 F8보다 높은 상태인지 확인하고,F120의 VIX 지수가 특정 수준을 넘거나 밑돌았는지 관찰합니다\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+    "generated_by": "ai:qwen3.5:9b · interpretation_v4",
+    "generated_at": "2026-10-17T07:47:54+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -4774,6 +4865,263 @@
       "schedule_changes": 28,
       "missing": 0,
       "sector_index": 25
+    },
+    "interpretation": {
+      "checks": [
+        {
+          "id": "c1",
+          "kind": "threshold",
+          "subject": "DGS10",
+          "metric": "value",
+          "op": ">=",
+          "value": 5.3,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": ""
+        },
+        {
+          "id": "c2",
+          "kind": "threshold",
+          "subject": "DGS2",
+          "metric": "value",
+          "op": "><=",
+          "value": 4.8,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": ""
+        }
+      ],
+      "engine_version": "2b.2",
+      "status": "ok",
+      "model": "qwen3.5:9b",
+      "prompt_version": "interpretation_v4",
+      "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+      "generated_at": "2026-10-17T07:47:54+00:00",
+      "elapsed_ms": 1214973,
+      "attempts": 2,
+      "fields": {
+        "reading": "ok",
+        "counter_reading": "ok",
+        "thesis_impact": "rules",
+        "next_check": "ok"
+      },
+      "violations": {},
+      "evidence": [
+        [
+          "F4",
+          "fred:CPIAUCSL:value:20260901",
+          1
+        ],
+        [
+          "F7",
+          "fred:DGS10:value:20261013",
+          1
+        ],
+        [
+          "F8",
+          "fred:DGS2:value:20261008",
+          1
+        ],
+        [
+          "F9",
+          "fred:DGS2:value:20261008",
+          1
+        ],
+        [
+          "F13",
+          "fred:PAYEMS:value:20260901",
+          1
+        ],
+        [
+          "F18",
+          "fred:T10YIE:value:20261014",
+          1
+        ],
+        [
+          "F120",
+          "yfinance:^VIX:price_close:20261012",
+          1
+        ],
+        [
+          "F120",
+          "yfinance:^VIX:price_close:20261013",
+          1
+        ],
+        [
+          "F120",
+          "yfinance:^VIX:price_close:20261014",
+          1
+        ]
+      ],
+      "evidence_unresolved": [],
+      "digest_truncated": false,
+      "facts_sha256": "bd335e2830c8c359bff86fdc7d2aa4a6003523c2318240fbcdb4b83185636c7d",
+      "text": {
+        "reading": "F13에서 미국 산업생산지수가 전일 대비 소폭 상승했으나 F4와 F18에 따르면 물가 지표는 인플레이션 압력을 유지하고 있어 금리 인하 기대감이 제한적입니다.",
+        "counter_reading": "반면 F9의 시장이 반영한 금리 경로가 정책금리 상단보다 높게 형성되어 있지만, 이는 곧 조만간 완화될 것이라는 신호일 수 있으며 F120에서 급등한 VIX는 시장의 과도한 공포 심리를 보여주고 있어 반등 가능성이 있습니다.",
+        "thesis_impact": "가설 9건 판정 — **상태가 바뀐 가설 1건** — AI·반도체 #1 강화 → 약화. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 10구간 -7.48% vs 기준 ^GSPC +0.88% -> 격차 -8.36%p (조건 <= -7.2%p 충족) (진입 2026-10-16 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-16 · 근거 2026-10-14).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 14판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 8판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.21 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 60판정일 · 새 관측 42건 이상(그 외 일부 판정일 미상) · 근거 2026-10-13).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.88 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 49판정일 · 새 관측 42건, 마지막 2026-10-15 · 근거 2026-10-13).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 8판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 56판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+        "next_check": "F7의 미국채 10년물 금리가 F8보다 높은 상태인지 확인하고,F120의 VIX 지수가 특정 수준을 넘거나 밑돌았는지 관찰합니다\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+        "generated_by": "ai:qwen3.5:9b · interpretation_v4",
+        "generated_at": "2026-10-17T07:47:54+00:00"
+      },
+      "restorable_meta": {
+        "checks": [
+          {
+            "id": "c1",
+            "kind": "threshold",
+            "subject": "DGS10",
+            "metric": "value",
+            "op": ">=",
+            "value": 5.3,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": ""
+          },
+          {
+            "id": "c2",
+            "kind": "threshold",
+            "subject": "DGS2",
+            "metric": "value",
+            "op": "><=",
+            "value": 4.8,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": ""
+          }
+        ],
+        "engine_version": "2b.2",
+        "status": "ok",
+        "model": "qwen3.5:9b",
+        "prompt_version": "interpretation_v4",
+        "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+        "generated_at": "2026-10-17T07:47:54+00:00",
+        "elapsed_ms": 1214973,
+        "attempts": 2,
+        "fields": {
+          "reading": "ok",
+          "counter_reading": "ok",
+          "thesis_impact": "rules",
+          "next_check": "ok"
+        },
+        "violations": {},
+        "evidence": [
+          [
+            "F4",
+            "fred:CPIAUCSL:value:20260901",
+            1
+          ],
+          [
+            "F7",
+            "fred:DGS10:value:20261013",
+            1
+          ],
+          [
+            "F8",
+            "fred:DGS2:value:20261008",
+            1
+          ],
+          [
+            "F9",
+            "fred:DGS2:value:20261008",
+            1
+          ],
+          [
+            "F13",
+            "fred:PAYEMS:value:20260901",
+            1
+          ],
+          [
+            "F18",
+            "fred:T10YIE:value:20261014",
+            1
+          ],
+          [
+            "F120",
+            "yfinance:^VIX:price_close:20261012",
+            1
+          ],
+          [
+            "F120",
+            "yfinance:^VIX:price_close:20261013",
+            1
+          ],
+          [
+            "F120",
+            "yfinance:^VIX:price_close:20261014",
+            1
+          ]
+        ],
+        "evidence_unresolved": [],
+        "digest_truncated": false,
+        "facts_sha256": "bd335e2830c8c359bff86fdc7d2aa4a6003523c2318240fbcdb4b83185636c7d",
+        "text": {
+          "reading": "F13에서 미국 산업생산지수가 전일 대비 소폭 상승했으나 F4와 F18에 따르면 물가 지표는 인플레이션 압력을 유지하고 있어 금리 인하 기대감이 제한적입니다.",
+          "counter_reading": "반면 F9의 시장이 반영한 금리 경로가 정책금리 상단보다 높게 형성되어 있지만, 이는 곧 조만간 완화될 것이라는 신호일 수 있으며 F120에서 급등한 VIX는 시장의 과도한 공포 심리를 보여주고 있어 반등 가능성이 있습니다.",
+          "thesis_impact": "가설 9건 판정 — **상태가 바뀐 가설 1건** — AI·반도체 #1 강화 → 약화. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 10구간 -7.48% vs 기준 ^GSPC +0.88% -> 격차 -8.36%p (조건 <= -7.2%p 충족) (진입 2026-10-16 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-16 · 근거 2026-10-14).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 14판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 8판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.21 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 60판정일 · 새 관측 42건 이상(그 외 일부 판정일 미상) · 근거 2026-10-13).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.88 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 49판정일 · 새 관측 42건, 마지막 2026-10-15 · 근거 2026-10-13).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 8판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 56판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+          "next_check": "F7의 미국채 10년물 금리가 F8보다 높은 상태인지 확인하고,F120의 VIX 지수가 특정 수준을 넘거나 밑돌았는지 관찰합니다\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+          "generated_by": "ai:qwen3.5:9b · interpretation_v4",
+          "generated_at": "2026-10-17T07:47:54+00:00"
+        }
+      },
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "약화",
+          "changed": true
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "consumer_cycle_1",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_2",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "policy_geo_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "power_energy_1",
+          "verdict": "강화",
+          "changed": false
+        }
+      ]
     }
   }
 }
