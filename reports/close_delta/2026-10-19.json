@@ -4204,14 +4204,105 @@
     "next_due": "2026-10-21",
     "unavailable": ""
   },
-  "thesis_board": [],
+  "thesis_board": [
+    {
+      "label": "AI·반도체 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 1,
+      "duration_at_least": false,
+      "basis_date": "2026-10-16",
+      "basis_age_days": 3
+    },
+    {
+      "label": "AI·반도체 #2",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 15,
+      "duration_at_least": false,
+      "basis_date": "2026-10-14",
+      "basis_age_days": 5
+    },
+    {
+      "label": "AI·반도체 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 9,
+      "duration_at_least": false,
+      "basis_date": "2026-10-14",
+      "basis_age_days": 5
+    },
+    {
+      "label": "소비·경기 #1",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 61,
+      "duration_at_least": true,
+      "basis_date": "2026-10-15",
+      "basis_age_days": 4
+    },
+    {
+      "label": "금융·신용 #2",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 50,
+      "duration_at_least": true,
+      "basis_date": "2026-10-15",
+      "basis_age_days": 4
+    },
+    {
+      "label": "정책·지정학 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 9,
+      "duration_at_least": false,
+      "basis_date": "2026-10-07",
+      "basis_age_days": 12
+    },
+    {
+      "label": "전력·에너지 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 57,
+      "duration_at_least": true,
+      "basis_date": "2026-06-30",
+      "basis_age_days": 111
+    }
+  ],
   "interpretation": {
-    "reading": "",
-    "counter_reading": "",
-    "thesis_impact": "",
-    "next_check": "",
-    "generated_by": "",
-    "generated_at": ""
+    "reading": "코스피 상승은 개인과 기관의 순매도에도 외국인 순매수와 기타 순매수가 나타난 수급 구조와 함께 나타나, 외국인과 기타의 유입이 상대적 지지 요인으로 읽힌다(F115, F1, F2, F3, F4). 다만 삼성전자에서는 외국인이 순매수한 반면 기관이 순매도했고(F18, F20), SK하이닉스에서는 외국인이 순매도한 가운데 기관과 기타가 순매수했으며(F6, F7, F8), 샌디스크와 마이크론도 전일대비 하락했다(F118, F119). 따라서 현재 상승은 반도체 전반의 확인된 동반 강세라기보다 종목별 수급이 엇갈린 가운데 나타난 지수 상승으로 해석할 수 있다(F115).",
+    "counter_reading": "반대로 코스피 상승을 취약한 반도체 신호로만 보는 해석은 과할 수 있다. 코스피 상위 종목 표본에서는 외국인 순매수가 확인됐고(F4), 현대차와 POSCO홀딩스, KB금융에서도 외국인 순매수가 기록됐다(F12, F16, F24). 미국채 2년물 금리는 4.77%로 정책금리 상단 4.00%보다 높지만(F32, F33), 한국 기준금리는 3.00 연%로 직전 관측과 같아서(F25), 국내 지수 상승이 일부 대형주 수급과 국내 요인의 조합으로 이어졌을 가능성도 남아 있다.",
+    "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -9.77% vs 기준 ^GSPC +3.39% -> 격차 -13.16%p (조건 <= -10%p 충족) · ^SOX 10구간 -15.22% vs 기준 ^GSPC -0.82% -> 격차 -14.40%p (조건 <= -7.2%p 충족) (진입 2026-10-19 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-19 · 근거 2026-10-16).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 15판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 9판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.1 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 61판정일 · 새 관측 43건 이상(그 외 일부 판정일 미상) · 근거 2026-10-15).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.78 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 50판정일 · 새 관측 43건, 마지막 2026-10-19 · 근거 2026-10-15).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 9판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 57판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+    "next_check": "다음에는 예정된 000660.KS, 005930.KS, META 등의 실적 발표와 통화정책 일정을 거친 뒤 ^KS11이 F115의 5,668.05를 넘는지 확인한다. MU가 F119의 878.84 USD를 넘고 SNDK가 F118의 1,299.30 USD를 넘으며 ^VIX가 F117의 19.99보다 낮아지는지도 확인한다. 이 조건들이 함께 충족되면 반도체와 위험 선호가 상승을 뒷받침했다는 반대 해석에 가까워지고, 그렇지 않으면 수급 중심의 해석을 다시 검증한다.\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+    "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+    "generated_at": "2026-10-20T05:25:06+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -4224,6 +4315,499 @@
       "schedule_changes": 30,
       "missing": 0,
       "sector_index": 25
+    },
+    "interpretation": {
+      "checks": [
+        {
+          "id": "c1",
+          "kind": "threshold",
+          "subject": "^KS11",
+          "metric": "price_close",
+          "op": ">",
+          "value": 5668.05,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "F115의 KOSPI 종가 5,668.05를 넘는지"
+        },
+        {
+          "id": "c2",
+          "kind": "threshold",
+          "subject": "MU",
+          "metric": "price_close",
+          "op": ">",
+          "value": 878.84,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "F119의 MU 종가 878.84 USD를 넘는지"
+        },
+        {
+          "id": "c3",
+          "kind": "threshold",
+          "subject": "SNDK",
+          "metric": "price_close",
+          "op": ">",
+          "value": 1299.3,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "F118의 SNDK 종가 1,299.30 USD를 넘는지"
+        },
+        {
+          "id": "c4",
+          "kind": "threshold",
+          "subject": "^VIX",
+          "metric": "price_close",
+          "op": "<",
+          "value": 19.99,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "F117의 VIX 19.99보다 낮아지는지"
+        }
+      ],
+      "engine_version": "2b.2",
+      "status": "ok",
+      "model": "gpt:gpt-5.6-luna",
+      "prompt_version": "interpretation_v4",
+      "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+      "generated_at": "2026-10-20T05:25:06+00:00",
+      "elapsed_ms": 66683,
+      "attempts": 1,
+      "fields": {
+        "reading": "ok",
+        "counter_reading": "ok",
+        "thesis_impact": "rules",
+        "next_check": "ok"
+      },
+      "violations": {},
+      "evidence": [
+        [
+          "F6",
+          "kis:000660.KS:net_buy_institution_value:20261014",
+          1
+        ],
+        [
+          "F6",
+          "kis:000660.KS:net_buy_institution_value:20261013",
+          1
+        ],
+        [
+          "F6",
+          "kis:000660.KS:net_buy_institution_value:20261012",
+          1
+        ],
+        [
+          "F7",
+          "kis:000660.KS:net_buy_etc_value:20261014",
+          1
+        ],
+        [
+          "F7",
+          "kis:000660.KS:net_buy_etc_value:20261013",
+          1
+        ],
+        [
+          "F7",
+          "kis:000660.KS:net_buy_etc_value:20261012",
+          1
+        ],
+        [
+          "F8",
+          "kis:000660.KS:net_buy_foreign_value:20261014",
+          1
+        ],
+        [
+          "F8",
+          "kis:000660.KS:net_buy_foreign_value:20261013",
+          1
+        ],
+        [
+          "F8",
+          "kis:000660.KS:net_buy_foreign_value:20261012",
+          1
+        ],
+        [
+          "F12",
+          "kis:005380.KS:net_buy_foreign_value:20261016",
+          2
+        ],
+        [
+          "F16",
+          "kis:005490.KS:net_buy_foreign_value:20261016",
+          2
+        ],
+        [
+          "F18",
+          "kis:005930.KS:net_buy_institution_value:20261016",
+          1
+        ],
+        [
+          "F18",
+          "kis:005930.KS:net_buy_institution_value:20261015",
+          1
+        ],
+        [
+          "F18",
+          "kis:005930.KS:net_buy_institution_value:20261014",
+          2
+        ],
+        [
+          "F20",
+          "kis:005930.KS:net_buy_foreign_value:20261016",
+          1
+        ],
+        [
+          "F20",
+          "kis:005930.KS:net_buy_foreign_value:20261015",
+          1
+        ],
+        [
+          "F20",
+          "kis:005930.KS:net_buy_foreign_value:20261014",
+          2
+        ],
+        [
+          "F24",
+          "kis:105560.KS:net_buy_foreign_value:20261016",
+          1
+        ],
+        [
+          "F24",
+          "kis:105560.KS:net_buy_foreign_value:20261015",
+          1
+        ],
+        [
+          "F25",
+          "ecos:722Y001.0101000:value:20260831",
+          1
+        ],
+        [
+          "F32",
+          "fred:DGS2:value:20261015",
+          1
+        ],
+        [
+          "F33",
+          "fred:DGS2:value:20261015",
+          1
+        ],
+        [
+          "F115",
+          "yfinance:^KS11:price_close:20261016",
+          1
+        ],
+        [
+          "F117",
+          "yfinance:^VIX:price_close:20261016",
+          1
+        ],
+        [
+          "F118",
+          "yfinance:SNDK:price_close:20261016",
+          1
+        ],
+        [
+          "F119",
+          "yfinance:MU:price_close:20261016",
+          1
+        ]
+      ],
+      "evidence_unresolved": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ],
+      "digest_truncated": false,
+      "facts_sha256": "f39e94635fb49d435a66f5e108e76d97c85eefd127c339e9784165a6ac9e9585",
+      "text": {
+        "reading": "코스피 상승은 개인과 기관의 순매도에도 외국인 순매수와 기타 순매수가 나타난 수급 구조와 함께 나타나, 외국인과 기타의 유입이 상대적 지지 요인으로 읽힌다(F115, F1, F2, F3, F4). 다만 삼성전자에서는 외국인이 순매수한 반면 기관이 순매도했고(F18, F20), SK하이닉스에서는 외국인이 순매도한 가운데 기관과 기타가 순매수했으며(F6, F7, F8), 샌디스크와 마이크론도 전일대비 하락했다(F118, F119). 따라서 현재 상승은 반도체 전반의 확인된 동반 강세라기보다 종목별 수급이 엇갈린 가운데 나타난 지수 상승으로 해석할 수 있다(F115).",
+        "counter_reading": "반대로 코스피 상승을 취약한 반도체 신호로만 보는 해석은 과할 수 있다. 코스피 상위 종목 표본에서는 외국인 순매수가 확인됐고(F4), 현대차와 POSCO홀딩스, KB금융에서도 외국인 순매수가 기록됐다(F12, F16, F24). 미국채 2년물 금리는 4.77%로 정책금리 상단 4.00%보다 높지만(F32, F33), 한국 기준금리는 3.00 연%로 직전 관측과 같아서(F25), 국내 지수 상승이 일부 대형주 수급과 국내 요인의 조합으로 이어졌을 가능성도 남아 있다.",
+        "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -9.77% vs 기준 ^GSPC +3.39% -> 격차 -13.16%p (조건 <= -10%p 충족) · ^SOX 10구간 -15.22% vs 기준 ^GSPC -0.82% -> 격차 -14.40%p (조건 <= -7.2%p 충족) (진입 2026-10-19 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-19 · 근거 2026-10-16).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 15판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 9판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.1 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 61판정일 · 새 관측 43건 이상(그 외 일부 판정일 미상) · 근거 2026-10-15).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.78 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 50판정일 · 새 관측 43건, 마지막 2026-10-19 · 근거 2026-10-15).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 9판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 57판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+        "next_check": "다음에는 예정된 000660.KS, 005930.KS, META 등의 실적 발표와 통화정책 일정을 거친 뒤 ^KS11이 F115의 5,668.05를 넘는지 확인한다. MU가 F119의 878.84 USD를 넘고 SNDK가 F118의 1,299.30 USD를 넘으며 ^VIX가 F117의 19.99보다 낮아지는지도 확인한다. 이 조건들이 함께 충족되면 반도체와 위험 선호가 상승을 뒷받침했다는 반대 해석에 가까워지고, 그렇지 않으면 수급 중심의 해석을 다시 검증한다.\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+        "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+        "generated_at": "2026-10-20T05:25:06+00:00"
+      },
+      "restorable_meta": {
+        "checks": [
+          {
+            "id": "c1",
+            "kind": "threshold",
+            "subject": "^KS11",
+            "metric": "price_close",
+            "op": ">",
+            "value": 5668.05,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "F115의 KOSPI 종가 5,668.05를 넘는지"
+          },
+          {
+            "id": "c2",
+            "kind": "threshold",
+            "subject": "MU",
+            "metric": "price_close",
+            "op": ">",
+            "value": 878.84,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "F119의 MU 종가 878.84 USD를 넘는지"
+          },
+          {
+            "id": "c3",
+            "kind": "threshold",
+            "subject": "SNDK",
+            "metric": "price_close",
+            "op": ">",
+            "value": 1299.3,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "F118의 SNDK 종가 1,299.30 USD를 넘는지"
+          },
+          {
+            "id": "c4",
+            "kind": "threshold",
+            "subject": "^VIX",
+            "metric": "price_close",
+            "op": "<",
+            "value": 19.99,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "F117의 VIX 19.99보다 낮아지는지"
+          }
+        ],
+        "engine_version": "2b.2",
+        "status": "ok",
+        "model": "gpt:gpt-5.6-luna",
+        "prompt_version": "interpretation_v4",
+        "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+        "generated_at": "2026-10-20T05:25:06+00:00",
+        "elapsed_ms": 66683,
+        "attempts": 1,
+        "fields": {
+          "reading": "ok",
+          "counter_reading": "ok",
+          "thesis_impact": "rules",
+          "next_check": "ok"
+        },
+        "violations": {},
+        "evidence": [
+          [
+            "F6",
+            "kis:000660.KS:net_buy_institution_value:20261014",
+            1
+          ],
+          [
+            "F6",
+            "kis:000660.KS:net_buy_institution_value:20261013",
+            1
+          ],
+          [
+            "F6",
+            "kis:000660.KS:net_buy_institution_value:20261012",
+            1
+          ],
+          [
+            "F7",
+            "kis:000660.KS:net_buy_etc_value:20261014",
+            1
+          ],
+          [
+            "F7",
+            "kis:000660.KS:net_buy_etc_value:20261013",
+            1
+          ],
+          [
+            "F7",
+            "kis:000660.KS:net_buy_etc_value:20261012",
+            1
+          ],
+          [
+            "F8",
+            "kis:000660.KS:net_buy_foreign_value:20261014",
+            1
+          ],
+          [
+            "F8",
+            "kis:000660.KS:net_buy_foreign_value:20261013",
+            1
+          ],
+          [
+            "F8",
+            "kis:000660.KS:net_buy_foreign_value:20261012",
+            1
+          ],
+          [
+            "F12",
+            "kis:005380.KS:net_buy_foreign_value:20261016",
+            2
+          ],
+          [
+            "F16",
+            "kis:005490.KS:net_buy_foreign_value:20261016",
+            2
+          ],
+          [
+            "F18",
+            "kis:005930.KS:net_buy_institution_value:20261016",
+            1
+          ],
+          [
+            "F18",
+            "kis:005930.KS:net_buy_institution_value:20261015",
+            1
+          ],
+          [
+            "F18",
+            "kis:005930.KS:net_buy_institution_value:20261014",
+            2
+          ],
+          [
+            "F20",
+            "kis:005930.KS:net_buy_foreign_value:20261016",
+            1
+          ],
+          [
+            "F20",
+            "kis:005930.KS:net_buy_foreign_value:20261015",
+            1
+          ],
+          [
+            "F20",
+            "kis:005930.KS:net_buy_foreign_value:20261014",
+            2
+          ],
+          [
+            "F24",
+            "kis:105560.KS:net_buy_foreign_value:20261016",
+            1
+          ],
+          [
+            "F24",
+            "kis:105560.KS:net_buy_foreign_value:20261015",
+            1
+          ],
+          [
+            "F25",
+            "ecos:722Y001.0101000:value:20260831",
+            1
+          ],
+          [
+            "F32",
+            "fred:DGS2:value:20261015",
+            1
+          ],
+          [
+            "F33",
+            "fred:DGS2:value:20261015",
+            1
+          ],
+          [
+            "F115",
+            "yfinance:^KS11:price_close:20261016",
+            1
+          ],
+          [
+            "F117",
+            "yfinance:^VIX:price_close:20261016",
+            1
+          ],
+          [
+            "F118",
+            "yfinance:SNDK:price_close:20261016",
+            1
+          ],
+          [
+            "F119",
+            "yfinance:MU:price_close:20261016",
+            1
+          ]
+        ],
+        "evidence_unresolved": [
+          "F1",
+          "F2",
+          "F3",
+          "F4"
+        ],
+        "digest_truncated": false,
+        "facts_sha256": "f39e94635fb49d435a66f5e108e76d97c85eefd127c339e9784165a6ac9e9585",
+        "text": {
+          "reading": "코스피 상승은 개인과 기관의 순매도에도 외국인 순매수와 기타 순매수가 나타난 수급 구조와 함께 나타나, 외국인과 기타의 유입이 상대적 지지 요인으로 읽힌다(F115, F1, F2, F3, F4). 다만 삼성전자에서는 외국인이 순매수한 반면 기관이 순매도했고(F18, F20), SK하이닉스에서는 외국인이 순매도한 가운데 기관과 기타가 순매수했으며(F6, F7, F8), 샌디스크와 마이크론도 전일대비 하락했다(F118, F119). 따라서 현재 상승은 반도체 전반의 확인된 동반 강세라기보다 종목별 수급이 엇갈린 가운데 나타난 지수 상승으로 해석할 수 있다(F115).",
+          "counter_reading": "반대로 코스피 상승을 취약한 반도체 신호로만 보는 해석은 과할 수 있다. 코스피 상위 종목 표본에서는 외국인 순매수가 확인됐고(F4), 현대차와 POSCO홀딩스, KB금융에서도 외국인 순매수가 기록됐다(F12, F16, F24). 미국채 2년물 금리는 4.77%로 정책금리 상단 4.00%보다 높지만(F32, F33), 한국 기준금리는 3.00 연%로 직전 관측과 같아서(F25), 국내 지수 상승이 일부 대형주 수급과 국내 요인의 조합으로 이어졌을 가능성도 남아 있다.",
+          "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -9.77% vs 기준 ^GSPC +3.39% -> 격차 -13.16%p (조건 <= -10%p 충족) · ^SOX 10구간 -15.22% vs 기준 ^GSPC -0.82% -> 격차 -14.40%p (조건 <= -7.2%p 충족) (진입 2026-10-19 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-19 · 근거 2026-10-16).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 15판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 9판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.1 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 61판정일 · 새 관측 43건 이상(그 외 일부 판정일 미상) · 근거 2026-10-15).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.78 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 50판정일 · 새 관측 43건, 마지막 2026-10-19 · 근거 2026-10-15).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 9판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 57판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+          "next_check": "다음에는 예정된 000660.KS, 005930.KS, META 등의 실적 발표와 통화정책 일정을 거친 뒤 ^KS11이 F115의 5,668.05를 넘는지 확인한다. MU가 F119의 878.84 USD를 넘고 SNDK가 F118의 1,299.30 USD를 넘으며 ^VIX가 F117의 19.99보다 낮아지는지도 확인한다. 이 조건들이 함께 충족되면 반도체와 위험 선호가 상승을 뒷받침했다는 반대 해석에 가까워지고, 그렇지 않으면 수급 중심의 해석을 다시 검증한다.\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+          "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+          "generated_at": "2026-10-20T05:25:06+00:00"
+        }
+      },
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "consumer_cycle_1",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_2",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "policy_geo_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "power_energy_1",
+          "verdict": "강화",
+          "changed": false
+        }
+      ]
     }
   }
 }

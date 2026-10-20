@@ -2420,7 +2420,14 @@
       "data_status": ""
     }
   ],
-  "missing": [],
+  "missing": [
+    {
+      "area": "AI 해석",
+      "reason": "AI 해석 일부 또는 전체 필드가 근거 검증에 실패해 비웠다(partial). 위반 상세는 meta.interpretation.violations 참고. 사실 계층은 정상.",
+      "since": "2026-10-20T05:23:54+00:00",
+      "gap_id": "interp:partial"
+    }
+  ],
   "sector_summary": [
     {
       "sector": "플랫폼·AI 수익화",
@@ -4203,14 +4210,105 @@
     "next_due": "2026-10-21",
     "unavailable": ""
   },
-  "thesis_board": [],
+  "thesis_board": [
+    {
+      "label": "AI·반도체 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 1,
+      "duration_at_least": false,
+      "basis_date": "2026-10-14",
+      "basis_age_days": 2
+    },
+    {
+      "label": "AI·반도체 #2",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 14,
+      "duration_at_least": false,
+      "basis_date": "2026-10-14",
+      "basis_age_days": 2
+    },
+    {
+      "label": "AI·반도체 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 8,
+      "duration_at_least": false,
+      "basis_date": "2026-10-14",
+      "basis_age_days": 2
+    },
+    {
+      "label": "소비·경기 #1",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 60,
+      "duration_at_least": true,
+      "basis_date": "2026-10-13",
+      "basis_age_days": 3
+    },
+    {
+      "label": "금융·신용 #2",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 49,
+      "duration_at_least": true,
+      "basis_date": "2026-10-13",
+      "basis_age_days": 3
+    },
+    {
+      "label": "정책·지정학 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 8,
+      "duration_at_least": false,
+      "basis_date": "2026-10-07",
+      "basis_age_days": 9
+    },
+    {
+      "label": "전력·에너지 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 56,
+      "duration_at_least": true,
+      "basis_date": "2026-06-30",
+      "basis_age_days": 108
+    }
+  ],
   "interpretation": {
-    "reading": "",
+    "reading": "코스피는 전일 대비 7.57% 하락했다(F114). SK하이닉스는 11.06% 하락했고(F116), 삼성전자는 9.48% 하락했다(F118). 상위 20종목 표본에서 외국인은 9,746억 원 순매도했고(F4), 기관은 3,289억 원 순매수했다(F2). 따라서 현재 하락은 외국인 매도와 반도체 종목 약세가 맞물린 흐름으로 읽을 수 있다.",
     "counter_reading": "",
-    "thesis_impact": "",
-    "next_check": "",
-    "generated_by": "",
-    "generated_at": ""
+    "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 10구간 -7.48% vs 기준 ^GSPC +0.88% -> 격차 -8.36%p (조건 <= -7.2%p 충족) (진입 2026-10-16 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-16 · 근거 2026-10-14).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 14판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 8판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.21 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 60판정일 · 새 관측 42건 이상(그 외 일부 판정일 미상) · 근거 2026-10-13).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.88 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 49판정일 · 새 관측 42건, 마지막 2026-10-15 · 근거 2026-10-13).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 8판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 56판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+    "next_check": "다음 거래일의 외국인 순매수가 -9,746 억 원(F4)보다 큰 음의 값을 기록하면 reading 이 맞고, 양의 값이나 그 이하인 음의 값이면 counter_reading 이 맞을 수 있다\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+    "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+    "generated_at": "2026-10-20T05:23:54+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -4223,6 +4321,261 @@
       "schedule_changes": 28,
       "missing": 0,
       "sector_index": 25
+    },
+    "interpretation": {
+      "checks": [
+        {
+          "id": "c1",
+          "kind": "threshold",
+          "subject": "^KS11",
+          "metric": "value",
+          "op": ">=",
+          "value": -7.57,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "코스피가 전일 대비 -7.57% 이상 하락했는지"
+        },
+        {
+          "id": "c2",
+          "kind": "threshold",
+          "subject": "F4",
+          "metric": "value",
+          "op": "<=",
+          "value": -974600000000,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "외국인 순매수가 -9,746 억 원 이하인지"
+        },
+        {
+          "id": "c3",
+          "kind": "threshold",
+          "subject": "F1+F2+F3",
+          "metric": "value",
+          "op": ">=",
+          "value": -24300000000,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "국내 투자자 총순매수가 -243 억 원 이상인지"
+        }
+      ],
+      "engine_version": "2b.2",
+      "status": "partial",
+      "model": "gpt:gpt-5.6-luna",
+      "prompt_version": "interpretation_v4",
+      "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+      "generated_at": "2026-10-20T05:23:54+00:00",
+      "elapsed_ms": 720729,
+      "attempts": 2,
+      "fields": {
+        "reading": "ok",
+        "counter_reading": "rejected",
+        "thesis_impact": "rules",
+        "next_check": "ok"
+      },
+      "violations": {
+        "counter_reading": [
+          [
+            "sign",
+            "9,746"
+          ]
+        ]
+      },
+      "evidence": [
+        [
+          "F114",
+          "yfinance:^KS11:price_close:20261014",
+          1
+        ],
+        [
+          "F114",
+          "yfinance:^KS11:price_close:20261015",
+          1
+        ],
+        [
+          "F116",
+          "yfinance:000660.KS:price_close:20261015",
+          1
+        ],
+        [
+          "F118",
+          "yfinance:005930.KS:price_close:20261015",
+          1
+        ]
+      ],
+      "evidence_unresolved": [
+        "F2",
+        "F4"
+      ],
+      "digest_truncated": false,
+      "facts_sha256": "3096f28308b82fbb5ea97ca179200430bf60cf0824072954fb37836df41d736f",
+      "text": {
+        "reading": "코스피는 전일 대비 7.57% 하락했다(F114). SK하이닉스는 11.06% 하락했고(F116), 삼성전자는 9.48% 하락했다(F118). 상위 20종목 표본에서 외국인은 9,746억 원 순매도했고(F4), 기관은 3,289억 원 순매수했다(F2). 따라서 현재 하락은 외국인 매도와 반도체 종목 약세가 맞물린 흐름으로 읽을 수 있다.",
+        "counter_reading": "",
+        "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 10구간 -7.48% vs 기준 ^GSPC +0.88% -> 격차 -8.36%p (조건 <= -7.2%p 충족) (진입 2026-10-16 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-16 · 근거 2026-10-14).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 14판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 8판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.21 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 60판정일 · 새 관측 42건 이상(그 외 일부 판정일 미상) · 근거 2026-10-13).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.88 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 49판정일 · 새 관측 42건, 마지막 2026-10-15 · 근거 2026-10-13).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 8판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 56판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+        "next_check": "다음 거래일의 외국인 순매수가 -9,746 억 원(F4)보다 큰 음의 값을 기록하면 reading 이 맞고, 양의 값이나 그 이하인 음의 값이면 counter_reading 이 맞을 수 있다\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+        "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+        "generated_at": "2026-10-20T05:23:54+00:00"
+      },
+      "restorable_meta": {
+        "checks": [
+          {
+            "id": "c1",
+            "kind": "threshold",
+            "subject": "^KS11",
+            "metric": "value",
+            "op": ">=",
+            "value": -7.57,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "코스피가 전일 대비 -7.57% 이상 하락했는지"
+          },
+          {
+            "id": "c2",
+            "kind": "threshold",
+            "subject": "F4",
+            "metric": "value",
+            "op": "<=",
+            "value": -974600000000,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "외국인 순매수가 -9,746 억 원 이하인지"
+          },
+          {
+            "id": "c3",
+            "kind": "threshold",
+            "subject": "F1+F2+F3",
+            "metric": "value",
+            "op": ">=",
+            "value": -24300000000,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "국내 투자자 총순매수가 -243 억 원 이상인지"
+          }
+        ],
+        "engine_version": "2b.2",
+        "status": "partial",
+        "model": "gpt:gpt-5.6-luna",
+        "prompt_version": "interpretation_v4",
+        "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+        "generated_at": "2026-10-20T05:23:54+00:00",
+        "elapsed_ms": 720729,
+        "attempts": 2,
+        "fields": {
+          "reading": "ok",
+          "counter_reading": "rejected",
+          "thesis_impact": "rules",
+          "next_check": "ok"
+        },
+        "violations": {
+          "counter_reading": [
+            [
+              "sign",
+              "9,746"
+            ]
+          ]
+        },
+        "evidence": [
+          [
+            "F114",
+            "yfinance:^KS11:price_close:20261014",
+            1
+          ],
+          [
+            "F114",
+            "yfinance:^KS11:price_close:20261015",
+            1
+          ],
+          [
+            "F116",
+            "yfinance:000660.KS:price_close:20261015",
+            1
+          ],
+          [
+            "F118",
+            "yfinance:005930.KS:price_close:20261015",
+            1
+          ]
+        ],
+        "evidence_unresolved": [
+          "F2",
+          "F4"
+        ],
+        "digest_truncated": false,
+        "facts_sha256": "3096f28308b82fbb5ea97ca179200430bf60cf0824072954fb37836df41d736f",
+        "text": {
+          "reading": "코스피는 전일 대비 7.57% 하락했다(F114). SK하이닉스는 11.06% 하락했고(F116), 삼성전자는 9.48% 하락했다(F118). 상위 20종목 표본에서 외국인은 9,746억 원 순매도했고(F4), 기관은 3,289억 원 순매수했다(F2). 따라서 현재 하락은 외국인 매도와 반도체 종목 약세가 맞물린 흐름으로 읽을 수 있다.",
+          "counter_reading": "",
+          "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 4 · 유지 2 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 10구간 -7.48% vs 기준 ^GSPC +0.88% -> 격차 -8.36%p (조건 <= -7.2%p 충족) (진입 2026-10-16 · 오늘 새로 충족 · 새 관측 1건, 마지막 2026-10-16 · 근거 2026-10-14).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -6,330,702,000,000) (진입 2026-09-29 · 지속 14판정일 · 새 관측 8건, 마지막 2026-10-15 · 근거 2026-10-14).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -10,343,014,000,000) (진입 2026-10-07 · 지속 8판정일 · 새 관측 3건, 마지막 2026-10-15 · 근거 2026-10-14).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 5.21 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 60판정일 · 새 관측 42건 이상(그 외 일부 판정일 미상) · 근거 2026-10-13).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.88 (조건 >= 1.05 충족) (기록 시작 2026-08-12 이전부터 · 지속 49판정일 · 새 관측 42건, 마지막 2026-10-15 · 근거 2026-10-13).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1339.2 (조건 <= 1350 충족) (진입 2026-10-07 · 지속 8판정일 · 새 관측 2건, 마지막 2026-10-08 · 근거 2026-10-07).\n[전력·에너지 #1] 강화 — EQIX revenue 최근 2구간 연속 up 확인 (기록 시작 2026-08-04 이전부터 · 지속 56판정일 · 새 관측 미상 · 근거 2026-06-30).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+          "next_check": "다음 거래일의 외국인 순매수가 -9,746 억 원(F4)보다 큰 음의 값을 기록하면 reading 이 맞고, 양의 값이나 그 이하인 음의 값이면 counter_reading 이 맞을 수 있다\n\n확인 일정: 2026-10-22 한국은행 금융통화위원회(A) · 2026-10-28 FOMC(A) · 가설 재점검 2026-09-01",
+          "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+          "generated_at": "2026-10-20T05:23:54+00:00"
+        }
+      },
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "consumer_cycle_1",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_2",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "policy_geo_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "power_energy_1",
+          "verdict": "강화",
+          "changed": false
+        }
+      ]
     }
   }
 }
