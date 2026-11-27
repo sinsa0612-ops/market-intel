@@ -2978,7 +2978,14 @@
     }
   ],
   "schedule_changes": [],
-  "missing": [],
+  "missing": [
+    {
+      "area": "AI 해석",
+      "reason": "AI 해석 일부 또는 전체 필드가 근거 검증에 실패해 비웠다(partial). 위반 상세는 meta.interpretation.violations 참고. 사실 계층은 정상.",
+      "since": "2026-11-27T21:52:21+00:00",
+      "gap_id": "interp:partial"
+    }
+  ],
   "sector_summary": [
     {
       "sector": "플랫폼·AI 수익화",
@@ -4816,14 +4823,105 @@
     "next_due": "2026-11-30",
     "unavailable": ""
   },
-  "thesis_board": [],
+  "thesis_board": [
+    {
+      "label": "AI·반도체 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 3,
+      "duration_at_least": false,
+      "basis_date": "2026-11-25",
+      "basis_age_days": 2
+    },
+    {
+      "label": "AI·반도체 #2",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 8,
+      "duration_at_least": false,
+      "basis_date": "2026-11-25",
+      "basis_age_days": 2
+    },
+    {
+      "label": "AI·반도체 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 2,
+      "duration_at_least": false,
+      "basis_date": "2026-11-25",
+      "basis_age_days": 2
+    },
+    {
+      "label": "소비·경기 #1",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #1",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 91,
+      "duration_at_least": true,
+      "basis_date": "2026-11-24",
+      "basis_age_days": 3
+    },
+    {
+      "label": "금융·신용 #2",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    },
+    {
+      "label": "금융·신용 #3",
+      "verdict": "강화",
+      "changed": false,
+      "prev_verdict": "강화",
+      "duration_days": 5,
+      "duration_at_least": false,
+      "basis_date": "2026-11-24",
+      "basis_age_days": 3
+    },
+    {
+      "label": "정책·지정학 #1",
+      "verdict": "약화",
+      "changed": false,
+      "prev_verdict": "약화",
+      "duration_days": 13,
+      "duration_at_least": false,
+      "basis_date": "2026-11-25",
+      "basis_age_days": 2
+    },
+    {
+      "label": "전력·에너지 #1",
+      "verdict": "유지",
+      "changed": false,
+      "prev_verdict": "유지",
+      "duration_days": null,
+      "duration_at_least": false,
+      "basis_date": "",
+      "basis_age_days": null
+    }
+  ],
   "interpretation": {
     "reading": "",
     "counter_reading": "",
-    "thesis_impact": "",
-    "next_check": "",
-    "generated_by": "",
-    "generated_at": ""
+    "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 3 · 유지 3 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -22.27% vs 기준 ^GSPC -5.88% -> 격차 -16.39%p (조건 <= -10%p 충족) · ^SOX 10구간 -16.94% vs 기준 ^GSPC -5.73% -> 격차 -11.21%p (조건 <= -7.2%p 충족) (진입 2026-11-25 · 지속 3판정일 · 새 관측 2건, 마지막 2026-11-26 · 근거 2026-11-25).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -1,081,093,000,000) (진입 2026-11-18 · 지속 8판정일 · 새 관측 5건, 마지막 2026-11-26 · 근거 2026-11-25).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -3,088,765,000,000) (진입 2026-11-26 · 지속 2판정일 · 새 관측 1건, 마지막 2026-11-26 · 근거 2026-11-25).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.91 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 91판정일 · 새 관측 68건 이상(그 외 일부 판정일 미상) · 근거 2026-11-24).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.79 (조건 >= 1.05 충족) · BAMLH0A0HYM2 value 60구간 전 대비 37.78% (조건 >= 30% 충족) (진입 2026-11-23 · 지속 5판정일 · 새 관측 4건, 마지막 2026-11-26 · 근거 2026-11-24).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1343.9 (조건 <= 1350 충족) (진입 2026-11-11 · 지속 13판정일 · 새 관측 10건, 마지막 2026-11-26 · 근거 2026-11-25).\n[전력·에너지 #1] 유지 — 발화 조건 없음(평가 가능 5/5).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+    "next_check": "다음 고용 상황 발표에서 PAYEMS가 현재 수준(F13)보다 높고 UNRATE가 현재 수준(F19)보다 낮은지 확인한다. FOMC 발표 뒤에는 DFEDTARU가 연방기금금리 상단 4.00%(F5)보다 높은지 확인하고, CPI 발표 뒤에는 CPIAUCSL이 현재 지수 337.48(F4)보다 높은지 확인한다.\n\n확인 일정: 2026-12-04 Employment Situation(A) · 2026-12-09 FOMC(A) · 가설 재점검 2026-09-01",
+    "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+    "generated_at": "2026-11-27T21:52:21+00:00"
   },
   "meta": {
     "generated_by": "reporting/build.py (2A)",
@@ -4836,6 +4934,299 @@
       "schedule_changes": 0,
       "missing": 0,
       "sector_index": 25
+    },
+    "interpretation": {
+      "checks": [
+        {
+          "id": "c1",
+          "kind": "threshold",
+          "subject": "PAYEMS",
+          "metric": "value",
+          "op": ">",
+          "value": 159293,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "현재 수준(F13)을 웃도는지 확인"
+        },
+        {
+          "id": "c2",
+          "kind": "threshold",
+          "subject": "UNRATE",
+          "metric": "value",
+          "op": "<",
+          "value": 4.1,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "현재 수준(F19)을 밑도는지 확인"
+        },
+        {
+          "id": "c3",
+          "kind": "threshold",
+          "subject": "DFEDTARU",
+          "metric": "value",
+          "op": ">",
+          "value": 4,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "연방기금금리 상단 수준(F5)을 웃도는지 확인"
+        },
+        {
+          "id": "c4",
+          "kind": "threshold",
+          "subject": "CPIAUCSL",
+          "metric": "value",
+          "op": ">",
+          "value": 337.48,
+          "lookback": null,
+          "benchmark": null,
+          "direction": null,
+          "periods": null,
+          "days": null,
+          "why": "현재 지수 수준(F4)을 웃도는지 확인"
+        }
+      ],
+      "engine_version": "2b.2",
+      "status": "partial",
+      "model": "gpt:gpt-5.6-luna",
+      "prompt_version": "interpretation_v4",
+      "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+      "generated_at": "2026-11-27T21:52:21+00:00",
+      "elapsed_ms": 1110406,
+      "attempts": 2,
+      "fields": {
+        "reading": "rejected",
+        "counter_reading": "withheld",
+        "thesis_impact": "rules",
+        "next_check": "ok"
+      },
+      "violations": {
+        "reading": [
+          [
+            "banned:단위변조",
+            "%p"
+          ],
+          [
+            "citation_num",
+            "F8 4.00"
+          ],
+          [
+            "citation_num",
+            "F5 0.77"
+          ]
+        ]
+      },
+      "evidence": [
+        [
+          "F4",
+          "fred:CPIAUCSL:value:20261001",
+          1
+        ],
+        [
+          "F5",
+          "fred:DFEDTARU:value:20261125",
+          1
+        ],
+        [
+          "F13",
+          "fred:PAYEMS:value:20261001",
+          1
+        ],
+        [
+          "F19",
+          "fred:UNRATE:value:20261001",
+          1
+        ]
+      ],
+      "evidence_unresolved": [],
+      "digest_truncated": false,
+      "facts_sha256": "2f602fe25f9e68a1f2a13897d76bb76f62c2de6960016f6b80a207bd167992e5",
+      "text": {
+        "reading": "",
+        "counter_reading": "",
+        "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 3 · 유지 3 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -22.27% vs 기준 ^GSPC -5.88% -> 격차 -16.39%p (조건 <= -10%p 충족) · ^SOX 10구간 -16.94% vs 기준 ^GSPC -5.73% -> 격차 -11.21%p (조건 <= -7.2%p 충족) (진입 2026-11-25 · 지속 3판정일 · 새 관측 2건, 마지막 2026-11-26 · 근거 2026-11-25).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -1,081,093,000,000) (진입 2026-11-18 · 지속 8판정일 · 새 관측 5건, 마지막 2026-11-26 · 근거 2026-11-25).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -3,088,765,000,000) (진입 2026-11-26 · 지속 2판정일 · 새 관측 1건, 마지막 2026-11-26 · 근거 2026-11-25).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.91 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 91판정일 · 새 관측 68건 이상(그 외 일부 판정일 미상) · 근거 2026-11-24).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.79 (조건 >= 1.05 충족) · BAMLH0A0HYM2 value 60구간 전 대비 37.78% (조건 >= 30% 충족) (진입 2026-11-23 · 지속 5판정일 · 새 관측 4건, 마지막 2026-11-26 · 근거 2026-11-24).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1343.9 (조건 <= 1350 충족) (진입 2026-11-11 · 지속 13판정일 · 새 관측 10건, 마지막 2026-11-26 · 근거 2026-11-25).\n[전력·에너지 #1] 유지 — 발화 조건 없음(평가 가능 5/5).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+        "next_check": "다음 고용 상황 발표에서 PAYEMS가 현재 수준(F13)보다 높고 UNRATE가 현재 수준(F19)보다 낮은지 확인한다. FOMC 발표 뒤에는 DFEDTARU가 연방기금금리 상단 4.00%(F5)보다 높은지 확인하고, CPI 발표 뒤에는 CPIAUCSL이 현재 지수 337.48(F4)보다 높은지 확인한다.\n\n확인 일정: 2026-12-04 Employment Situation(A) · 2026-12-09 FOMC(A) · 가설 재점검 2026-09-01",
+        "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+        "generated_at": "2026-11-27T21:52:21+00:00"
+      },
+      "restorable_meta": {
+        "checks": [
+          {
+            "id": "c1",
+            "kind": "threshold",
+            "subject": "PAYEMS",
+            "metric": "value",
+            "op": ">",
+            "value": 159293,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "현재 수준(F13)을 웃도는지 확인"
+          },
+          {
+            "id": "c2",
+            "kind": "threshold",
+            "subject": "UNRATE",
+            "metric": "value",
+            "op": "<",
+            "value": 4.1,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "현재 수준(F19)을 밑도는지 확인"
+          },
+          {
+            "id": "c3",
+            "kind": "threshold",
+            "subject": "DFEDTARU",
+            "metric": "value",
+            "op": ">",
+            "value": 4,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "연방기금금리 상단 수준(F5)을 웃도는지 확인"
+          },
+          {
+            "id": "c4",
+            "kind": "threshold",
+            "subject": "CPIAUCSL",
+            "metric": "value",
+            "op": ">",
+            "value": 337.48,
+            "lookback": null,
+            "benchmark": null,
+            "direction": null,
+            "periods": null,
+            "days": null,
+            "why": "현재 지수 수준(F4)을 웃도는지 확인"
+          }
+        ],
+        "engine_version": "2b.2",
+        "status": "partial",
+        "model": "gpt:gpt-5.6-luna",
+        "prompt_version": "interpretation_v4",
+        "prompt_sha256": "5b6fcb19dbe091720c7feaa8a7fec1caec36134ae4f3da83632d9e9b08a8ec01",
+        "generated_at": "2026-11-27T21:52:21+00:00",
+        "elapsed_ms": 1110406,
+        "attempts": 2,
+        "fields": {
+          "reading": "rejected",
+          "counter_reading": "withheld",
+          "thesis_impact": "rules",
+          "next_check": "ok"
+        },
+        "violations": {
+          "reading": [
+            [
+              "banned:단위변조",
+              "%p"
+            ],
+            [
+              "citation_num",
+              "F8 4.00"
+            ],
+            [
+              "citation_num",
+              "F5 0.77"
+            ]
+          ]
+        },
+        "evidence": [
+          [
+            "F4",
+            "fred:CPIAUCSL:value:20261001",
+            1
+          ],
+          [
+            "F5",
+            "fred:DFEDTARU:value:20261125",
+            1
+          ],
+          [
+            "F13",
+            "fred:PAYEMS:value:20261001",
+            1
+          ],
+          [
+            "F19",
+            "fred:UNRATE:value:20261001",
+            1
+          ]
+        ],
+        "evidence_unresolved": [],
+        "digest_truncated": false,
+        "facts_sha256": "2f602fe25f9e68a1f2a13897d76bb76f62c2de6960016f6b80a207bd167992e5",
+        "text": {
+          "reading": "",
+          "counter_reading": "",
+          "thesis_impact": "가설 9건 판정 — 상태가 바뀐 가설 없음. (현재 상태: 강화 3 · 유지 3 · 약화 3 · 무효 0 · 판정 불가 0)\n[AI·반도체 #1] 약화 — ^SOX 60구간 -22.27% vs 기준 ^GSPC -5.88% -> 격차 -16.39%p (조건 <= -10%p 충족) · ^SOX 10구간 -16.94% vs 기준 ^GSPC -5.73% -> 격차 -11.21%p (조건 <= -7.2%p 충족) (진입 2026-11-25 · 지속 3판정일 · 새 관측 2건, 마지막 2026-11-26 · 근거 2026-11-25).\n[AI·반도체 #2] 약화 — 000660.KS net_buy_foreign_value 최근 5구간 연속 순매도 확인(합계 -1,081,093,000,000) (진입 2026-11-18 · 지속 8판정일 · 새 관측 5건, 마지막 2026-11-26 · 근거 2026-11-25).\n[AI·반도체 #3] 강화 — 000660.KS net_buy_foreign_value 최근 10구간 연속 순매도 확인(합계 -3,088,765,000,000) (진입 2026-11-26 · 지속 2판정일 · 새 관측 1건, 마지막 2026-11-26 · 근거 2026-11-25).\n[소비·경기 #1] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #1] 강화 — DGS10 value 최신값 4.91 (조건 >= 4.5 충족) (기록 시작 2026-07-30 이전부터 · 지속 91판정일 · 새 관측 68건 이상(그 외 일부 판정일 미상) · 근거 2026-11-24).\n[금융·신용 #2] 유지 — 발화 조건 없음(평가 가능 4/4).\n[금융·신용 #3] 강화 — DFII10 value 최신값 2.79 (조건 >= 1.05 충족) · BAMLH0A0HYM2 value 60구간 전 대비 37.78% (조건 >= 30% 충족) (진입 2026-11-23 · 지속 5판정일 · 새 관측 4건, 마지막 2026-11-26 · 근거 2026-11-24).\n[정책·지정학 #1] 약화 — 731Y001.0000001 value 최신값 1343.9 (조건 <= 1350 충족) (진입 2026-11-11 · 지속 13판정일 · 새 관측 10건, 마지막 2026-11-26 · 근거 2026-11-25).\n[전력·에너지 #1] 유지 — 발화 조건 없음(평가 가능 5/5).\n※ 진입일·지속·새 관측 표시는 2026-08-20 도입. 그 이전 판정의 '강화'는 다른 뜻이다(매일 재충족을 포함). 지속일은 독립 증거의 수가 아니다 — 월간·분기 지표는 다음 발표 전까지 증거 1개다.",
+          "next_check": "다음 고용 상황 발표에서 PAYEMS가 현재 수준(F13)보다 높고 UNRATE가 현재 수준(F19)보다 낮은지 확인한다. FOMC 발표 뒤에는 DFEDTARU가 연방기금금리 상단 4.00%(F5)보다 높은지 확인하고, CPI 발표 뒤에는 CPIAUCSL이 현재 지수 337.48(F4)보다 높은지 확인한다.\n\n확인 일정: 2026-12-04 Employment Situation(A) · 2026-12-09 FOMC(A) · 가설 재점검 2026-09-01",
+          "generated_by": "ai:gpt:gpt-5.6-luna · interpretation_v4",
+          "generated_at": "2026-11-27T21:52:21+00:00"
+        }
+      },
+      "thesis_reviews": [
+        {
+          "thesis_id": "ai_semi_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_2",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "ai_semi_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "consumer_cycle_1",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_1",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_2",
+          "verdict": "유지",
+          "changed": false
+        },
+        {
+          "thesis_id": "fin_credit_3",
+          "verdict": "강화",
+          "changed": false
+        },
+        {
+          "thesis_id": "policy_geo_1",
+          "verdict": "약화",
+          "changed": false
+        },
+        {
+          "thesis_id": "power_energy_1",
+          "verdict": "유지",
+          "changed": false
+        }
+      ]
     }
   }
 }
